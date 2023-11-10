@@ -1,0 +1,18 @@
+name: "DLNA"
+guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
+imageUrl: ""
+version: "1"
+targetAbi: "10.9.0.0"
+framework: "net7.0"
+owner: "jellyfin"
+overview: "DLNA Service"
+description: >
+  Adds DLNA capability to Jellyfin
+
+category: "Notifications"
+artifacts:
+  - "Jellyfin.Plugin.Dlna.dll"
+  - "Jellyfin.Plugin.Dlna.Model.dll"
+  - "Jellyfin.Plugin.Dlna.Playback.dll"
+  - "Rssdp.dll"
+changelog: |-
