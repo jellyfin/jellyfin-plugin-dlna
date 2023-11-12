@@ -1,9 +1,7 @@
 using System;
-using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Net.Http;
-using System.Reflection;
 using System.Text;
 using Jellyfin.Plugin.Dlna.ConnectionManager;
 using Jellyfin.Plugin.Dlna.ContentDirectory;
@@ -13,7 +11,8 @@ using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Playback;
 using Jellyfin.Plugin.Dlna.Ssdp;
 using MediaBrowser.Common.Net;
-using MediaBrowser.Common.Plugins;
+using MediaBrowser.Controller;
+using MediaBrowser.Controller.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Rssdp.Infrastructure;
@@ -22,10 +21,9 @@ namespace Jellyfin.Plugin.Dlna;
 
 public class DlnaServiceRegistrator : IPluginServiceRegistrator
 {
-    public void RegisterServices(IServiceCollection services)
+    public void RegisterServices(IServiceCollection services, IServerApplicationHost applicationHost)
     {
-        // TODO
-        /*services.AddHttpClient(NamedClient.Dlna, c =>
+        services.AddHttpClient(NamedClient.Dlna, c =>
             {
                 c.DefaultRequestHeaders.UserAgent.ParseAdd(
                     string.Format(
@@ -38,29 +36,6 @@ public class DlnaServiceRegistrator : IPluginServiceRegistrator
 
                 c.DefaultRequestHeaders.Add("CPFN.UPNP.ORG", applicationHost.FriendlyName); // Required for UPnP DeviceArchitecture v2.0
                 c.DefaultRequestHeaders.Add("FriendlyName.DLNA.ORG", applicationHost.FriendlyName); // REVIEW: where does this come from?
-            })
-            .ConfigurePrimaryHttpMessageHandler(_ => new SocketsHttpHandler
-            {
-                AutomaticDecompression = DecompressionMethods.All,
-                RequestHeaderEncodingSelector = (_, _) => Encoding.UTF8
-            });*/
-
-        var appName = FileVersionInfo.GetVersionInfo(Assembly.GetEntryAssembly()!.Location).ProductName;
-        var appFriendlyName = Environment.MachineName;
-        var appVersion = Assembly.GetEntryAssembly()!.GetName().Version!.ToString(3);
-        services.AddHttpClient(NamedClient.Dlna, c =>
-            {
-                c.DefaultRequestHeaders.UserAgent.ParseAdd(
-                    string.Format(
-                        CultureInfo.InvariantCulture,
-                        "{0}/{1} UPnP/1.0 {2}/{3}",
-                        Environment.OSVersion.Platform,
-                        Environment.OSVersion,
-                        appName,
-                        appVersion));
-
-                c.DefaultRequestHeaders.Add("CPFN.UPNP.ORG", appFriendlyName); // Required for UPnP DeviceArchitecture v2.0
-                c.DefaultRequestHeaders.Add("FriendlyName.DLNA.ORG", appFriendlyName); // REVIEW: where does this come from?
             })
             .ConfigurePrimaryHttpMessageHandler(_ => new SocketsHttpHandler
             {
