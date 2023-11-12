@@ -494,7 +494,7 @@ namespace Jellyfin.Plugin.Dlna.ContentDirectory
         {
             var folder = (Folder)item;
 
-            string[] mediaTypes = Array.Empty<string>();
+            MediaType[] mediaTypes = Array.Empty<MediaType>();
             bool? isFolder = null;
 
             switch (search.SearchType)

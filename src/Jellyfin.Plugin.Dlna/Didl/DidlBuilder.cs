@@ -181,13 +181,14 @@ namespace Jellyfin.Plugin.Dlna.Didl
 
             if (item is IHasMediaSources)
             {
-                if (string.Equals(item.MediaType, MediaType.Audio, StringComparison.OrdinalIgnoreCase))
+                switch (item.MediaType)
                 {
-                    AddAudioResource(writer, item, deviceId, filter, streamInfo);
-                }
-                else if (string.Equals(item.MediaType, MediaType.Video, StringComparison.OrdinalIgnoreCase))
-                {
-                    AddVideoResource(writer, item, deviceId, filter, streamInfo);
+                    case MediaType.Audio:
+                        AddAudioResource(writer, item, deviceId, filter, streamInfo);
+                        break;
+                    case MediaType.Video:
+                        AddVideoResource(writer, item, deviceId, filter, streamInfo);
+                        break;
                 }
             }
 
@@ -828,15 +829,15 @@ namespace Jellyfin.Plugin.Dlna.Didl
 
                 writer.WriteString(classType ?? "object.container.storageFolder");
             }
-            else if (string.Equals(item.MediaType, MediaType.Audio, StringComparison.OrdinalIgnoreCase))
+            else if (item.MediaType == MediaType.Audio)
             {
                 writer.WriteString("object.item.audioItem.musicTrack");
             }
-            else if (string.Equals(item.MediaType, MediaType.Photo, StringComparison.OrdinalIgnoreCase))
+            else if (item.MediaType == MediaType.Photo)
             {
                 writer.WriteString("object.item.imageItem.photo");
             }
-            else if (string.Equals(item.MediaType, MediaType.Video, StringComparison.OrdinalIgnoreCase))
+            else if (item.MediaType == MediaType.Video)
             {
                 if (!_profile.RequiresPlainVideoItems && item is Movie)
                 {
@@ -1013,8 +1014,7 @@ namespace Jellyfin.Plugin.Dlna.Didl
 
             if (!_profile.EnableAlbumArtInDidl)
             {
-                if (string.Equals(item.MediaType, MediaType.Audio, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(item.MediaType, MediaType.Video, StringComparison.OrdinalIgnoreCase))
+                if (item.MediaType is MediaType.Audio or MediaType.Video)
                 {
                     if (!stubType.HasValue)
                     {
@@ -1023,7 +1023,7 @@ namespace Jellyfin.Plugin.Dlna.Didl
                 }
             }
 
-            if (!_profile.EnableSingleAlbumArtLimit || string.Equals(item.MediaType, MediaType.Photo, StringComparison.OrdinalIgnoreCase))
+            if (!_profile.EnableSingleAlbumArtLimit || item.MediaType == MediaType.Photo)
             {
                 AddImageResElement(item, writer, 4096, 4096, "jpg", "JPEG_LRG");
                 AddImageResElement(item, writer, 1024, 768, "jpg", "JPEG_MED");

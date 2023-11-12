@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
+using Jellyfin.Data.Enums;
 using Jellyfin.Data.Events;
 using Jellyfin.Plugin.Dlna.Didl;
 using Jellyfin.Plugin.Dlna.Extensions;
@@ -17,7 +18,6 @@ using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Session;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
-using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.Session;
 using Microsoft.AspNetCore.WebUtilities;
@@ -580,10 +580,9 @@ namespace Jellyfin.Plugin.Dlna.PlayTo
         }
 
         private PlaylistItem GetPlaylistItem(BaseItem item, MediaSourceInfo[] mediaSources, DeviceProfile profile, string deviceId, string? mediaSourceId, int? audioStreamIndex, int? subtitleStreamIndex)
-        {
-            if (string.Equals(item.MediaType, MediaType.Video, StringComparison.OrdinalIgnoreCase))
+            => item.MediaType switch
             {
-                return new PlaylistItem
+                MediaType.Video => new PlaylistItem
                 {
                     StreamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalVideoStream(new MediaOptions
                     {
@@ -596,14 +595,9 @@ namespace Jellyfin.Plugin.Dlna.PlayTo
                         AudioStreamIndex = audioStreamIndex,
                         SubtitleStreamIndex = subtitleStreamIndex
                     }),
-
                     Profile = profile
-                };
-            }
-
-            if (string.Equals(item.MediaType, MediaType.Audio, StringComparison.OrdinalIgnoreCase))
-            {
-                return new PlaylistItem
+                },
+                MediaType.Audio => new PlaylistItem
                 {
                     StreamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalAudioStream(new MediaOptions
                     {
@@ -614,18 +608,11 @@ namespace Jellyfin.Plugin.Dlna.PlayTo
                         MaxBitrate = profile.MaxStreamingBitrate,
                         MediaSourceId = mediaSourceId
                     }),
-
                     Profile = profile
-                };
-            }
-
-            if (string.Equals(item.MediaType, MediaType.Photo, StringComparison.OrdinalIgnoreCase))
-            {
-                return PlaylistItemFactory.Create((Photo)item, profile);
-            }
-
-            throw new ArgumentException("Unrecognized item type.");
-        }
+                },
+                MediaType.Photo => PlaylistItemFactory.Create((Photo)item, profile),
+                _ => throw new ArgumentException("Unrecognized item type.")
+            };
 
         /// <summary>
         /// Plays the items.

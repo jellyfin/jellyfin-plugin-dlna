@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Data.Enums;
 using Jellyfin.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Playback.Extensions;
@@ -17,7 +18,6 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
-using MediaBrowser.Model.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
@@ -129,7 +129,7 @@ public static class StreamingHelpers
 
         var item = libraryManager.GetItemById(streamingRequest.Id);
 
-        state.IsInputVideo = string.Equals(item.MediaType, MediaType.Video, StringComparison.OrdinalIgnoreCase);
+        state.IsInputVideo = item.MediaType == MediaType.Video;
 
         MediaSourceInfo? mediaSource = null;
         if (string.IsNullOrWhiteSpace(streamingRequest.LiveStreamId))
