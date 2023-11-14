@@ -3,7 +3,6 @@
 using System;
 using System.Globalization;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
@@ -92,8 +91,6 @@ public sealed class DlnaHost : IHostedService, IDisposable
         ISsdpCommunicationsServer communicationsServer,
         INetworkManager networkManager)
     {
-        Console.WriteLine("Creating DlnaHost");
-        
         _config = config;
         _appHost = appHost;
         _sessionManager = sessionManager;
@@ -115,14 +112,13 @@ public sealed class DlnaHost : IHostedService, IDisposable
     /// <inheritdoc />
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        // TODO
-        /*var netConfig = _config.GetConfiguration<NetworkConfiguration>(NetworkConfigurationStore.StoreKey);
+        var netConfig = _config.GetConfiguration<NetworkConfiguration>(NetworkConfigurationStore.StoreKey);
         if (_appHost.ListenWithHttps && netConfig.RequireHttps)
         {
             // No use starting as dlna won't work, as we're running purely on HTTPS.
             _logger.LogError("The DLNA specification does not support HTTPS.");
             return;
-        }*/
+        }
 
         await ((DlnaManager)_dlnaManager).InitProfilesAsync().ConfigureAwait(false);
         ReloadComponents();
@@ -269,7 +265,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
                 CacheLifetime = TimeSpan.FromSeconds(1800), // How long SSDP clients can cache this info.
                 Location = uri.Uri, // Must point to the URL that serves your devices UPnP description document.
                 Address = intf.Address,
-                PrefixLength = MaskToCidr(intf.Subnet.Prefix),
+                PrefixLength = NetworkUtils.MaskToCidr(intf.Subnet.Prefix),
                 FriendlyName = "Jellyfin",
                 Manufacturer = "Jellyfin",
                 ModelName = "Jellyfin Server",
@@ -374,48 +370,5 @@ public sealed class DlnaHost : IHostedService, IDisposable
     {
         DisposeDevicePublisher();
         DisposePlayToManager();
-    }
-
-    // TODO
-    private static byte MaskToCidr(IPAddress mask)
-    {
-        ArgumentNullException.ThrowIfNull(mask);
-
-        byte cidrnet = 0;
-        if (mask.Equals(IPAddress.Any))
-        {
-            return cidrnet;
-        }
-
-        // GetAddressBytes
-        Span<byte> bytes = stackalloc byte[mask.AddressFamily == AddressFamily.InterNetwork ? 4 : 16];
-        if (!mask.TryWriteBytes(bytes, out var bytesWritten))
-        {
-            Console.WriteLine("Unable to write address bytes, only ${bytesWritten} bytes written.");
-        }
-
-        var zeroed = false;
-        for (var i = 0; i < bytes.Length; i++)
-        {
-            for (int v = bytes[i]; (v & 0xFF) != 0; v <<= 1)
-            {
-                if (zeroed)
-                {
-                    // Invalid netmask.
-                    return (byte)~cidrnet;
-                }
-
-                if ((v & 0x80) == 0)
-                {
-                    zeroed = true;
-                }
-                else
-                {
-                    cidrnet++;
-                }
-            }
-        }
-
-        return cidrnet;
     }
 }
