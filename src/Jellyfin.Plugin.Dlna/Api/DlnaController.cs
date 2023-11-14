@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Jellyfin.Plugin.Dlna.Model;
+using MediaBrowser.Common.Api;
 using MediaBrowser.Model.Dlna;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,7 +13,7 @@ namespace Jellyfin.Plugin.Dlna.Api;
 /// Dlna Controller.
 /// </summary>
 [ApiController]
-// TODO: [Authorize(Policy = Policies.RequiresElevation)]
+[Authorize(Policy = Policies.RequiresElevation)]
 public class DlnaController : ControllerBase
 {
     private readonly IDlnaManager _dlnaManager;
@@ -22,7 +24,6 @@ public class DlnaController : ControllerBase
     /// <param name="dlnaManager">Instance of the <see cref="IDlnaManager"/> interface.</param>
     public DlnaController(IDlnaManager dlnaManager)
     {
-        System.Console.WriteLine("Creating DlnaController");
         _dlnaManager = dlnaManager;
     }
 

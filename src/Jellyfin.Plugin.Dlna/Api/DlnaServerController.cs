@@ -5,7 +5,9 @@ using System.IO;
 using System.Net.Mime;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.Dlna.Model;
+using MediaBrowser.Common.Api;
 using MediaBrowser.Model.Net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +18,7 @@ namespace Jellyfin.Plugin.Dlna.Api;
 /// </summary>
 [ApiController]
 [Route("Dlna")]
-// TODO: [Authorize(Policy = Policies.AnonymousLanAccessPolicy)]
+[Authorize(Policy = Policies.AnonymousLanAccessPolicy)]
 public class DlnaServerController : ControllerBase
 {
     private readonly IDlnaManager _dlnaManager;
