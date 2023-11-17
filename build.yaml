@@ -3,7 +3,7 @@ guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
 imageUrl: ""
 version: "1"
 targetAbi: "10.9.0.0"
-framework: "net7.0"
+framework: "net8.0"
 owner: "jellyfin"
 overview: "DLNA Service"
 description: >
