@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Xml;
 using Jellyfin.Plugin.Dlna.Service;
 using MediaBrowser.Common.Extensions;
-using MediaBrowser.Controller.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Dlna.MediaReceiverRegistrar
@@ -16,10 +15,9 @@ namespace Jellyfin.Plugin.Dlna.MediaReceiverRegistrar
         /// <summary>
         /// Initializes a new instance of the <see cref="ControlHandler"/> class.
         /// </summary>
-        /// <param name="config">The <see cref="IServerConfigurationManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="logger">The <see cref="ILogger"/> for use with the <see cref="ControlHandler"/> instance.</param>
-        public ControlHandler(IServerConfigurationManager config, ILogger logger)
-            : base(config, logger)
+        public ControlHandler(ILogger logger)
+            : base(logger)
         {
         }
 

@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Xml;
 using Jellyfin.Plugin.Dlna.Service;
 using MediaBrowser.Common.Extensions;
-using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Model.Dlna;
 using Microsoft.Extensions.Logging;
 
@@ -21,11 +20,10 @@ namespace Jellyfin.Plugin.Dlna.ConnectionManager
         /// <summary>
         /// Initializes a new instance of the <see cref="ControlHandler"/> class.
         /// </summary>
-        /// <param name="config">The <see cref="IServerConfigurationManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="logger">The <see cref="ILogger"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="profile">The <see cref="DeviceProfile"/> for use with the <see cref="ControlHandler"/> instance.</param>
-        public ControlHandler(IServerConfigurationManager config, ILogger logger, DeviceProfile profile)
-            : base(config, logger)
+        public ControlHandler(ILogger logger, DeviceProfile profile)
+            : base(logger)
         {
             _profile = profile;
         }

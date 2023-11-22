@@ -11,9 +11,12 @@ namespace Jellyfin.Plugin.Dlna;
 /// </summary>
 public class DlnaPlugin : BasePlugin<DlnaPluginConfiguration>
 {
+    public static DlnaPlugin Instance { get; private set; } = null!;
+
     public DlnaPlugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
         : base(applicationPaths, xmlSerializer)
     {
+        Instance = this;
     }
 
     /// <inheritdoc />

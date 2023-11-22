@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using System.Xml;
 using Jellyfin.Extensions;
 using Jellyfin.Plugin.Dlna.Didl;
-using MediaBrowser.Controller.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Dlna.Service
@@ -17,13 +16,10 @@ namespace Jellyfin.Plugin.Dlna.Service
     {
         private const string NsSoapEnv = "http://schemas.xmlsoap.org/soap/envelope/";
 
-        protected BaseControlHandler(IServerConfigurationManager config, ILogger logger)
+        protected BaseControlHandler(ILogger logger)
         {
-            Config = config;
             Logger = logger;
         }
-
-        protected IServerConfigurationManager Config { get; }
 
         protected ILogger Logger { get; }
 
@@ -31,10 +27,11 @@ namespace Jellyfin.Plugin.Dlna.Service
         {
             try
             {
-                LogRequest(request);
+                Logger.LogDebug("Control request. Headers: {@Headers}", request.Headers);
 
                 var response = await ProcessControlRequestInternalAsync(request).ConfigureAwait(false);
-                LogResponse(response);
+                Logger.LogDebug("Control response. Headers: {@Headers}\n{Xml}", response.Headers, response.Xml);
+
                 return response;
             }
             catch (Exception ex)
@@ -202,26 +199,6 @@ namespace Jellyfin.Plugin.Dlna.Service
         }
 
         protected abstract void WriteResult(string methodName, IReadOnlyDictionary<string, string> methodParams, XmlWriter xmlWriter);
-
-        private void LogRequest(ControlRequest request)
-        {
-            if (!Config.GetDlnaConfiguration().EnableDebugLog)
-            {
-                return;
-            }
-
-            Logger.LogDebug("Control request. Headers: {@Headers}", request.Headers);
-        }
-
-        private void LogResponse(ControlResponse response)
-        {
-            if (!Config.GetDlnaConfiguration().EnableDebugLog)
-            {
-                return;
-            }
-
-            Logger.LogDebug("Control response. Headers: {@Headers}\n{Xml}", response.Headers, response.Xml);
-        }
 
         private class ControlRequestInfo
         {

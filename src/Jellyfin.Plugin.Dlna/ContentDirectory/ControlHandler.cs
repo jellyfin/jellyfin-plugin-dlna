@@ -14,7 +14,6 @@ using Jellyfin.Plugin.Dlna.Didl;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Service;
 using MediaBrowser.Common.Extensions;
-using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
@@ -66,7 +65,6 @@ namespace Jellyfin.Plugin.Dlna.ContentDirectory
         /// <param name="userDataManager">The <see cref="IUserDataManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="user">The <see cref="User"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="systemUpdateId">The system id for use with the <see cref="ControlHandler"/> instance.</param>
-        /// <param name="config">The <see cref="IServerConfigurationManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="localization">The <see cref="ILocalizationManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="mediaSourceManager">The <see cref="IMediaSourceManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
         /// <param name="userViewManager">The <see cref="IUserViewManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
@@ -82,13 +80,12 @@ namespace Jellyfin.Plugin.Dlna.ContentDirectory
             IUserDataManager userDataManager,
             User user,
             int systemUpdateId,
-            IServerConfigurationManager config,
             ILocalizationManager localization,
             IMediaSourceManager mediaSourceManager,
             IUserViewManager userViewManager,
             IMediaEncoder mediaEncoder,
             ITVSeriesManager tvSeriesManager)
-            : base(config, logger)
+            : base(logger)
         {
             _libraryManager = libraryManager;
             _userDataManager = userDataManager;

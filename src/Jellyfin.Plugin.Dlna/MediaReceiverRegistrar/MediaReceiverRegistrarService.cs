@@ -1,7 +1,6 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.Dlna.Service;
-using MediaBrowser.Controller.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Dlna.MediaReceiverRegistrar
@@ -11,21 +10,16 @@ namespace Jellyfin.Plugin.Dlna.MediaReceiverRegistrar
     /// </summary>
     public class MediaReceiverRegistrarService : BaseService, IMediaReceiverRegistrar
     {
-        private readonly IServerConfigurationManager _config;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="MediaReceiverRegistrarService"/> class.
         /// </summary>
         /// <param name="logger">The <see cref="ILogger{MediaReceiverRegistrarService}"/> for use with the <see cref="MediaReceiverRegistrarService"/> instance.</param>
         /// <param name="httpClientFactory">The <see cref="IHttpClientFactory"/> for use with the <see cref="MediaReceiverRegistrarService"/> instance.</param>
-        /// <param name="config">The <see cref="IServerConfigurationManager"/> for use with the <see cref="MediaReceiverRegistrarService"/> instance.</param>
         public MediaReceiverRegistrarService(
             ILogger<MediaReceiverRegistrarService> logger,
-            IHttpClientFactory httpClientFactory,
-            IServerConfigurationManager config)
+            IHttpClientFactory httpClientFactory)
             : base(logger, httpClientFactory)
         {
-            _config = config;
         }
 
         /// <inheritdoc />
@@ -37,9 +31,7 @@ namespace Jellyfin.Plugin.Dlna.MediaReceiverRegistrar
         /// <inheritdoc />
         public Task<ControlResponse> ProcessControlRequestAsync(ControlRequest request)
         {
-            return new ControlHandler(
-                _config,
-                Logger)
+            return new ControlHandler(Logger)
                 .ProcessControlRequestAsync(request);
         }
     }

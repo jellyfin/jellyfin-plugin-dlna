@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.Dlna.Configuration;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.PlayTo;
 using Jellyfin.Plugin.Dlna.Ssdp;
@@ -28,7 +29,7 @@ using Rssdp.Infrastructure;
 namespace Jellyfin.Plugin.Dlna.Main;
 
 /// <summary>
-/// A <see cref="IHostedService"/> that manages a DLNA server.
+/// An <see cref="IHostedService"/> that manages a DLNA server.
 /// </summary>
 public sealed class DlnaHost : IHostedService, IDisposable
 {
@@ -154,7 +155,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
 
     private void ReloadComponents()
     {
-        var options = _config.GetDlnaConfiguration();
+        var options = DlnaPlugin.Instance.Configuration;
         StartDeviceDiscovery();
         StartDevicePublisher(options);
 
@@ -202,7 +203,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
         }
     }
 
-    private void StartDevicePublisher(Configuration.DlnaOptions options)
+    private void StartDevicePublisher(DlnaPluginConfiguration options)
     {
         if (_publisher is not null)
         {
@@ -216,7 +217,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
                 Environment.OSVersion.Platform.ToString(),
                 // Can not use VersionString here since that includes OS and version
                 Environment.OSVersion.Version.ToString(),
-                _config.GetDlnaConfiguration().SendOnlyMatchedHost)
+                options.SendOnlyMatchedHost)
             {
                 LogFunction = msg => _logger.LogDebug("{Msg}", msg),
                 SupportPnpRootDevice = false
@@ -226,7 +227,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
 
             if (options.BlastAliveMessages)
             {
-                _publisher.StartSendingAliveNotifications(TimeSpan.FromSeconds(options.BlastAliveMessageIntervalSeconds));
+                _publisher.StartSendingAliveNotifications(TimeSpan.FromSeconds(options.AliveMessageIntervalSeconds));
             }
         }
         catch (Exception ex)

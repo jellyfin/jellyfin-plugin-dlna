@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.Dlna.Service;
-using MediaBrowser.Controller.Configuration;
-using MediaBrowser.Controller.Dlna;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
@@ -29,7 +27,6 @@ namespace Jellyfin.Plugin.Dlna.ContentDirectory
         private readonly IImageProcessor _imageProcessor;
         private readonly IUserDataManager _userDataManager;
         private readonly IDlnaManager _dlna;
-        private readonly IServerConfigurationManager _config;
         private readonly IUserManager _userManager;
         private readonly ILocalizationManager _localization;
         private readonly IMediaSourceManager _mediaSourceManager;
@@ -44,7 +41,6 @@ namespace Jellyfin.Plugin.Dlna.ContentDirectory
         /// <param name="userDataManager">The <see cref="IUserDataManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="imageProcessor">The <see cref="IImageProcessor"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="libraryManager">The <see cref="ILibraryManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
-        /// <param name="config">The <see cref="IServerConfigurationManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="userManager">The <see cref="IUserManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="logger">The <see cref="ILogger{ContentDirectoryService}"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
         /// <param name="httpClient">The <see cref="IHttpClientFactory"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
@@ -58,7 +54,6 @@ namespace Jellyfin.Plugin.Dlna.ContentDirectory
             IUserDataManager userDataManager,
             IImageProcessor imageProcessor,
             ILibraryManager libraryManager,
-            IServerConfigurationManager config,
             IUserManager userManager,
             ILogger<ContentDirectoryService> logger,
             IHttpClientFactory httpClient,
@@ -73,7 +68,6 @@ namespace Jellyfin.Plugin.Dlna.ContentDirectory
             _userDataManager = userDataManager;
             _imageProcessor = imageProcessor;
             _libraryManager = libraryManager;
-            _config = config;
             _userManager = userManager;
             _localization = localization;
             _mediaSourceManager = mediaSourceManager;
@@ -122,7 +116,6 @@ namespace Jellyfin.Plugin.Dlna.ContentDirectory
                 _userDataManager,
                 user,
                 SystemUpdateId,
-                _config,
                 _localization,
                 _mediaSourceManager,
                 _userViewManager,
@@ -148,7 +141,7 @@ namespace Jellyfin.Plugin.Dlna.ContentDirectory
                 }
             }
 
-            var userId = _config.GetDlnaConfiguration().DefaultUserId;
+            var userId = DlnaPlugin.Instance.Configuration.DefaultUserId;
 
             if (!string.IsNullOrEmpty(userId))
             {

@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Jellyfin.Data.Events;
 using Jellyfin.Plugin.Dlna.Model;
-using MediaBrowser.Controller.Configuration;
 using Rssdp;
 using Rssdp.Infrastructure;
 
@@ -17,18 +16,11 @@ namespace Jellyfin.Plugin.Dlna.Ssdp
     {
         private readonly object _syncLock = new object();
 
-        private readonly IServerConfigurationManager _config;
-
         private SsdpDeviceLocator _deviceLocator;
         private ISsdpCommunicationsServer _commsServer;
 
         private int _listenerCount;
         private bool _disposed;
-
-        public DeviceDiscovery(IServerConfigurationManager config)
-        {
-            _config = config;
-        }
 
         private event EventHandler<GenericEventArgs<UpnpDeviceInfo>> DeviceDiscoveredInternal;
 
@@ -89,7 +81,8 @@ namespace Jellyfin.Plugin.Dlna.Ssdp
                     _deviceLocator.DeviceUnavailable += OnDeviceLocatorDeviceUnavailable;
 
                     var dueTime = TimeSpan.FromSeconds(5);
-                    var interval = TimeSpan.FromSeconds(_config.GetDlnaConfiguration().ClientDiscoveryIntervalSeconds);
+                    var options = DlnaPlugin.Instance.Configuration;
+                    var interval = TimeSpan.FromSeconds(options.ClientDiscoveryIntervalSeconds);
 
                     _deviceLocator.RestartBroadcastTimer(dueTime, interval);
                 }

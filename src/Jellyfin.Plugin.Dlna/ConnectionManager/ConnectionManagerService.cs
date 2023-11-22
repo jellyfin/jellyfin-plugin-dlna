@@ -3,8 +3,6 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.Dlna.Service;
-using MediaBrowser.Controller.Configuration;
-using MediaBrowser.Controller.Dlna;
 using Microsoft.Extensions.Logging;
 using IDlnaManager = Jellyfin.Plugin.Dlna.Model.IDlnaManager;
 
@@ -16,24 +14,20 @@ namespace Jellyfin.Plugin.Dlna.ConnectionManager
     public class ConnectionManagerService : BaseService, IConnectionManager
     {
         private readonly IDlnaManager _dlna;
-        private readonly IServerConfigurationManager _config;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConnectionManagerService"/> class.
         /// </summary>
         /// <param name="dlna">The <see cref="IDlnaManager"/> for use with the <see cref="ConnectionManagerService"/> instance.</param>
-        /// <param name="config">The <see cref="IServerConfigurationManager"/> for use with the <see cref="ConnectionManagerService"/> instance.</param>
         /// <param name="logger">The <see cref="ILogger{ConnectionManagerService}"/> for use with the <see cref="ConnectionManagerService"/> instance..</param>
         /// <param name="httpClientFactory">The <see cref="IHttpClientFactory"/> for use with the <see cref="ConnectionManagerService"/> instance..</param>
         public ConnectionManagerService(
             IDlnaManager dlna,
-            IServerConfigurationManager config,
             ILogger<ConnectionManagerService> logger,
             IHttpClientFactory httpClientFactory)
             : base(logger, httpClientFactory)
         {
             _dlna = dlna;
-            _config = config;
         }
 
         /// <inheritdoc />
@@ -45,10 +39,9 @@ namespace Jellyfin.Plugin.Dlna.ConnectionManager
         /// <inheritdoc />
         public Task<ControlResponse> ProcessControlRequestAsync(ControlRequest request)
         {
-            var profile = _dlna.GetProfile(request.Headers) ??
-                         _dlna.GetDefaultProfile();
+            var profile = _dlna.GetProfile(request.Headers) ?? _dlna.GetDefaultProfile();
 
-            return new ControlHandler(_config, Logger, profile).ProcessControlRequestAsync(request);
+            return new ControlHandler(Logger, profile).ProcessControlRequestAsync(request);
         }
     }
 }
