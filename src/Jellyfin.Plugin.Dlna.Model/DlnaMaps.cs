@@ -3,45 +3,44 @@
 using System.Globalization;
 using MediaBrowser.Model.Dlna;
 
-namespace Jellyfin.Plugin.Dlna.Model
+namespace Jellyfin.Plugin.Dlna.Model;
+
+public static class DlnaMaps
 {
-    public static class DlnaMaps
+    public static string FlagsToString(DlnaFlags flags)
     {
-        public static string FlagsToString(DlnaFlags flags)
-        {
-            return string.Format(CultureInfo.InvariantCulture, "{0:X8}{1:D24}", (ulong)flags, 0);
-        }
+        return string.Format(CultureInfo.InvariantCulture, "{0:X8}{1:D24}", (ulong)flags, 0);
+    }
 
-        public static string GetOrgOpValue(bool hasKnownRuntime, bool isDirectStream, TranscodeSeekInfo profileTranscodeSeekInfo)
-        {
-            if (hasKnownRuntime)
-            {
-                string orgOp = string.Empty;
-
-                // Time-based seeking currently only possible when transcoding
-                orgOp += isDirectStream ? "0" : "1";
-
-                // Byte-based seeking only possible when not transcoding
-                orgOp += isDirectStream || profileTranscodeSeekInfo == TranscodeSeekInfo.Bytes ? "1" : "0";
-
-                return orgOp;
-            }
-
-            // No seeking is available if we don't know the content runtime
-            return "00";
-        }
-
-        public static string GetImageOrgOpValue()
+    public static string GetOrgOpValue(bool hasKnownRuntime, bool isDirectStream, TranscodeSeekInfo profileTranscodeSeekInfo)
+    {
+        if (hasKnownRuntime)
         {
             string orgOp = string.Empty;
 
             // Time-based seeking currently only possible when transcoding
-            orgOp += "0";
+            orgOp += isDirectStream ? "0" : "1";
 
             // Byte-based seeking only possible when not transcoding
-            orgOp += "0";
+            orgOp += isDirectStream || profileTranscodeSeekInfo == TranscodeSeekInfo.Bytes ? "1" : "0";
 
             return orgOp;
         }
+
+        // No seeking is available if we don't know the content runtime
+        return "00";
+    }
+
+    public static string GetImageOrgOpValue()
+    {
+        string orgOp = string.Empty;
+
+        // Time-based seeking currently only possible when transcoding
+        orgOp += "0";
+
+        // Byte-based seeking only possible when not transcoding
+        orgOp += "0";
+
+        return orgOp;
     }
 }

@@ -1,16 +1,15 @@
 #pragma warning disable CS1591
 
-namespace Jellyfin.Plugin.Dlna.PlayTo
+namespace Jellyfin.Plugin.Dlna.PlayTo;
+
+/// <summary>
+/// Core of the AVTransport service. It defines the conceptually top-
+/// level state of the transport, for example, whether it is playing, recording, etc.
+/// </summary>
+public enum TransportState
 {
-    /// <summary>
-    /// Core of the AVTransport service. It defines the conceptually top-
-    /// level state of the transport, for example, whether it is playing, recording, etc.
-    /// </summary>
-    public enum TransportState
-    {
-        STOPPED,
-        PLAYING,
-        TRANSITIONING,
-        PAUSED_PLAYBACK
-    }
+    STOPPED,
+    PLAYING,
+    TRANSITIONING,
+    PAUSED_PLAYBACK
 }

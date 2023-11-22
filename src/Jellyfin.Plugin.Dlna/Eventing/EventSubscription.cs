@@ -4,32 +4,31 @@
 
 using System;
 
-namespace Jellyfin.Plugin.Dlna.Eventing
+namespace Jellyfin.Plugin.Dlna.Eventing;
+
+public class EventSubscription
 {
-    public class EventSubscription
+    public string Id { get; set; }
+
+    public string CallbackUrl { get; set; }
+
+    public string NotificationType { get; set; }
+
+    public DateTime SubscriptionTime { get; set; }
+
+    public int TimeoutSeconds { get; set; }
+
+    public long TriggerCount { get; set; }
+
+    public bool IsExpired => SubscriptionTime.AddSeconds(TimeoutSeconds) >= DateTime.UtcNow;
+
+    public void IncrementTriggerCount()
     {
-        public string Id { get; set; }
-
-        public string CallbackUrl { get; set; }
-
-        public string NotificationType { get; set; }
-
-        public DateTime SubscriptionTime { get; set; }
-
-        public int TimeoutSeconds { get; set; }
-
-        public long TriggerCount { get; set; }
-
-        public bool IsExpired => SubscriptionTime.AddSeconds(TimeoutSeconds) >= DateTime.UtcNow;
-
-        public void IncrementTriggerCount()
+        if (TriggerCount == long.MaxValue)
         {
-            if (TriggerCount == long.MaxValue)
-            {
-                TriggerCount = 0;
-            }
-
-            TriggerCount++;
+            TriggerCount = 0;
         }
+
+        TriggerCount++;
     }
 }

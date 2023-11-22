@@ -2,18 +2,17 @@
 
 using System;
 
-namespace Jellyfin.Plugin.Dlna.PlayTo
+namespace Jellyfin.Plugin.Dlna.PlayTo;
+
+public class MediaChangedEventArgs : EventArgs
 {
-    public class MediaChangedEventArgs : EventArgs
+    public MediaChangedEventArgs(UBaseObject oldMediaInfo, UBaseObject newMediaInfo)
     {
-        public MediaChangedEventArgs(UBaseObject oldMediaInfo, UBaseObject newMediaInfo)
-        {
-            OldMediaInfo = oldMediaInfo;
-            NewMediaInfo = newMediaInfo;
-        }
-
-        public UBaseObject OldMediaInfo { get; set; }
-
-        public UBaseObject NewMediaInfo { get; set; }
+        OldMediaInfo = oldMediaInfo;
+        NewMediaInfo = newMediaInfo;
     }
+
+    public UBaseObject OldMediaInfo { get; set; }
+
+    public UBaseObject NewMediaInfo { get; set; }
 }

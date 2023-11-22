@@ -5,21 +5,20 @@
 using System.IO;
 using Microsoft.AspNetCore.Http;
 
-namespace Jellyfin.Plugin.Dlna
+namespace Jellyfin.Plugin.Dlna;
+
+public class ControlRequest
 {
-    public class ControlRequest
+    public ControlRequest(IHeaderDictionary headers)
     {
-        public ControlRequest(IHeaderDictionary headers)
-        {
-            Headers = headers;
-        }
-
-        public IHeaderDictionary Headers { get; }
-
-        public Stream InputXml { get; set; }
-
-        public string TargetServerUuId { get; set; }
-
-        public string RequestedUrl { get; set; }
+        Headers = headers;
     }
+
+    public IHeaderDictionary Headers { get; }
+
+    public Stream InputXml { get; set; }
+
+    public string TargetServerUuId { get; set; }
+
+    public string RequestedUrl { get; set; }
 }

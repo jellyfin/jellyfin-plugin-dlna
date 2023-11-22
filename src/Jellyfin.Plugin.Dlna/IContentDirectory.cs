@@ -1,8 +1,7 @@
 #pragma warning disable CS1591
 
-namespace Jellyfin.Plugin.Dlna
+namespace Jellyfin.Plugin.Dlna;
+
+public interface IContentDirectory : IDlnaEventManager, IUpnpService
 {
-    public interface IContentDirectory : IDlnaEventManager, IUpnpService
-    {
-    }
 }

@@ -2,21 +2,20 @@
 
 using System.Collections.Generic;
 
-namespace Jellyfin.Plugin.Dlna
+namespace Jellyfin.Plugin.Dlna;
+
+public class EventSubscriptionResponse
 {
-    public class EventSubscriptionResponse
+    public EventSubscriptionResponse(string content, string contentType)
     {
-        public EventSubscriptionResponse(string content, string contentType)
-        {
-            Content = content;
-            ContentType = contentType;
-            Headers = new Dictionary<string, string>();
-        }
-
-        public string Content { get; set; }
-
-        public string ContentType { get; set; }
-
-        public Dictionary<string, string> Headers { get; }
+        Content = content;
+        ContentType = contentType;
+        Headers = new Dictionary<string, string>();
     }
+
+    public string Content { get; set; }
+
+    public string ContentType { get; set; }
+
+    public Dictionary<string, string> Headers { get; }
 }

@@ -2,27 +2,26 @@
 
 using System.Collections.Generic;
 
-namespace Jellyfin.Plugin.Dlna
+namespace Jellyfin.Plugin.Dlna;
+
+public class ControlResponse
 {
-    public class ControlResponse
+    public ControlResponse(string xml, bool isSuccessful)
     {
-        public ControlResponse(string xml, bool isSuccessful)
-        {
-            Headers = new Dictionary<string, string>();
-            Xml = xml;
-            IsSuccessful = isSuccessful;
-        }
+        Headers = new Dictionary<string, string>();
+        Xml = xml;
+        IsSuccessful = isSuccessful;
+    }
 
-        public IDictionary<string, string> Headers { get; }
+    public IDictionary<string, string> Headers { get; }
 
-        public string Xml { get; set; }
+    public string Xml { get; set; }
 
-        public bool IsSuccessful { get; set; }
+    public bool IsSuccessful { get; set; }
 
-        /// <inheritdoc />
-        public override string ToString()
-        {
-            return Xml;
-        }
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        return Xml;
     }
 }

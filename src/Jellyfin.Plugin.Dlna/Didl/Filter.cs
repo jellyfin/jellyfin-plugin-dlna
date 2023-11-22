@@ -2,27 +2,26 @@
 
 using System;
 
-namespace Jellyfin.Plugin.Dlna.Didl
+namespace Jellyfin.Plugin.Dlna.Didl;
+
+public class Filter
 {
-    public class Filter
+    private readonly string[] _fields;
+    private readonly bool _all;
+
+    public Filter()
+        : this("*")
     {
-        private readonly string[] _fields;
-        private readonly bool _all;
+    }
 
-        public Filter()
-            : this("*")
-        {
-        }
+    public Filter(string filter)
+    {
+        _all = string.Equals(filter, "*", StringComparison.OrdinalIgnoreCase);
+        _fields = filter.Split(',', StringSplitOptions.RemoveEmptyEntries);
+    }
 
-        public Filter(string filter)
-        {
-            _all = string.Equals(filter, "*", StringComparison.OrdinalIgnoreCase);
-            _fields = filter.Split(',', StringSplitOptions.RemoveEmptyEntries);
-        }
-
-        public bool Contains(string field)
-        {
-            return _all || Array.Exists(_fields, x => x.Equals(field, StringComparison.OrdinalIgnoreCase));
-        }
+    public bool Contains(string field)
+    {
+        return _all || Array.Exists(_fields, x => x.Equals(field, StringComparison.OrdinalIgnoreCase));
     }
 }

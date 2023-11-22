@@ -8,46 +8,45 @@ using MediaBrowser.Common.Extensions;
 using MediaBrowser.Model.Dlna;
 using Microsoft.Extensions.Logging;
 
-namespace Jellyfin.Plugin.Dlna.ConnectionManager
+namespace Jellyfin.Plugin.Dlna.ConnectionManager;
+
+/// <summary>
+/// Defines the <see cref="ControlHandler" />.
+/// </summary>
+public class ControlHandler : BaseControlHandler
 {
+    private readonly DeviceProfile _profile;
+
     /// <summary>
-    /// Defines the <see cref="ControlHandler" />.
+    /// Initializes a new instance of the <see cref="ControlHandler"/> class.
     /// </summary>
-    public class ControlHandler : BaseControlHandler
+    /// <param name="logger">The <see cref="ILogger"/> for use with the <see cref="ControlHandler"/> instance.</param>
+    /// <param name="profile">The <see cref="DeviceProfile"/> for use with the <see cref="ControlHandler"/> instance.</param>
+    public ControlHandler(ILogger logger, DeviceProfile profile)
+        : base(logger)
     {
-        private readonly DeviceProfile _profile;
+        _profile = profile;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ControlHandler"/> class.
-        /// </summary>
-        /// <param name="logger">The <see cref="ILogger"/> for use with the <see cref="ControlHandler"/> instance.</param>
-        /// <param name="profile">The <see cref="DeviceProfile"/> for use with the <see cref="ControlHandler"/> instance.</param>
-        public ControlHandler(ILogger logger, DeviceProfile profile)
-            : base(logger)
+    /// <inheritdoc />
+    protected override void WriteResult(string methodName, IReadOnlyDictionary<string, string> methodParams, XmlWriter xmlWriter)
+    {
+        if (string.Equals(methodName, "GetProtocolInfo", StringComparison.OrdinalIgnoreCase))
         {
-            _profile = profile;
+            HandleGetProtocolInfo(xmlWriter);
+            return;
         }
 
-        /// <inheritdoc />
-        protected override void WriteResult(string methodName, IReadOnlyDictionary<string, string> methodParams, XmlWriter xmlWriter)
-        {
-            if (string.Equals(methodName, "GetProtocolInfo", StringComparison.OrdinalIgnoreCase))
-            {
-                HandleGetProtocolInfo(xmlWriter);
-                return;
-            }
+        throw new ResourceNotFoundException("Unexpected control request name: " + methodName);
+    }
 
-            throw new ResourceNotFoundException("Unexpected control request name: " + methodName);
-        }
-
-        /// <summary>
-        /// Builds the response to the GetProtocolInfo request.
-        /// </summary>
-        /// <param name="xmlWriter">The <see cref="XmlWriter"/>.</param>
-        private void HandleGetProtocolInfo(XmlWriter xmlWriter)
-        {
-            xmlWriter.WriteElementString("Source", _profile.ProtocolInfo);
-            xmlWriter.WriteElementString("Sink", string.Empty);
-        }
+    /// <summary>
+    /// Builds the response to the GetProtocolInfo request.
+    /// </summary>
+    /// <param name="xmlWriter">The <see cref="XmlWriter"/>.</param>
+    private void HandleGetProtocolInfo(XmlWriter xmlWriter)
+    {
+        xmlWriter.WriteElementString("Source", _profile.ProtocolInfo);
+        xmlWriter.WriteElementString("Sink", string.Empty);
     }
 }

@@ -3,22 +3,21 @@
 using System;
 using Jellyfin.Data.Enums;
 
-namespace Jellyfin.Plugin.Dlna.Model
-{
-    public class SortCriteria
-    {
-        public SortCriteria(string sortOrder)
-        {
-            if (Enum.TryParse<SortOrder>(sortOrder, true, out var sortOrderValue))
-            {
-                SortOrder = sortOrderValue;
-            }
-            else
-            {
-                SortOrder = SortOrder.Ascending;
-            }
-        }
+namespace Jellyfin.Plugin.Dlna.Model;
 
-        public SortOrder SortOrder { get; }
+public class SortCriteria
+{
+    public SortCriteria(string sortOrder)
+    {
+        if (Enum.TryParse<SortOrder>(sortOrder, true, out var sortOrderValue))
+        {
+            SortOrder = sortOrderValue;
+        }
+        else
+        {
+            SortOrder = SortOrder.Ascending;
+        }
     }
+
+    public SortOrder SortOrder { get; }
 }

@@ -2,15 +2,14 @@
 
 using System;
 
-namespace Jellyfin.Plugin.Dlna.PlayTo
-{
-    public class PlaybackStoppedEventArgs : EventArgs
-    {
-        public PlaybackStoppedEventArgs(UBaseObject mediaInfo)
-        {
-            MediaInfo = mediaInfo;
-        }
+namespace Jellyfin.Plugin.Dlna.PlayTo;
 
-        public UBaseObject MediaInfo { get; set; }
+public class PlaybackStoppedEventArgs : EventArgs
+{
+    public PlaybackStoppedEventArgs(UBaseObject mediaInfo)
+    {
+        MediaInfo = mediaInfo;
     }
+
+    public UBaseObject MediaInfo { get; set; }
 }

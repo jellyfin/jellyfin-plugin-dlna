@@ -1,187 +1,186 @@
 using System.Collections.Generic;
 using Jellyfin.Plugin.Dlna.Common;
 
-namespace Jellyfin.Plugin.Dlna.MediaReceiverRegistrar
+namespace Jellyfin.Plugin.Dlna.MediaReceiverRegistrar;
+
+/// <summary>
+/// Defines the <see cref="ServiceActionListBuilder" />.
+/// </summary>
+public static class ServiceActionListBuilder
 {
     /// <summary>
-    /// Defines the <see cref="ServiceActionListBuilder" />.
+    /// Returns a list of services that this instance provides.
     /// </summary>
-    public static class ServiceActionListBuilder
+    /// <returns>An <see cref="IEnumerable{ServiceAction}"/>.</returns>
+    public static IEnumerable<ServiceAction> GetActions()
     {
-        /// <summary>
-        /// Returns a list of services that this instance provides.
-        /// </summary>
-        /// <returns>An <see cref="IEnumerable{ServiceAction}"/>.</returns>
-        public static IEnumerable<ServiceAction> GetActions()
+        return new[]
         {
-            return new[]
-            {
-                GetIsValidated(),
-                GetIsAuthorized(),
-                GetRegisterDevice(),
-                GetGetAuthorizationDeniedUpdateID(),
-                GetGetAuthorizationGrantedUpdateID(),
-                GetGetValidationRevokedUpdateID(),
-                GetGetValidationSucceededUpdateID()
-            };
-        }
+            GetIsValidated(),
+            GetIsAuthorized(),
+            GetRegisterDevice(),
+            GetGetAuthorizationDeniedUpdateID(),
+            GetGetAuthorizationGrantedUpdateID(),
+            GetGetValidationRevokedUpdateID(),
+            GetGetValidationSucceededUpdateID()
+        };
+    }
 
-        /// <summary>
-        /// Returns the action details for "IsValidated".
-        /// </summary>
-        /// <returns>The <see cref="ServiceAction"/>.</returns>
-        private static ServiceAction GetIsValidated()
+    /// <summary>
+    /// Returns the action details for "IsValidated".
+    /// </summary>
+    /// <returns>The <see cref="ServiceAction"/>.</returns>
+    private static ServiceAction GetIsValidated()
+    {
+        var action = new ServiceAction
         {
-            var action = new ServiceAction
-            {
-                Name = "IsValidated"
-            };
+            Name = "IsValidated"
+        };
 
-            action.ArgumentList.Add(new Argument
-            {
-                Name = "DeviceID",
-                Direction = "in"
-            });
-
-            action.ArgumentList.Add(new Argument
-            {
-                Name = "Result",
-                Direction = "out"
-            });
-
-            return action;
-        }
-
-        /// <summary>
-        /// Returns the action details for "IsAuthorized".
-        /// </summary>
-        /// <returns>The <see cref="ServiceAction"/>.</returns>
-        private static ServiceAction GetIsAuthorized()
+        action.ArgumentList.Add(new Argument
         {
-            var action = new ServiceAction
-            {
-                Name = "IsAuthorized"
-            };
+            Name = "DeviceID",
+            Direction = "in"
+        });
 
-            action.ArgumentList.Add(new Argument
-            {
-                Name = "DeviceID",
-                Direction = "in"
-            });
-
-            action.ArgumentList.Add(new Argument
-            {
-                Name = "Result",
-                Direction = "out"
-            });
-
-            return action;
-        }
-
-        /// <summary>
-        /// Returns the action details for "RegisterDevice".
-        /// </summary>
-        /// <returns>The <see cref="ServiceAction"/>.</returns>
-        private static ServiceAction GetRegisterDevice()
+        action.ArgumentList.Add(new Argument
         {
-            var action = new ServiceAction
-            {
-                Name = "RegisterDevice"
-            };
+            Name = "Result",
+            Direction = "out"
+        });
 
-            action.ArgumentList.Add(new Argument
-            {
-                Name = "RegistrationReqMsg",
-                Direction = "in"
-            });
+        return action;
+    }
 
-            action.ArgumentList.Add(new Argument
-            {
-                Name = "RegistrationRespMsg",
-                Direction = "out"
-            });
-
-            return action;
-        }
-
-        /// <summary>
-        /// Returns the action details for "GetValidationSucceededUpdateID".
-        /// </summary>
-        /// <returns>The <see cref="ServiceAction"/>.</returns>
-        private static ServiceAction GetGetValidationSucceededUpdateID()
+    /// <summary>
+    /// Returns the action details for "IsAuthorized".
+    /// </summary>
+    /// <returns>The <see cref="ServiceAction"/>.</returns>
+    private static ServiceAction GetIsAuthorized()
+    {
+        var action = new ServiceAction
         {
-            var action = new ServiceAction
-            {
-                Name = "GetValidationSucceededUpdateID"
-            };
+            Name = "IsAuthorized"
+        };
 
-            action.ArgumentList.Add(new Argument
-            {
-                Name = "ValidationSucceededUpdateID",
-                Direction = "out"
-            });
-
-            return action;
-        }
-
-        /// <summary>
-        /// Returns the action details for "GetGetAuthorizationDeniedUpdateID".
-        /// </summary>
-        /// <returns>The <see cref="ServiceAction"/>.</returns>
-        private static ServiceAction GetGetAuthorizationDeniedUpdateID()
+        action.ArgumentList.Add(new Argument
         {
-            var action = new ServiceAction
-            {
-                Name = "GetAuthorizationDeniedUpdateID"
-            };
+            Name = "DeviceID",
+            Direction = "in"
+        });
 
-            action.ArgumentList.Add(new Argument
-            {
-                Name = "AuthorizationDeniedUpdateID",
-                Direction = "out"
-            });
-
-            return action;
-        }
-
-        /// <summary>
-        /// Returns the action details for "GetValidationRevokedUpdateID".
-        /// </summary>
-        /// <returns>The <see cref="ServiceAction"/>.</returns>
-        private static ServiceAction GetGetValidationRevokedUpdateID()
+        action.ArgumentList.Add(new Argument
         {
-            var action = new ServiceAction
-            {
-                Name = "GetValidationRevokedUpdateID"
-            };
+            Name = "Result",
+            Direction = "out"
+        });
 
-            action.ArgumentList.Add(new Argument
-            {
-                Name = "ValidationRevokedUpdateID",
-                Direction = "out"
-            });
+        return action;
+    }
 
-            return action;
-        }
-
-        /// <summary>
-        /// Returns the action details for "GetAuthorizationGrantedUpdateID".
-        /// </summary>
-        /// <returns>The <see cref="ServiceAction"/>.</returns>
-        private static ServiceAction GetGetAuthorizationGrantedUpdateID()
+    /// <summary>
+    /// Returns the action details for "RegisterDevice".
+    /// </summary>
+    /// <returns>The <see cref="ServiceAction"/>.</returns>
+    private static ServiceAction GetRegisterDevice()
+    {
+        var action = new ServiceAction
         {
-            var action = new ServiceAction
-            {
-                Name = "GetAuthorizationGrantedUpdateID"
-            };
+            Name = "RegisterDevice"
+        };
 
-            action.ArgumentList.Add(new Argument
-            {
-                Name = "AuthorizationGrantedUpdateID",
-                Direction = "out"
-            });
+        action.ArgumentList.Add(new Argument
+        {
+            Name = "RegistrationReqMsg",
+            Direction = "in"
+        });
 
-            return action;
-        }
+        action.ArgumentList.Add(new Argument
+        {
+            Name = "RegistrationRespMsg",
+            Direction = "out"
+        });
+
+        return action;
+    }
+
+    /// <summary>
+    /// Returns the action details for "GetValidationSucceededUpdateID".
+    /// </summary>
+    /// <returns>The <see cref="ServiceAction"/>.</returns>
+    private static ServiceAction GetGetValidationSucceededUpdateID()
+    {
+        var action = new ServiceAction
+        {
+            Name = "GetValidationSucceededUpdateID"
+        };
+
+        action.ArgumentList.Add(new Argument
+        {
+            Name = "ValidationSucceededUpdateID",
+            Direction = "out"
+        });
+
+        return action;
+    }
+
+    /// <summary>
+    /// Returns the action details for "GetGetAuthorizationDeniedUpdateID".
+    /// </summary>
+    /// <returns>The <see cref="ServiceAction"/>.</returns>
+    private static ServiceAction GetGetAuthorizationDeniedUpdateID()
+    {
+        var action = new ServiceAction
+        {
+            Name = "GetAuthorizationDeniedUpdateID"
+        };
+
+        action.ArgumentList.Add(new Argument
+        {
+            Name = "AuthorizationDeniedUpdateID",
+            Direction = "out"
+        });
+
+        return action;
+    }
+
+    /// <summary>
+    /// Returns the action details for "GetValidationRevokedUpdateID".
+    /// </summary>
+    /// <returns>The <see cref="ServiceAction"/>.</returns>
+    private static ServiceAction GetGetValidationRevokedUpdateID()
+    {
+        var action = new ServiceAction
+        {
+            Name = "GetValidationRevokedUpdateID"
+        };
+
+        action.ArgumentList.Add(new Argument
+        {
+            Name = "ValidationRevokedUpdateID",
+            Direction = "out"
+        });
+
+        return action;
+    }
+
+    /// <summary>
+    /// Returns the action details for "GetAuthorizationGrantedUpdateID".
+    /// </summary>
+    /// <returns>The <see cref="ServiceAction"/>.</returns>
+    private static ServiceAction GetGetAuthorizationGrantedUpdateID()
+    {
+        var action = new ServiceAction
+        {
+            Name = "GetAuthorizationGrantedUpdateID"
+        };
+
+        action.ArgumentList.Add(new Argument
+        {
+            Name = "AuthorizationGrantedUpdateID",
+            Direction = "out"
+        });
+
+        return action;
     }
 }
