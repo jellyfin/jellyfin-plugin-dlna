@@ -1,3 +1,4 @@
+using System;
 using MediaBrowser.Model.Plugins;
 
 namespace Jellyfin.Plugin.Dlna.Configuration;
@@ -26,12 +27,12 @@ public class DlnaPluginConfiguration : BasePluginConfiguration
     public int AliveMessageIntervalSeconds { get; set; }  = 180;
 
     /// <summary>
-    /// gets or sets a value indicating whether to send only matched host.
+    /// Gets or sets a value indicating whether to send only matched host.
     /// </summary>
     public bool SendOnlyMatchedHost { get; set; } = true;
 
     /// <summary>
     /// Gets or sets the default user account that the dlna server uses.
     /// </summary>
-    public string? DefaultUserId { get; set; }
+    public Guid? DefaultUserId { get; set; }
 }

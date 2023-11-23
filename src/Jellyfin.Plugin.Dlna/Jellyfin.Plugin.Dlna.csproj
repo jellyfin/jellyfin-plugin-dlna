@@ -14,4 +14,10 @@
         <ProjectReference Include="..\Jellyfin.Plugin.Dlna.Playback\Jellyfin.Plugin.Dlna.Playback.csproj" />
         <ProjectReference Include="..\Rssdp\Rssdp.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Configuration\config.html" />
+      <EmbeddedResource Include="Configuration\config.js" />
+      <EmbeddedResource Include="Profiles\Xml\*.xml" />
+    </ItemGroup>
 </Project>
