@@ -143,9 +143,9 @@ public class ContentDirectoryService : BaseService, IContentDirectory
 
         var userId = DlnaPlugin.Instance.Configuration.DefaultUserId;
 
-        if (!string.IsNullOrEmpty(userId))
+        if (userId is not null && !userId.Equals(default))
         {
-            var user = _userManager.GetUserById(Guid.Parse(userId));
+            var user = _userManager.GetUserById(userId.Value);
 
             if (user is not null)
             {

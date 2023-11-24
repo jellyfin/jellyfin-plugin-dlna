@@ -54,9 +54,9 @@ public class DlnaManager : IDlnaManager
         _appHost = appHost;
     }
 
-    private string UserProfilesPath => Path.Combine(_appPaths.ConfigurationDirectoryPath, "dlna", "user");
+    private string UserProfilesPath => Path.Combine(_appPaths.PluginConfigurationsPath, "dlna", "user");
 
-    private string SystemProfilesPath => Path.Combine(_appPaths.ConfigurationDirectoryPath, "dlna", "system");
+    private string SystemProfilesPath => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "profiles");
 
     public async Task InitProfilesAsync()
     {
@@ -234,7 +234,7 @@ public class DlnaManager : IDlnaManager
                 .Where(i => i is not null)
                 .ToList()!; // We just filtered out all the nulls
         }
-        catch (IOException)
+        catch (Exception)
         {
             return Array.Empty<DeviceProfile>();
         }

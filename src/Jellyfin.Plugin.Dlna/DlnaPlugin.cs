@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using Jellyfin.Plugin.Dlna.Configuration;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
+using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
 
 namespace Jellyfin.Plugin.Dlna;
@@ -9,7 +11,7 @@ namespace Jellyfin.Plugin.Dlna;
 /// <summary>
 /// DLNA plugin for Jellyfin.
 /// </summary>
-public class DlnaPlugin : BasePlugin<DlnaPluginConfiguration>
+public class DlnaPlugin : BasePlugin<DlnaPluginConfiguration>, IHasWebPages
 {
     public static DlnaPlugin Instance { get; private set; } = null!;
 
@@ -27,4 +29,23 @@ public class DlnaPlugin : BasePlugin<DlnaPluginConfiguration>
 
     /// <inheritdoc />
     public override string Description => "Use Jellyfin as a DLNA server.";
+    
+    /// <inheritdoc />
+    public IEnumerable<PluginPageInfo> GetPages()
+    {
+        return new[]
+        {
+            new PluginPageInfo
+            {
+                Name = "dlna",
+                EmbeddedResourcePath = GetType().Namespace + ".Configuration.config.html",
+                EnableInMainMenu = true
+            },
+            new PluginPageInfo
+            {
+                Name = "dlnajs",
+                EmbeddedResourcePath = GetType().Namespace + ".Configuration.config.js"
+            },
+        };
+    }
 }
