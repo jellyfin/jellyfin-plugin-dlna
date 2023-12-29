@@ -15,7 +15,6 @@ using Jellyfin.Plugin.Dlna.Server;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Controller;
-using MediaBrowser.Controller.Dlna;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Drawing;

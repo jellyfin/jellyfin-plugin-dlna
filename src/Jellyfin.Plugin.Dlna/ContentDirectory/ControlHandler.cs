@@ -564,15 +564,15 @@ public class ControlHandler : BaseControlHandler
         {
             switch (collectionFolder.CollectionType)
             {
-                case CollectionType.Music:
+                case CollectionType.music:
                     return GetMusicFolders(item, user, stubType, sort, startIndex, limit);
-                case CollectionType.Movies:
+                case CollectionType.movies:
                     return GetMovieFolders(item, user, stubType, sort, startIndex, limit);
-                case CollectionType.TvShows:
+                case CollectionType.tvshows:
                     return GetTvFolders(item, user, stubType, sort, startIndex, limit);
-                case CollectionType.Folders:
+                case CollectionType.folders:
                     return GetFolders(user, startIndex, limit);
-                case CollectionType.LiveTv:
+                case CollectionType.livetv:
                     return GetLiveTvChannels(user, sort, startIndex, limit);
             }
         }
