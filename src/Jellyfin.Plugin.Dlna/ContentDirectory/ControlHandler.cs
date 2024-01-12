@@ -51,7 +51,7 @@ public class ControlHandler : BaseControlHandler
 
     private readonly DidlBuilder _didlBuilder;
 
-    private readonly DeviceProfile _profile;
+    private readonly DlnaDeviceProfile _profile;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ControlHandler"/> class.
@@ -73,7 +73,7 @@ public class ControlHandler : BaseControlHandler
     public ControlHandler(
         ILogger logger,
         ILibraryManager libraryManager,
-        DeviceProfile profile,
+        DlnaDeviceProfile profile,
         string serverAddress,
         string accessToken,
         IImageProcessor imageProcessor,

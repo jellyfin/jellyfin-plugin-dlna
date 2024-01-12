@@ -7,20 +7,20 @@ using System.Linq;
 using System.Security;
 using System.Text;
 using Jellyfin.Plugin.Dlna.Common;
-using MediaBrowser.Model.Dlna;
+using Jellyfin.Plugin.Dlna.Model;
 
 namespace Jellyfin.Plugin.Dlna.Server;
 
 public class DescriptionXmlBuilder
 {
-    private readonly DeviceProfile _profile;
+    private readonly DlnaDeviceProfile _profile;
 
     private readonly string _serverUdn;
     private readonly string _serverAddress;
     private readonly string _serverName;
     private readonly string _serverId;
 
-    public DescriptionXmlBuilder(DeviceProfile profile, string serverUdn, string serverAddress, string serverName, string serverId)
+    public DescriptionXmlBuilder(DlnaDeviceProfile profile, string serverUdn, string serverAddress, string serverName, string serverId)
     {
         ArgumentException.ThrowIfNullOrEmpty(serverUdn);
         ArgumentException.ThrowIfNullOrEmpty(serverAddress);

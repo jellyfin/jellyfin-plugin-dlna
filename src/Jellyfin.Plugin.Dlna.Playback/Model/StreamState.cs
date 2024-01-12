@@ -1,4 +1,5 @@
 using System;
+using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Model.Dlna;
@@ -144,7 +145,7 @@ public class StreamState : EncodingJobInfo, IDisposable
     /// <summary>
     /// Gets or sets the device profile.
     /// </summary>
-    public DeviceProfile? DeviceProfile { get; set; }
+    public DlnaDeviceProfile? DeviceProfile { get; set; }
 
     /// <summary>
     /// Gets or sets the transcoding job.

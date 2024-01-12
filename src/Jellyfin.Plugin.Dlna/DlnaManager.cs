@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Jellyfin.Extensions.Json;
+using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Profiles;
 using Jellyfin.Plugin.Dlna.Server;
 using MediaBrowser.Common.Configuration;
@@ -37,7 +38,8 @@ public class DlnaManager : IDlnaManager
     private static readonly Assembly _assembly = typeof(DlnaManager).Assembly;
     private readonly JsonSerializerOptions _jsonOptions = JsonDefaults.Options;
 
-    private readonly Dictionary<string, Tuple<InternalProfileInfo, DeviceProfile>> _profiles = new Dictionary<string, Tuple<InternalProfileInfo, DeviceProfile>>(StringComparer.Ordinal);
+    private readonly Dictionary<string, Tuple<InternalProfileInfo, DlnaDeviceProfile>> _profiles
+        = new(StringComparer.Ordinal);
 
     public DlnaManager(
         IXmlSerializer xmlSerializer,
@@ -81,7 +83,7 @@ public class DlnaManager : IDlnaManager
             .OrderBy(i => i.Name));
     }
 
-    public IEnumerable<DeviceProfile> GetProfiles()
+    public IEnumerable<DlnaDeviceProfile> GetProfiles()
     {
         lock (_profiles)
         {
@@ -94,13 +96,13 @@ public class DlnaManager : IDlnaManager
     }
 
     /// <inheritdoc />
-    public DeviceProfile GetDefaultProfile()
+    public DlnaDeviceProfile GetDefaultProfile()
     {
         return new DefaultProfile();
     }
 
     /// <inheritdoc />
-    public DeviceProfile? GetProfile(DeviceIdentification deviceInfo)
+    public DlnaDeviceProfile? GetProfile(DeviceIdentification deviceInfo)
     {
         ArgumentNullException.ThrowIfNull(deviceInfo);
 
@@ -167,7 +169,7 @@ public class DlnaManager : IDlnaManager
     }
 
     /// <inheritdoc />
-    public DeviceProfile? GetProfile(IHeaderDictionary headers)
+    public DlnaDeviceProfile? GetProfile(IHeaderDictionary headers)
     {
         ArgumentNullException.ThrowIfNull(headers);
 
@@ -239,23 +241,23 @@ public class DlnaManager : IDlnaManager
         }
     }
 
-    private DeviceProfile? ParseProfileFile(string path, DeviceProfileType type)
+    private DlnaDeviceProfile? ParseProfileFile(string path, DeviceProfileType type)
     {
         lock (_profiles)
         {
-            if (_profiles.TryGetValue(path, out Tuple<InternalProfileInfo, DeviceProfile>? profileTuple))
+            if (_profiles.TryGetValue(path, out Tuple<InternalProfileInfo, DlnaDeviceProfile>? profileTuple))
             {
                 return profileTuple.Item2;
             }
 
             try
             {
-                var tempProfile = (DeviceProfile)_xmlSerializer.DeserializeFromFile(typeof(DeviceProfile), path);
+                var tempProfile = (DlnaDeviceProfile)_xmlSerializer.DeserializeFromFile(typeof(DlnaDeviceProfile), path);
                 var profile = ReserializeProfile(tempProfile);
 
                 profile.Id = path.ToLowerInvariant().GetMD5().ToString("N", CultureInfo.InvariantCulture);
 
-                _profiles[path] = new Tuple<InternalProfileInfo, DeviceProfile>(GetInternalProfileInfo(_fileSystem.GetFileInfo(path), type), profile);
+                _profiles[path] = new Tuple<InternalProfileInfo, DlnaDeviceProfile>(GetInternalProfileInfo(_fileSystem.GetFileInfo(path), type), profile);
 
                 return profile;
             }
@@ -269,7 +271,7 @@ public class DlnaManager : IDlnaManager
     }
 
     /// <inheritdoc />
-    public DeviceProfile? GetProfile(string id)
+    public DlnaDeviceProfile? GetProfile(string id)
     {
         ArgumentException.ThrowIfNullOrEmpty(id);
 
@@ -370,7 +372,7 @@ public class DlnaManager : IDlnaManager
     }
 
     /// <inheritdoc />
-    public void CreateProfile(DeviceProfile profile)
+    public void CreateProfile(DlnaDeviceProfile profile)
     {
         profile = ReserializeProfile(profile);
 
@@ -383,7 +385,7 @@ public class DlnaManager : IDlnaManager
     }
 
     /// <inheritdoc />
-    public void UpdateProfile(string profileId, DeviceProfile profile)
+    public void UpdateProfile(string profileId, DlnaDeviceProfile profile)
     {
         profile = ReserializeProfile(profile);
 
@@ -411,11 +413,11 @@ public class DlnaManager : IDlnaManager
         SaveProfile(profile, path, DeviceProfileType.User);
     }
 
-    private void SaveProfile(DeviceProfile profile, string path, DeviceProfileType type)
+    private void SaveProfile(DlnaDeviceProfile profile, string path, DeviceProfileType type)
     {
         lock (_profiles)
         {
-            _profiles[path] = new Tuple<InternalProfileInfo, DeviceProfile>(GetInternalProfileInfo(_fileSystem.GetFileInfo(path), type), profile);
+            _profiles[path] = new Tuple<InternalProfileInfo, DlnaDeviceProfile>(GetInternalProfileInfo(_fileSystem.GetFileInfo(path), type), profile);
         }
 
         SerializeToXml(profile, path);
@@ -432,9 +434,9 @@ public class DlnaManager : IDlnaManager
     /// </summary>
     /// <param name="profile">The device profile.</param>
     /// <returns>The re-serialized device profile.</returns>
-    private DeviceProfile ReserializeProfile(DeviceProfile profile)
+    private DlnaDeviceProfile ReserializeProfile(DlnaDeviceProfile profile)
     {
-        if (profile.GetType() == typeof(DeviceProfile))
+        if (profile.GetType() == typeof(DlnaDeviceProfile))
         {
             return profile;
         }
@@ -442,7 +444,7 @@ public class DlnaManager : IDlnaManager
         var json = JsonSerializer.Serialize(profile, _jsonOptions);
 
         // Output can't be null if the input isn't null
-        return JsonSerializer.Deserialize<DeviceProfile>(json, _jsonOptions)!;
+        return JsonSerializer.Deserialize<DlnaDeviceProfile>(json, _jsonOptions)!;
     }
 
     /// <inheritdoc />

@@ -528,7 +528,7 @@ public static class StreamingHelpers
             if (state.DeviceProfile is null)
             {
                 var caps = deviceManager.GetCapabilities(deviceProfileId);
-                state.DeviceProfile = caps is null ? dlnaManager.GetProfile(request.Headers) : caps.DeviceProfile;
+                state.DeviceProfile = caps is null ? dlnaManager.GetProfile(request.Headers) : caps.DeviceProfile as DlnaDeviceProfile;
             }
         }
 

@@ -11,6 +11,7 @@ using Jellyfin.Data.Enums;
 using Jellyfin.Data.Events;
 using Jellyfin.Plugin.Dlna.Didl;
 using Jellyfin.Plugin.Dlna.Extensions;
+using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
@@ -579,7 +580,7 @@ public class PlayToController2 : ISessionController, IDisposable
         return null;
     }
 
-    private PlaylistItem GetPlaylistItem(BaseItem item, MediaSourceInfo[] mediaSources, DeviceProfile profile, string deviceId, string? mediaSourceId, int? audioStreamIndex, int? subtitleStreamIndex)
+    private PlaylistItem GetPlaylistItem(BaseItem item, MediaSourceInfo[] mediaSources, DlnaDeviceProfile profile, string deviceId, string? mediaSourceId, int? audioStreamIndex, int? subtitleStreamIndex)
         => item.MediaType switch
         {
             MediaType.Video => new PlaylistItem

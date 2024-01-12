@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
+using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Service;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Library;
@@ -129,7 +130,7 @@ public class ContentDirectoryService : BaseService, IContentDirectory
     /// </summary>
     /// <param name="profile">The <see cref="DeviceProfile"/>.</param>
     /// <returns>The <see cref="User"/>.</returns>
-    private User? GetUser(DeviceProfile profile)
+    private User? GetUser(DlnaDeviceProfile profile)
     {
         if (!string.IsNullOrEmpty(profile.UserId))
         {

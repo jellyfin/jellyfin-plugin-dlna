@@ -13,7 +13,7 @@ namespace Jellyfin.Plugin.Dlna.Model;
 public static class ContentFeatureBuilder
 {
     public static string BuildImageHeader(
-        DeviceProfile profile,
+        DlnaDeviceProfile profile,
         string container,
         int? width,
         int? height,
@@ -58,7 +58,7 @@ public static class ContentFeatureBuilder
     }
 
     public static string BuildAudioHeader(
-        DeviceProfile profile,
+        DlnaDeviceProfile profile,
         string container,
         string audioCodec,
         int? audioBitrate,
@@ -118,7 +118,7 @@ public static class ContentFeatureBuilder
     }
 
     public static IEnumerable<string> BuildVideoHeader(
-        DeviceProfile profile,
+        DlnaDeviceProfile profile,
         string container,
         string videoCodec,
         string audioCodec,
