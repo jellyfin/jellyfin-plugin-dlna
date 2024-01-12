@@ -12,6 +12,7 @@ using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Devices;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
+using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.MediaInfo;
 using MediaBrowser.Model.Net;
@@ -33,7 +34,7 @@ public class DlnaVideosController : ControllerBase
     private readonly IServerConfigurationManager _serverConfigurationManager;
     private readonly IMediaEncoder _mediaEncoder;
     private readonly IDeviceManager _deviceManager;
-    private readonly TranscodingJobHelper _transcodingJobHelper;
+    private readonly ITranscodeManager _transcodingJobHelper;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly EncodingHelper _encodingHelper;
 
@@ -49,7 +50,7 @@ public class DlnaVideosController : ControllerBase
     /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
     /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
     /// <param name="deviceManager">Instance of the <see cref="IDeviceManager"/> interface.</param>
-    /// <param name="transcodingJobHelper">Instance of the <see cref="TranscodingJobHelper"/> class.</param>
+    /// <param name="transcodingJobHelper">Instance of the <see cref="ITranscodeManager"/> class.</param>
     /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
     /// <param name="encodingHelper">Instance of <see cref="EncodingHelper"/>.</param>
     public DlnaVideosController(
@@ -60,7 +61,7 @@ public class DlnaVideosController : ControllerBase
         IServerConfigurationManager serverConfigurationManager,
         IMediaEncoder mediaEncoder,
         IDeviceManager deviceManager,
-        TranscodingJobHelper transcodingJobHelper,
+        ITranscodeManager transcodingJobHelper,
         IHttpClientFactory httpClientFactory,
         EncodingHelper encodingHelper)
     {
@@ -191,7 +192,7 @@ public class DlnaVideosController : ControllerBase
         var isHeadRequest = Request.Method == System.Net.WebRequestMethods.Http.Head;
         // CTS lifecycle is managed internally.
         var cancellationTokenSource = new CancellationTokenSource();
-        var streamingRequest = new VideoRequestDto
+        var streamingRequest = new DlnaVideoRequestDto
         {
             Id = itemId,
             Container = container,

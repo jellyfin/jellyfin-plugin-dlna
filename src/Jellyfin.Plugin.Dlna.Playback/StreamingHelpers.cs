@@ -16,6 +16,7 @@ using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Devices;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
+using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
 using Microsoft.AspNetCore.Http;
@@ -33,7 +34,7 @@ public static class StreamingHelpers
     /// <summary>
     /// Gets the current streaming state.
     /// </summary>
-    /// <param name="streamingRequest">The <see cref="StreamingRequestDto"/>.</param>
+    /// <param name="streamingRequest">The <see cref="DlnaStreamingRequestDto"/>.</param>
     /// <param name="httpContext">The <see cref="HttpContext"/>.</param>
     /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
@@ -43,12 +44,12 @@ public static class StreamingHelpers
     /// <param name="encodingHelper">Instance of <see cref="EncodingHelper"/>.</param>
     /// <param name="dlnaManager">Instance of the <see cref="IDlnaManager"/> interface.</param>
     /// <param name="deviceManager">Instance of the <see cref="IDeviceManager"/> interface.</param>
-    /// <param name="transcodingJobHelper">Initialized <see cref="TranscodingJobHelper"/>.</param>
+    /// <param name="transcodeManager">Initialized <see cref="ITranscodeManager"/>.</param>
     /// <param name="transcodingJobType">The <see cref="TranscodingJobType"/>.</param>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>A <see cref="Task"/> containing the current <see cref="StreamState"/>.</returns>
-    public static async Task<StreamState> GetStreamingState(
-        StreamingRequestDto streamingRequest,
+    public static async Task<DlnaStreamState> GetStreamingState(
+        DlnaStreamingRequestDto streamingRequest,
         HttpContext httpContext,
         IMediaSourceManager mediaSourceManager,
         IUserManager userManager,
@@ -58,7 +59,7 @@ public static class StreamingHelpers
         EncodingHelper encodingHelper,
         IDlnaManager dlnaManager,
         IDeviceManager deviceManager,
-        TranscodingJobHelper transcodingJobHelper,
+        ITranscodeManager transcodeManager,
         TranscodingJobType transcodingJobType,
         CancellationToken cancellationToken)
     {
@@ -93,7 +94,7 @@ public static class StreamingHelpers
                                 streamingRequest.StreamOptions.ContainsKey("dlnaheaders") ||
                                 string.Equals(httpRequest.Headers["GetContentFeatures.DLNA.ORG"], "1", StringComparison.OrdinalIgnoreCase);
 
-        var state = new StreamState(mediaSourceManager, transcodingJobType, transcodingJobHelper)
+        var state = new DlnaStreamState(mediaSourceManager, transcodingJobType, transcodeManager)
         {
             Request = streamingRequest,
             RequestedUrl = url,
@@ -135,7 +136,7 @@ public static class StreamingHelpers
         if (string.IsNullOrWhiteSpace(streamingRequest.LiveStreamId))
         {
             var currentJob = !string.IsNullOrWhiteSpace(streamingRequest.PlaySessionId)
-                ? transcodingJobHelper.GetTranscodingJob(streamingRequest.PlaySessionId)
+                ? transcodeManager.GetTranscodingJob(streamingRequest.PlaySessionId)
                 : null;
 
             if (currentJob is not null)
@@ -264,7 +265,7 @@ public static class StreamingHelpers
     /// <param name="request">The <see cref="HttpRequest"/>.</param>
     /// <param name="dlnaManager">Instance of the <see cref="IDlnaManager"/> interface.</param>
     public static void AddDlnaHeaders(
-        StreamState state,
+        DlnaStreamState state,
         IHeaderDictionary responseHeaders,
         bool isStaticallyStreamed,
         long? startTimeTicks,
@@ -519,7 +520,7 @@ public static class StreamingHelpers
         return Path.Combine(folder, filename + ext);
     }
 
-    private static void ApplyDeviceProfileSettings(StreamState state, IDlnaManager dlnaManager, IDeviceManager deviceManager, HttpRequest request, string? deviceProfileId, bool? @static)
+    private static void ApplyDeviceProfileSettings(DlnaStreamState state, IDlnaManager dlnaManager, IDeviceManager deviceManager, HttpRequest request, string? deviceProfileId, bool? @static)
     {
         if (!string.IsNullOrWhiteSpace(deviceProfileId))
         {
@@ -596,7 +597,7 @@ public static class StreamingHelpers
     /// Parses the parameters.
     /// </summary>
     /// <param name="request">The request.</param>
-    private static void ParseParams(StreamingRequestDto request)
+    private static void ParseParams(DlnaStreamingRequestDto request)
     {
         if (string.IsNullOrEmpty(request.Params))
         {
@@ -605,7 +606,7 @@ public static class StreamingHelpers
 
         var vals = request.Params.Split(';');
 
-        var videoRequest = request as VideoRequestDto;
+        var videoRequest = request as DlnaVideoRequestDto;
 
         for (var i = 0; i < vals.Length; i++)
         {

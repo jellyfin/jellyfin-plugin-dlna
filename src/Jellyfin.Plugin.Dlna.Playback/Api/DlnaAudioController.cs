@@ -137,7 +137,7 @@ public class DlnaAudioController : ControllerBase
         [FromQuery] EncodingContext? context,
         [FromQuery] Dictionary<string, string>? streamOptions)
     {
-        StreamingRequestDto streamingRequest = new StreamingRequestDto
+        var streamingRequest = new DlnaStreamingRequestDto
         {
             Id = itemId,
             Container = container,
@@ -301,7 +301,7 @@ public class DlnaAudioController : ControllerBase
         [FromQuery] EncodingContext? context,
         [FromQuery] Dictionary<string, string>? streamOptions)
     {
-        StreamingRequestDto streamingRequest = new StreamingRequestDto
+        var streamingRequest = new DlnaStreamingRequestDto
         {
             Id = itemId,
             Container = container,
