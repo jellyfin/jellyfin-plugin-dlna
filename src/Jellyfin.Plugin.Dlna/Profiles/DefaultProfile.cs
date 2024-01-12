@@ -2,12 +2,13 @@
 
 using System;
 using System.Globalization;
+using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Model.Dlna;
 
 namespace Jellyfin.Plugin.Dlna.Profiles;
 
 [System.Xml.Serialization.XmlRoot("Profile")]
-public class DefaultProfile : DeviceProfile
+public class DefaultProfile : DlnaDeviceProfile
 {
     public DefaultProfile()
     {

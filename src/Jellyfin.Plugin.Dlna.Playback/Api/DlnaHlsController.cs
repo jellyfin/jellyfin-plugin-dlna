@@ -145,7 +145,7 @@ public class DynamicHlsController : ControllerBase
         [FromQuery] bool enableAdaptiveBitrateStreaming = true,
         [FromQuery] bool enableTrickplay = true)
     {
-        var streamingRequest = new HlsVideoRequestDto
+        var streamingRequest = new DlnaHlsVideoRequestDto
         {
             Id = itemId,
             Static = @static ?? false,
@@ -314,7 +314,7 @@ public class DynamicHlsController : ControllerBase
         [FromQuery] Dictionary<string, string> streamOptions,
         [FromQuery] bool enableAdaptiveBitrateStreaming = true)
     {
-        var streamingRequest = new HlsAudioRequestDto
+        var streamingRequest = new DlnaHlsAudioRequestDto
         {
             Id = itemId,
             Static = @static ?? false,

@@ -36,7 +36,7 @@ using StreamBuilder = MediaBrowser.Model.Dlna.StreamBuilder;
 using StreamInfo = MediaBrowser.Model.Dlna.StreamInfo;
 using SubtitleDeliveryMethod = MediaBrowser.Model.Dlna.SubtitleDeliveryMethod;
 using SubtitleStreamInfo = MediaBrowser.Model.Dlna.SubtitleStreamInfo;
-using XmlAttribute = MediaBrowser.Model.Dlna.XmlAttribute;
+using XmlAttribute = Jellyfin.Plugin.Dlna.Model.XmlAttribute;
 
 namespace Jellyfin.Plugin.Dlna.Didl;
 
@@ -47,7 +47,7 @@ public class DidlBuilder
     private const string NsUpnp = "urn:schemas-upnp-org:metadata-1-0/upnp/";
     private const string NsDlna = "urn:schemas-dlna-org:metadata-1-0/";
 
-    private readonly DeviceProfile _profile;
+    private readonly DlnaDeviceProfile _profile;
     private readonly IImageProcessor _imageProcessor;
     private readonly string _serverAddress;
     private readonly string? _accessToken;
@@ -60,7 +60,7 @@ public class DidlBuilder
     private readonly ILibraryManager _libraryManager;
 
     public DidlBuilder(
-        DeviceProfile profile,
+        DlnaDeviceProfile profile,
         User? user,
         IImageProcessor imageProcessor,
         string serverAddress,
@@ -126,7 +126,7 @@ public class DidlBuilder
         }
     }
 
-    public static void WriteXmlRootAttributes(DeviceProfile profile, XmlWriter writer)
+    public static void WriteXmlRootAttributes(DlnaDeviceProfile profile, XmlWriter writer)
     {
         foreach (var att in profile.XmlRootAttributes)
         {

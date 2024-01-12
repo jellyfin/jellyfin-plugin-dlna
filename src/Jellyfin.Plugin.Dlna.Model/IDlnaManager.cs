@@ -20,26 +20,26 @@ public interface IDlnaManager
     /// </summary>
     /// <param name="headers">The headers.</param>
     /// <returns>DeviceProfile.</returns>
-    DeviceProfile? GetProfile(IHeaderDictionary headers);
+    DlnaDeviceProfile? GetProfile(IHeaderDictionary headers);
 
     /// <summary>
     /// Gets the default profile.
     /// </summary>
     /// <returns>DeviceProfile.</returns>
-    DeviceProfile GetDefaultProfile();
+    DlnaDeviceProfile GetDefaultProfile();
 
     /// <summary>
     /// Creates the profile.
     /// </summary>
     /// <param name="profile">The profile.</param>
-    void CreateProfile(DeviceProfile profile);
+    void CreateProfile(DlnaDeviceProfile profile);
 
     /// <summary>
     /// Updates the profile.
     /// </summary>
     /// <param name="profileId">The profile id.</param>
     /// <param name="profile">The profile.</param>
-    void UpdateProfile(string profileId, DeviceProfile profile);
+    void UpdateProfile(string profileId, DlnaDeviceProfile profile);
 
     /// <summary>
     /// Deletes the profile.
@@ -52,14 +52,14 @@ public interface IDlnaManager
     /// </summary>
     /// <param name="id">The identifier.</param>
     /// <returns>DeviceProfile.</returns>
-    DeviceProfile? GetProfile(string id);
+    DlnaDeviceProfile? GetProfile(string id);
 
     /// <summary>
     /// Gets the profile.
     /// </summary>
     /// <param name="deviceInfo">The device information.</param>
     /// <returns>DeviceProfile.</returns>
-    DeviceProfile? GetProfile(DeviceIdentification deviceInfo);
+    DlnaDeviceProfile? GetProfile(DeviceIdentification deviceInfo);
 
     /// <summary>
     /// Gets the server description XML.

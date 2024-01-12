@@ -49,7 +49,6 @@ public class DlnaServiceRegistrator : IPluginServiceRegistrator
         services.AddSingleton<IConnectionManager, ConnectionManagerService>();
         services.AddSingleton<IMediaReceiverRegistrar, MediaReceiverRegistrarService>();
 
-        services.AddSingleton<TranscodingJobHelper>();
         services.AddScoped<AudioHelper>();
         services.AddScoped<DynamicHlsHelper>();
 

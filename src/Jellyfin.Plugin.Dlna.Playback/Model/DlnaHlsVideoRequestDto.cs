@@ -3,7 +3,7 @@
 /// <summary>
 /// The hls video request dto.
 /// </summary>
-public class HlsAudioRequestDto : StreamingRequestDto
+public class DlnaHlsVideoRequestDto : DlnaVideoRequestDto
 {
     /// <summary>
     /// Gets or sets a value indicating whether enable adaptive bitrate streaming.

@@ -3,7 +3,7 @@ namespace Jellyfin.Plugin.Dlna.Playback.Model;
 /// <summary>
 /// The video request dto.
 /// </summary>
-public class VideoRequestDto : StreamingRequestDto
+public class DlnaVideoRequestDto : DlnaStreamingRequestDto
 {
     /// <summary>
     /// Gets a value indicating whether this instance has fixed resolution.

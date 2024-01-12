@@ -3,9 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.Xml;
+using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Service;
 using MediaBrowser.Common.Extensions;
-using MediaBrowser.Model.Dlna;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Dlna.ConnectionManager;
@@ -15,14 +15,14 @@ namespace Jellyfin.Plugin.Dlna.ConnectionManager;
 /// </summary>
 public class ControlHandler : BaseControlHandler
 {
-    private readonly DeviceProfile _profile;
+    private readonly DlnaDeviceProfile _profile;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ControlHandler"/> class.
     /// </summary>
     /// <param name="logger">The <see cref="ILogger"/> for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="profile">The <see cref="DeviceProfile"/> for use with the <see cref="ControlHandler"/> instance.</param>
-    public ControlHandler(ILogger logger, DeviceProfile profile)
+    /// <param name="profile">The <see cref="DlnaDeviceProfile"/> for use with the <see cref="ControlHandler"/> instance.</param>
+    public ControlHandler(ILogger logger, DlnaDeviceProfile profile)
         : base(logger)
     {
         _profile = profile;

@@ -4,6 +4,7 @@
 
 using System.IO;
 using System.Linq;
+using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Session;
@@ -12,7 +13,7 @@ namespace Jellyfin.Plugin.Dlna.PlayTo;
 
 public static class PlaylistItemFactory
 {
-    public static PlaylistItem Create(Photo item, DeviceProfile profile)
+    public static PlaylistItem Create(Photo item, DlnaDeviceProfile profile)
     {
         var playlistItem = new PlaylistItem
         {

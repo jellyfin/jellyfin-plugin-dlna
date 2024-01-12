@@ -102,7 +102,7 @@ public class DlnaController : ControllerBase
     /// <returns>A <see cref="NoContentResult"/>.</returns>
     [HttpPost("Profiles")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public ActionResult CreateProfile([FromBody] DeviceProfile deviceProfile)
+    public ActionResult CreateProfile([FromBody] DlnaDeviceProfile deviceProfile)
     {
         _dlnaManager.CreateProfile(deviceProfile);
         return NoContent();
@@ -119,7 +119,7 @@ public class DlnaController : ControllerBase
     [HttpPost("Profiles/{profileId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public ActionResult UpdateProfile([FromRoute, Required] string profileId, [FromBody] DeviceProfile deviceProfile)
+    public ActionResult UpdateProfile([FromRoute, Required] string profileId, [FromBody] DlnaDeviceProfile deviceProfile)
     {
         var existingDeviceProfile = _dlnaManager.GetProfile(profileId);
         if (existingDeviceProfile is null)

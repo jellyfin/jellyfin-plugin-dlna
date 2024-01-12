@@ -20,6 +20,7 @@ using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Devices;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
+using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Controller.Trickplay;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Entities;
@@ -43,7 +44,7 @@ public class DynamicHlsHelper
     private readonly IServerConfigurationManager _serverConfigurationManager;
     private readonly IMediaEncoder _mediaEncoder;
     private readonly IDeviceManager _deviceManager;
-    private readonly TranscodingJobHelper _transcodingJobHelper;
+    private readonly ITranscodeManager _transcodeManager;
     private readonly INetworkManager _networkManager;
     private readonly ILogger<DynamicHlsHelper> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -60,7 +61,7 @@ public class DynamicHlsHelper
     /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
     /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
     /// <param name="deviceManager">Instance of the <see cref="IDeviceManager"/> interface.</param>
-    /// <param name="transcodingJobHelper">Instance of <see cref="TranscodingJobHelper"/>.</param>
+    /// <param name="transcodeManager">Instance of <see cref="ITranscodeManager"/>.</param>
     /// <param name="networkManager">Instance of the <see cref="INetworkManager"/> interface.</param>
     /// <param name="logger">Instance of the <see cref="ILogger{DynamicHlsHelper}"/> interface.</param>
     /// <param name="httpContextAccessor">Instance of the <see cref="IHttpContextAccessor"/> interface.</param>
@@ -74,7 +75,7 @@ public class DynamicHlsHelper
         IServerConfigurationManager serverConfigurationManager,
         IMediaEncoder mediaEncoder,
         IDeviceManager deviceManager,
-        TranscodingJobHelper transcodingJobHelper,
+        ITranscodeManager transcodeManager,
         INetworkManager networkManager,
         ILogger<DynamicHlsHelper> logger,
         IHttpContextAccessor httpContextAccessor,
@@ -88,7 +89,7 @@ public class DynamicHlsHelper
         _serverConfigurationManager = serverConfigurationManager;
         _mediaEncoder = mediaEncoder;
         _deviceManager = deviceManager;
-        _transcodingJobHelper = transcodingJobHelper;
+        _transcodeManager = transcodeManager;
         _networkManager = networkManager;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
@@ -105,7 +106,7 @@ public class DynamicHlsHelper
     /// <returns>A <see cref="Task"/> containing the resulting <see cref="ActionResult"/>.</returns>
     public async Task<ActionResult> GetMasterHlsPlaylist(
         TranscodingJobType transcodingJobType,
-        StreamingRequestDto streamingRequest,
+        DlnaStreamingRequestDto streamingRequest,
         bool enableAdaptiveBitrateStreaming)
     {
         var isHeadRequest = _httpContextAccessor.HttpContext?.Request.Method == WebRequestMethods.Http.Head;
@@ -120,7 +121,7 @@ public class DynamicHlsHelper
     }
 
     private async Task<ActionResult> GetMasterPlaylistInternal(
-        StreamingRequestDto streamingRequest,
+        DlnaStreamingRequestDto streamingRequest,
         bool isHeadRequest,
         bool enableAdaptiveBitrateStreaming,
         TranscodingJobType transcodingJobType,
@@ -142,7 +143,7 @@ public class DynamicHlsHelper
                 _encodingHelper,
                 _dlnaManager,
                 _deviceManager,
-                _transcodingJobHelper,
+                _transcodeManager,
                 transcodingJobType,
                 cancellationTokenSource.Token)
             .ConfigureAwait(false);

@@ -4,7 +4,7 @@
 
 using System.Collections.Generic;
 using Jellyfin.Plugin.Dlna.Common;
-using MediaBrowser.Model.Dlna;
+using Jellyfin.Plugin.Dlna.Model;
 
 namespace Jellyfin.Plugin.Dlna.PlayTo;
 

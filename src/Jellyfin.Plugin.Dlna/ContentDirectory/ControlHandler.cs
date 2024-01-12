@@ -51,7 +51,7 @@ public class ControlHandler : BaseControlHandler
 
     private readonly DidlBuilder _didlBuilder;
 
-    private readonly DeviceProfile _profile;
+    private readonly DlnaDeviceProfile _profile;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ControlHandler"/> class.
@@ -73,7 +73,7 @@ public class ControlHandler : BaseControlHandler
     public ControlHandler(
         ILogger logger,
         ILibraryManager libraryManager,
-        DeviceProfile profile,
+        DlnaDeviceProfile profile,
         string serverAddress,
         string accessToken,
         IImageProcessor imageProcessor,
@@ -564,15 +564,15 @@ public class ControlHandler : BaseControlHandler
         {
             switch (collectionFolder.CollectionType)
             {
-                case CollectionType.Music:
+                case CollectionType.music:
                     return GetMusicFolders(item, user, stubType, sort, startIndex, limit);
-                case CollectionType.Movies:
+                case CollectionType.movies:
                     return GetMovieFolders(item, user, stubType, sort, startIndex, limit);
-                case CollectionType.TvShows:
+                case CollectionType.tvshows:
                     return GetTvFolders(item, user, stubType, sort, startIndex, limit);
-                case CollectionType.Folders:
+                case CollectionType.folders:
                     return GetFolders(user, startIndex, limit);
-                case CollectionType.LiveTv:
+                case CollectionType.livetv:
                     return GetLiveTvChannels(user, sort, startIndex, limit);
             }
         }
