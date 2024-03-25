@@ -1,6 +1,7 @@
 #pragma warning disable CS1591
 
 using System.Collections.Generic;
+using System.IO;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Model.Dlna;
 using Microsoft.AspNetCore.Http;
@@ -75,5 +76,5 @@ public interface IDlnaManager
     /// </summary>
     /// <param name="filename">The filename.</param>
     /// <returns>DlnaIconResponse.</returns>
-    ImageStream? GetIcon(string filename);
+    Stream? GetIcon(string filename);
 }

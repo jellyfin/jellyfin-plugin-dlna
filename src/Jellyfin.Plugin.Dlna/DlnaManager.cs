@@ -458,23 +458,10 @@ public class DlnaManager : IDlnaManager
     }
 
     /// <inheritdoc />
-    public ImageStream? GetIcon(string filename)
+    public Stream? GetIcon(string filename)
     {
-        var format = filename.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
-            ? ImageFormat.Png
-            : ImageFormat.Jpg;
-
         var resource = GetType().Namespace + ".Images." + filename.ToLowerInvariant();
-        var stream = _assembly.GetManifestResourceStream(resource);
-        if (stream is null)
-        {
-            return null;
-        }
-
-        return new ImageStream(stream)
-        {
-            Format = format
-        };
+        return _assembly.GetManifestResourceStream(resource);
     }
 
     private class InternalProfileInfo
