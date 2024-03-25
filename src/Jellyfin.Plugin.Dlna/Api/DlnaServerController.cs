@@ -265,13 +265,13 @@ public class DlnaServerController : ControllerBase
 
     private ActionResult GetIconInternal(string fileName)
     {
-        var icon = _dlnaManager.GetIcon(fileName);
-        if (icon is null)
+        var iconStream = _dlnaManager.GetIcon(fileName);
+        if (iconStream is null)
         {
             return NotFound();
         }
 
-        return File(icon.Stream, MimeTypes.GetMimeType(fileName));
+        return File(iconStream, MimeTypes.GetMimeType(fileName));
     }
 
     private string GetAbsoluteUri()

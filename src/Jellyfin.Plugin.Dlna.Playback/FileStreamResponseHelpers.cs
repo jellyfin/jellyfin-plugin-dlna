@@ -93,33 +93,26 @@ public static class FileStreamResponseHelpers
             return new OkResult();
         }
 
-        var transcodingLock = transcodeManager.GetTranscodingLock(outputPath);
-        await transcodingLock.WaitAsync(cancellationTokenSource.Token).ConfigureAwait(false);
-        try
-        {
-            TranscodingJob? job;
-            if (!File.Exists(outputPath))
-            {
-                job = await transcodeManager.StartFfMpeg(
-                    state,
-                    outputPath,
-                    ffmpegCommandLineArguments,
-                    httpContext.User.GetUserId(),
-                    transcodingJobType,
-                    cancellationTokenSource).ConfigureAwait(false);
-            }
-            else
-            {
-                job = transcodeManager.OnTranscodeBeginRequest(outputPath, TranscodingJobType.Progressive);
-                state.Dispose();
-            }
+        using var transcodingLock = await transcodeManager.LockAsync(outputPath, cancellationTokenSource.Token);
 
-            var stream = new ProgressiveFileStream(outputPath, job, transcodeManager);
-            return new FileStreamResult(stream, contentType);
-        }
-        finally
+        TranscodingJob? job;
+        if (!File.Exists(outputPath))
         {
-            transcodingLock.Release();
+            job = await transcodeManager.StartFfMpeg(
+                state,
+                outputPath,
+                ffmpegCommandLineArguments,
+                httpContext.User.GetUserId(),
+                transcodingJobType,
+                cancellationTokenSource).ConfigureAwait(false);
         }
+        else
+        {
+            job = transcodeManager.OnTranscodeBeginRequest(outputPath, TranscodingJobType.Progressive);
+            state.Dispose();
+        }
+
+        var stream = new ProgressiveFileStream(outputPath, job, transcodeManager);
+        return new FileStreamResult(stream, contentType);
     }
 }
