@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Jellyfin.Data.Enums;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
 
@@ -60,7 +61,7 @@ public static class StreamInfoExtensions
         var itemId = streamInfo.ItemId;
         if (streamInfo.MediaType == DlnaProfileType.Audio)
         {
-            if (string.Equals(streamInfo.SubProtocol, "hls", StringComparison.OrdinalIgnoreCase))
+            if (streamInfo.SubProtocol == MediaStreamProtocol.hls)
             {
                 return string.Format(CultureInfo.InvariantCulture, "{0}/dlna/audio/{1}/master.m3u8?{2}", baseUrl, itemId, queryString);
             }
@@ -68,14 +69,14 @@ public static class StreamInfoExtensions
             return string.Format(CultureInfo.InvariantCulture, "{0}/dlna/audio/{1}/stream{2}?{3}", baseUrl, itemId, extension, queryString);
         }
 
-        if (string.Equals(streamInfo.SubProtocol, "hls", StringComparison.OrdinalIgnoreCase))
+        if (streamInfo.SubProtocol == MediaStreamProtocol.hls)
         {
             return string.Format(CultureInfo.InvariantCulture, "{0}/dlna/videos/{1}/master.m3u8?{2}", baseUrl, itemId, queryString);
         }
 
         return string.Format(CultureInfo.InvariantCulture, "{0}/dlna/videos/{1}/stream{2}?{3}", baseUrl, itemId, extension, queryString);
     }
-        
+
     private static IEnumerable<NameValuePair> BuildParams(StreamInfo item, string? accessToken)
     {
         var list = new List<NameValuePair>();
@@ -105,7 +106,7 @@ public static class StreamInfoExtensions
         list.Add(new NameValuePair("MaxHeight", item.MaxHeight.HasValue ? item.MaxHeight.Value.ToString(CultureInfo.InvariantCulture) : string.Empty));
 
         long startPositionTicks = item.StartPositionTicks;
-        var isHls = string.Equals(item.SubProtocol, "hls", StringComparison.OrdinalIgnoreCase);
+        var isHls = item.SubProtocol == MediaStreamProtocol.hls;
 
         if (isHls)
         {
