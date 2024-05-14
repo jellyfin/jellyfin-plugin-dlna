@@ -9,7 +9,7 @@ overview: "DLNA Service"
 description: >
   Adds DLNA capability to Jellyfin
 
-category: "Notifications"
+category: "General"
 artifacts:
   - "Jellyfin.Plugin.Dlna.dll"
   - "Jellyfin.Plugin.Dlna.Model.dll"
