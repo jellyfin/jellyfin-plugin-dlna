@@ -416,19 +416,16 @@ namespace Rssdp.Infrastructure
                         var remoteEndpoint = (IPEndPoint)result.RemoteEndPoint;
                         var allBindInterfaces = _networkManager.GetAllBindInterfaces();
                         IPData localEndpointAdapter;
-                        if (
-                            allBindInterfaces.Count == 1
-                            && (
-                                allBindInterfaces.First().Address.Equals(IPAddress.Any)
-                                || allBindInterfaces.First().Address.Equals(IPAddress.IPv6Any)
-                            )
-                        )
+                        if (allBindInterfaces.Count == 1
+                            && (allBindInterfaces[0].Address.Equals(IPAddress.Any)
+                                || allBindInterfaces[0].Address.Equals(IPAddress.IPv6Any)))
                         {
-                            localEndpointAdapter = allBindInterfaces.First();
+                            localEndpointAdapter = allBindInterfaces[0];
                         } else
                         {
                             localEndpointAdapter = allBindInterfaces.First(a => a.Index == result.PacketInformation.Interface);
                         }
+
                         ProcessMessage(
                             Encoding.UTF8.GetString(receiveBuffer, 0, result.ReceivedBytes),
                             remoteEndpoint,
@@ -522,7 +519,7 @@ namespace Rssdp.Infrastructure
                 LocalIPAddress = localIPAddress
             });
         }
-        
+
         private Socket CreateSsdpUdpSocket(IPData bindInterface, int localPort)
         {
             var interfaceAddress = bindInterface.Address;
@@ -548,7 +545,7 @@ namespace Rssdp.Infrastructure
                 throw;
             }
         }
-        
+
         private Socket CreateUdpMulticastSocket(IPAddress multicastAddress, IPData bindInterface, int multicastTimeToLive, int localPort)
         {
             var bindIPAddress = bindInterface.Address;
