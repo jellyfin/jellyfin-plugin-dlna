@@ -414,8 +414,21 @@ namespace Rssdp.Infrastructure
                     if (result.ReceivedBytes > 0)
                     {
                         var remoteEndpoint = (IPEndPoint)result.RemoteEndPoint;
-                        var localEndpointAdapter = _networkManager.GetAllBindInterfaces().First(a => a.Index == result.PacketInformation.Interface);
-
+                        var allBindInterfaces = _networkManager.GetAllBindInterfaces();
+                        IPData localEndpointAdapter;
+                        if (
+                            allBindInterfaces.Count == 1
+                            && (
+                                allBindInterfaces.First().Address.Equals(IPAddress.Any)
+                                || allBindInterfaces.First().Address.Equals(IPAddress.IPv6Any)
+                            )
+                        )
+                        {
+                            localEndpointAdapter = allBindInterfaces.First();
+                        } else
+                        {
+                            localEndpointAdapter = allBindInterfaces.First(a => a.Index == result.PacketInformation.Interface);
+                        }
                         ProcessMessage(
                             Encoding.UTF8.GetString(receiveBuffer, 0, result.ReceivedBytes),
                             remoteEndpoint,
