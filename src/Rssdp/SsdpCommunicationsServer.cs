@@ -421,7 +421,8 @@ namespace Rssdp.Infrastructure
                                 || allBindInterfaces[0].Address.Equals(IPAddress.IPv6Any)))
                         {
                             localEndpointAdapter = allBindInterfaces[0];
-                        } else
+                        }
+                        else
                         {
                             localEndpointAdapter = allBindInterfaces.First(a => a.Index == result.PacketInformation.Interface);
                         }
