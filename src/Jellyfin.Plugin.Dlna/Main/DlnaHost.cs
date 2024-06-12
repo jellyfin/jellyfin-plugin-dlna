@@ -247,6 +247,8 @@ public sealed class DlnaHost : IHostedService, IDisposable
             .Where(x => x.AddressFamily != AddressFamily.InterNetworkV6)
             .ToList();
 
+        var httpBindPort = _appHost.HttpPort;
+
         if (validInterfaces.Count == 0)
         {
             // No interfaces returned, fall back to loopback
@@ -257,9 +259,11 @@ public sealed class DlnaHost : IHostedService, IDisposable
         {
             var fullService = "urn:schemas-upnp-org:device:MediaServer:1";
 
-            _logger.LogInformation("Registering publisher for {ResourceName} on {DeviceAddress}", fullService, intf.Address);
+            var uri = new UriBuilder(intf.Address + descriptorUri);
+            uri.Scheme = "http://";
+            uri.Port = httpBindPort;
 
-            var uri = new UriBuilder(_appHost.GetApiUrlForLocalAccess(intf.Address, false) + descriptorUri);
+            _logger.LogInformation("Registering publisher for {ResourceName} on {DeviceAddress} with uri {fulluri}", fullService, intf.Address, uri);
 
             var device = new SsdpRootDevice
             {
