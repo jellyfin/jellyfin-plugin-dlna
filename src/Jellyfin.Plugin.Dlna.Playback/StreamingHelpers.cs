@@ -34,7 +34,7 @@ public static class StreamingHelpers
     /// <summary>
     /// Gets the current streaming state.
     /// </summary>
-    /// <param name="streamingRequest">The <see cref="DlnaStreamingRequestDto"/>.</param>
+    /// <param name="streamingRequest">The <see cref="StreamingRequestDto"/>.</param>
     /// <param name="httpContext">The <see cref="HttpContext"/>.</param>
     /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
     /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
@@ -49,7 +49,7 @@ public static class StreamingHelpers
     /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>A <see cref="Task"/> containing the current <see cref="StreamState"/>.</returns>
     public static async Task<DlnaStreamState> GetStreamingState(
-        DlnaStreamingRequestDto streamingRequest,
+        StreamingRequestDto streamingRequest,
         HttpContext httpContext,
         IMediaSourceManager mediaSourceManager,
         IUserManager userManager,
@@ -244,7 +244,10 @@ public static class StreamingHelpers
             }
         }
 
-        ApplyDeviceProfileSettings(state, dlnaManager, deviceManager, httpRequest, streamingRequest.DeviceProfileId, streamingRequest.Static);
+        var deviceProfileId = state.IsVideoRequest
+            ? (streamingRequest as DlnaVideoRequestDto).DeviceProfileId
+            : (streamingRequest as DlnaStreamingRequestDto).DeviceProfileId;
+        ApplyDeviceProfileSettings(state, dlnaManager, deviceManager, httpRequest, deviceProfileId, streamingRequest.Static);
 
         var ext = string.IsNullOrWhiteSpace(state.OutputContainer)
             ? GetOutputFileExtension(state, mediaSource)
@@ -597,7 +600,7 @@ public static class StreamingHelpers
     /// Parses the parameters.
     /// </summary>
     /// <param name="request">The request.</param>
-    private static void ParseParams(DlnaStreamingRequestDto request)
+    private static void ParseParams(StreamingRequestDto request)
     {
         if (string.IsNullOrEmpty(request.Params))
         {
@@ -607,6 +610,7 @@ public static class StreamingHelpers
         var vals = request.Params.Split(';');
 
         var videoRequest = request as DlnaVideoRequestDto;
+        var streamingRequest = request as DlnaStreamingRequestDto;
 
         for (var i = 0; i < vals.Length; i++)
         {
@@ -620,7 +624,14 @@ public static class StreamingHelpers
             switch (i)
             {
                 case 0:
-                    request.DeviceProfileId = val;
+                    if (videoRequest is not null)
+                    {
+                        videoRequest.DeviceProfileId = val;
+                    }
+                    else if (streamingRequest is not null)
+                    {
+                        streamingRequest.DeviceProfileId = val;
+                    }
                     break;
                 case 1:
                     request.DeviceId = val;

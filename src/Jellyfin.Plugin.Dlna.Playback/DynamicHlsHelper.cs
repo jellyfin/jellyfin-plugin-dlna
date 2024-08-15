@@ -106,7 +106,7 @@ public class DynamicHlsHelper
     /// <returns>A <see cref="Task"/> containing the resulting <see cref="ActionResult"/>.</returns>
     public async Task<ActionResult> GetMasterHlsPlaylist(
         TranscodingJobType transcodingJobType,
-        DlnaStreamingRequestDto streamingRequest,
+        StreamingRequestDto streamingRequest,
         bool enableAdaptiveBitrateStreaming)
     {
         var isHeadRequest = _httpContextAccessor.HttpContext?.Request.Method == WebRequestMethods.Http.Head;
@@ -121,7 +121,7 @@ public class DynamicHlsHelper
     }
 
     private async Task<ActionResult> GetMasterPlaylistInternal(
-        DlnaStreamingRequestDto streamingRequest,
+        StreamingRequestDto streamingRequest,
         bool isHeadRequest,
         bool enableAdaptiveBitrateStreaming,
         TranscodingJobType transcodingJobType,
