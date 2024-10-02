@@ -3,7 +3,7 @@
   xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Name>LG Smart TV</Name>
   <Identification>
-    <FriendlyName>LG*</FriendlyName>
+    <FriendlyName>LG.*</FriendlyName>
     <Headers>
       <HttpHeaderInfo name="User-Agent" value="LG" match="Substring" />
     </Headers>
