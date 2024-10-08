@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -233,6 +234,18 @@ namespace Rssdp.Infrastructure
             }
         }
 
+        public List<IPAddress> GetBindIPs()
+        {
+            List<IPAddress> iplist = new List<IPAddress>();
+            iplist = (List<IPAddress>)_networkManager.GetInternalBindAddresses()
+                .Where(x => x.Address is not null)
+                .Where(x => x.SupportsMulticast)
+                .Where(x => x.AddressFamily == AddressFamily.InterNetwork)
+                .Where(x => !x.Address.Equals(IPAddress.Loopback));
+
+            return iplist;
+        }
+
         public Task SendMulticastMessage(string message, IPAddress fromlocalIPAddress, CancellationToken cancellationToken)
         {
             return SendMulticastMessage(message, SsdpConstants.UdpResendCount, fromlocalIPAddress, cancellationToken);
@@ -343,24 +356,19 @@ namespace Rssdp.Infrastructure
             var sockets = new List<Socket>();
             var multicastGroupAddress = IPAddress.Parse(SsdpConstants.MulticastLocalAdminAddress);
 
-            // IPv6 is currently unsupported
-            var validInterfaces = _networkManager.GetInternalBindAddresses()
-                .Where(x => x.Address is not null)
-                .Where(x => x.SupportsMulticast)
-                .Where(x => x.AddressFamily == AddressFamily.InterNetwork)
-                .DistinctBy(x => x.Index);
+            var validInterfaces = GetBindIPs();
 
             foreach (var intf in validInterfaces)
             {
                 try
                 {
-                    var socket = CreateUdpMulticastSocket(multicastGroupAddress, intf, _MulticastTtl, SsdpConstants.MulticastPort);
-                    _ = ListenToSocketInternal(socket);
+                    var socket = CreateUdpMulticastSocket(multicastGroupAddress, intf.GetAddressBytes, _MulticastTtl, SsdpConstants.MulticastPort);
+                    _ = ListenToSocketInternal(socket, intf.GetAddressBytes);
                     sockets.Add(socket);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to create SSDP UDP multicast socket for {0} on interface {1} (index {2})", intf.Address, intf.Name, intf.Index);
+                    _logger.LogError(ex, "Failed to create SSDP UDP multicast socket for {0} on interface {1} (index {2})", intf.GetAddressBytes, intf.Name, intf.Index);
                 }
             }
 
@@ -372,35 +380,26 @@ namespace Rssdp.Infrastructure
             var sockets = new List<Socket>();
 
             // IPv6 is currently unsupported
-            var validInterfaces = _networkManager.GetInternalBindAddresses()
-                .Where(x => x.Address is not null)
-                .Where(x => x.SupportsMulticast)
-                .Where(x => x.AddressFamily == AddressFamily.InterNetwork);
-
-            if (OperatingSystem.IsMacOS())
-            {
-                // Manually remove loopback on macOS due to https://github.com/dotnet/runtime/issues/24340
-                validInterfaces = validInterfaces.Where(x => !x.Address.Equals(IPAddress.Loopback));
-            }
+            var validInterfaces = GetBindIPs();
 
             foreach (var intf in validInterfaces)
             {
                 try
                 {
-                    var socket = CreateSsdpUdpSocket(intf, _LocalPort);
-                    _ = ListenToSocketInternal(socket);
+                    var socket = CreateSsdpUdpSocket(intf.GetAddressBytes, _LocalPort);
+                    _ = ListenToSocketInternal(socket, intf.GetAddressBytes);
                     sockets.Add(socket);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to create SSDP UDP sender socket for {0} on interface {1} (index {2})", intf.Address, intf.Name, intf.Index);
+                    _logger.LogError(ex, "Failed to create SSDP UDP sender socket for {0} on interface {1} (index {2})", intf.GetAddressBytes, intf.Name, intf.Index);
                 }
             }
 
             return sockets;
         }
 
-        private async Task ListenToSocketInternal(Socket socket)
+        private async Task ListenToSocketInternal(Socket socket, IPData listenIP)
         {
             var cancelled = false;
             var receiveBuffer = new byte[8192];
@@ -414,23 +413,11 @@ namespace Rssdp.Infrastructure
                     if (result.ReceivedBytes > 0)
                     {
                         var remoteEndpoint = (IPEndPoint)result.RemoteEndPoint;
-                        var allBindInterfaces = _networkManager.GetAllBindInterfaces();
-                        IPData localEndpointAdapter;
-                        if (allBindInterfaces.Count == 1
-                            && (allBindInterfaces[0].Address.Equals(IPAddress.Any)
-                                || allBindInterfaces[0].Address.Equals(IPAddress.IPv6Any)))
-                        {
-                            localEndpointAdapter = allBindInterfaces[0];
-                        }
-                        else
-                        {
-                            localEndpointAdapter = allBindInterfaces.First(a => a.Index == result.PacketInformation.Interface);
-                        }
 
                         ProcessMessage(
                             Encoding.UTF8.GetString(receiveBuffer, 0, result.ReceivedBytes),
                             remoteEndpoint,
-                            localEndpointAdapter.Address);
+                            listenIP.Address);
                     }
                 }
                 catch (ObjectDisposedException)
