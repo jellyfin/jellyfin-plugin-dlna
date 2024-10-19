@@ -239,7 +239,9 @@ public sealed class DlnaHost : IHostedService, IDisposable
     private void RegisterServerEndpoints()
     {
         var udn = CreateUuid(_appHost.SystemId);
-        var descriptorUri = "/dlna/" + udn + "/description.xml";
+        var netConfig = _config.GetConfiguration<NetworkConfiguration>(NetworkConfigurationStore.StoreKey);
+        var baseURL = netConfig.BaseUrl;
+        var descriptorUri = baseURL + "/dlna/" + udn + "/description.xml";
 
         // Only get bind addresses in LAN
         // IPv6 is currently unsupported
