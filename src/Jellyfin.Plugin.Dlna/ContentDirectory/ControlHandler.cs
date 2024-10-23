@@ -681,15 +681,7 @@ public class ControlHandler : BaseControlHandler
             new(item, StubType.FavoriteSongs)
         };
 
-        if (limit < serverItems.Length)
-        {
-            serverItems = serverItems[..limit.Value];
-        }
-
-        return new QueryResult<ServerItem>(
-            startIndex,
-            serverItems.Length,
-            serverItems);
+        return GetTrimmedArray(serverItems, startIndex, limit);
     }
 
     /// <summary>
@@ -737,15 +729,7 @@ public class ControlHandler : BaseControlHandler
             new(item, StubType.Genres)
         };
 
-        if (limit < array.Length)
-        {
-            array = array[..limit.Value];
-        }
-
-        return new QueryResult<ServerItem>(
-            startIndex,
-            array.Length,
-            array);
+        return GetTrimmedArray(array, startIndex, limit);
     }
 
     /// <summary>
@@ -821,15 +805,7 @@ public class ControlHandler : BaseControlHandler
             new(item, StubType.Genres)
         };
 
-        if (limit < serverItems.Length)
-        {
-            serverItems = serverItems[..limit.Value];
-        }
-
-        return new QueryResult<ServerItem>(
-            startIndex,
-            serverItems.Length,
-            serverItems);
+        return GetTrimmedArray(serverItems, startIndex, limit);
     }
 
     /// <summary>
@@ -1121,6 +1097,34 @@ public class ControlHandler : BaseControlHandler
         var result = _libraryManager.GetItemsResult(query);
 
         return ToResult(startIndex, result);
+    }
+    
+    private static QueryResult<ServerItem> GetTrimmedArray(ServerItem[] serverItems, int? startIndex, int? limit)
+    {
+        if (startIndex >= serverItems.Length)
+        {
+            serverItems = new ServerItem[] { };
+
+            return new QueryResult<ServerItem>(
+                startIndex,
+                serverItems.Length,
+                serverItems);
+        }
+
+        if (startIndex > 0)
+        {
+            serverItems = serverItems[startIndex.Value..];
+        }
+
+        if (limit < serverItems.Length)
+        {
+            serverItems = serverItems[..limit.Value];
+        }
+
+        return new QueryResult<ServerItem>(
+            startIndex,
+            serverItems.Length,
+            serverItems);
     }
 
     /// <summary>
