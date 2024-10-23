@@ -59,7 +59,7 @@ public class DlnaServerController : ControllerBase
     [Produces(MediaTypeNames.Text.Xml)]
     public ActionResult<string> GetDescriptionXml([FromRoute, Required] string serverId)
     {
-        var url = GetAbsoluteUri();
+        var url = GetRelativeUrl();
         var serverAddress = url.Substring(0, url.IndexOf("/dlna/", StringComparison.OrdinalIgnoreCase));
         var xml = _dlnaManager.GetServerDescriptionXml(Request.Headers, serverId, serverAddress);
         return Ok(xml);
@@ -277,6 +277,11 @@ public class DlnaServerController : ControllerBase
     private string GetAbsoluteUri()
     {
         return $"{Request.Scheme}://{Request.Host}{Request.PathBase}{Request.Path}";
+    }
+
+    private string GetRelativeUrl()
+    {
+        return $"{Request.PathBase}{Request.Path}";
     }
 
     private Task<ControlResponse> ProcessControlRequestInternalAsync(string id, Stream requestStream, IUpnpService service)

@@ -23,7 +23,6 @@ public class DescriptionXmlBuilder
     public DescriptionXmlBuilder(DlnaDeviceProfile profile, string serverUdn, string serverAddress, string serverName, string serverId)
     {
         ArgumentException.ThrowIfNullOrEmpty(serverUdn);
-        ArgumentException.ThrowIfNullOrEmpty(serverAddress);
 
         _profile = profile;
         _serverUdn = serverUdn;
