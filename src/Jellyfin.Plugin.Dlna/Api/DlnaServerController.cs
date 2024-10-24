@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Mime;
 using System.Threading.Tasks;
+using Jellyfin.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Common.Api;
 using MediaBrowser.Model.Net;
@@ -45,6 +46,10 @@ public class DlnaServerController : ControllerBase
         _mediaReceiverRegistrar = mediaReceiverRegistrar;
     }
 
+    private static readonly string[] relativeUrlUserAgents = new string[] {
+        "Bigscreen"
+    };
+
     /// <summary>
     /// Get Description Xml.
     /// </summary>
@@ -59,7 +64,22 @@ public class DlnaServerController : ControllerBase
     [Produces(MediaTypeNames.Text.Xml)]
     public ActionResult<string> GetDescriptionXml([FromRoute, Required] string serverId)
     {
-        var url = GetRelativeUrl();
+        var useRelativePath = false;
+        string? userAgent = Request.Headers.UserAgent;
+        if (userAgent != null)
+        {
+            userAgent = userAgent.Substring(0, userAgent.IndexOf('/'));
+            foreach (var relativePathUserAgent in relativeUrlUserAgents)
+            { 
+                if (userAgent == relativePathUserAgent)
+                {
+                    useRelativePath = true;
+                    break;
+                }
+            }
+        }
+
+        var url = useRelativePath ? GetRelativeUrl() : GetAbsoluteUri();
         var serverAddress = url.Substring(0, url.IndexOf("/dlna/", StringComparison.OrdinalIgnoreCase));
         var xml = _dlnaManager.GetServerDescriptionXml(Request.Headers, serverId, serverAddress);
         return Ok(xml);
