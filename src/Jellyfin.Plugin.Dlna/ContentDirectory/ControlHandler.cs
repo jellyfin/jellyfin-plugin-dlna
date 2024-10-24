@@ -999,17 +999,44 @@ public class ControlHandler : BaseControlHandler
     {
         query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
 
+        int limit;
+
+        if (query.StartIndex > 0)
+        {
+            limit = (query.Limit == null || query.Limit <= 0) ? int.MaxValue : (query.StartIndex + query.Limit).Value;
+        }
+        else
+        {
+            limit = query.Limit ?? 50;
+        }
+
         var items = _userViewManager.GetLatestItems(
             new LatestItemsQuery
             {
                 // User cannot be null here as the caller has set it
                 UserId = query.User!.Id,
-                Limit = query.Limit ?? 50,
+                Limit = limit,
                 IncludeItemTypes = new[] { itemType },
                 ParentId = parent?.Id ?? Guid.Empty,
                 GroupItems = true
             },
             query.DtoOptions).Select(i => i.Item1 ?? i.Item2.FirstOrDefault()).Where(i => i is not null).ToArray();
+
+        if (query.StartIndex > 0)
+        {
+            if (items.Length <= query.StartIndex)
+            {
+                items = new BaseItem[] { };
+            }
+            else if (query.Limit > 0 && items.Length > query.Limit.Value)
+            {
+                items = items[query.StartIndex.Value..(query.StartIndex + query.Limit).Value];
+            }
+            else
+            {
+                items = items[query.StartIndex.Value..];
+            }
+        }
 
         return ToResult(query.StartIndex, items);
     }
