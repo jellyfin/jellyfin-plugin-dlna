@@ -66,7 +66,7 @@ public class DlnaServerController : ControllerBase
     {
         var useRelativePath = false;
         string? userAgent = Request.Headers.UserAgent;
-        if (userAgent != null)
+        if (userAgent is not null)
         {
             userAgent = userAgent.Substring(0, userAgent.IndexOf('/'));
             foreach (var relativePathUserAgent in relativeUrlUserAgents)

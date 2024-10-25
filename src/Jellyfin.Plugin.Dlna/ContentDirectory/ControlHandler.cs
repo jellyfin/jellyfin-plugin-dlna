@@ -1003,7 +1003,7 @@ public class ControlHandler : BaseControlHandler
 
         if (query.StartIndex > 0)
         {
-            limit = (query.Limit == null || query.Limit <= 0) ? int.MaxValue : (query.StartIndex + query.Limit).Value;
+            limit = (query.Limit is null || query.Limit <= 0) ? int.MaxValue : (query.StartIndex + query.Limit).Value;
         }
         else
         {
