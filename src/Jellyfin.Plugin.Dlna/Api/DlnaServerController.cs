@@ -69,14 +69,7 @@ public class DlnaServerController : ControllerBase
         if (userAgent is not null)
         {
             userAgent = userAgent.Substring(0, userAgent.IndexOf('/'));
-            foreach (var relativePathUserAgent in relativeUrlUserAgents)
-            { 
-                if (userAgent == relativePathUserAgent)
-                {
-                    useRelativePath = true;
-                    break;
-                }
-            }
+            useRelativePath = relativeUrlUserAgents.Contains(userAgent, StringComparison.Ordinal);
         }
 
         var url = useRelativePath ? GetRelativeUrl() : GetAbsoluteUri();
