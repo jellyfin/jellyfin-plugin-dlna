@@ -14,6 +14,7 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Model.Dlna;
+using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.MediaInfo;
 using MediaBrowser.Model.Net;
 using Microsoft.AspNetCore.Http;
@@ -318,7 +319,7 @@ public class DlnaVideosController : ControllerBase
 
         // Need to start ffmpeg (because media can't be returned directly)
         var encodingOptions = _serverConfigurationManager.GetEncodingOptions();
-        var ffmpegCommandLineArguments = _encodingHelper.GetProgressiveVideoFullCommandLine(state, encodingOptions, "superfast");
+        var ffmpegCommandLineArguments = _encodingHelper.GetProgressiveVideoFullCommandLine(state, encodingOptions,  EncoderPreset.superfast);
         return await FileStreamResponseHelpers.GetTranscodedFile(
             state,
             isHeadRequest,
