@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Jellyfin.Extensions;
 using Jellyfin.Extensions.Json;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Profiles;
@@ -255,7 +256,7 @@ public class DlnaManager : IDlnaManager
                 var tempProfile = (DlnaDeviceProfile)_xmlSerializer.DeserializeFromFile(typeof(DlnaDeviceProfile), path);
                 var profile = ReserializeProfile(tempProfile);
 
-                profile.Id = path.ToLowerInvariant().GetMD5().ToString("N", CultureInfo.InvariantCulture);
+                profile.Id = path.ToLowerInvariant().GetMD5();
 
                 _profiles[path] = new Tuple<InternalProfileInfo, DlnaDeviceProfile>(GetInternalProfileInfo(_fileSystem.GetFileInfo(path), type), profile);
 
@@ -389,7 +390,10 @@ public class DlnaManager : IDlnaManager
     {
         profile = ReserializeProfile(profile);
 
-        ArgumentException.ThrowIfNullOrEmpty(profile.Id);
+        if (profile.Id.IsNullOrEmpty())
+        {
+            throw new ArgumentException("Profile id cannot be empty.", nameof(profile.Id));
+        }
 
         ArgumentException.ThrowIfNullOrEmpty(profile.Name);
 

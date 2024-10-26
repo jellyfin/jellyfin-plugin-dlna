@@ -3,6 +3,7 @@
 using System;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
@@ -245,8 +246,12 @@ public sealed class DlnaHost : IHostedService, IDisposable
 
         // Only get bind addresses in LAN
         // IPv6 is currently unsupported
-        var validInterfaces = _networkManager.GetInternalBindAddresses()
+        var validInterfaces =  _networkManager.GetInternalBindAddresses()
+            .Where(x => x.Address is not null)
             .Where(x => x.AddressFamily != AddressFamily.InterNetworkV6)
+            .Where(x => x.AddressFamily == AddressFamily.InterNetwork)
+            .Where(x => x.SupportsMulticast)
+            .Where(x => !x.Address.Equals(IPAddress.Loopback))
             .ToList();
 
         var httpBindPort = _appHost.HttpPort;

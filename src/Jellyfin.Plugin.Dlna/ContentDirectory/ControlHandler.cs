@@ -980,7 +980,7 @@ public class ControlHandler : BaseControlHandler
                 Limit = query.Limit,
                 StartIndex = query.StartIndex,
                 // User cannot be null here as the caller has set it
-                UserId = query.User!.Id
+                User = query.User!
             },
             new[] { parent },
             query.DtoOptions);
@@ -1014,8 +1014,8 @@ public class ControlHandler : BaseControlHandler
             new LatestItemsQuery
             {
                 // User cannot be null here as the caller has set it
-                UserId = query.User!.Id,
-                Limit = limit,
+                User = query.User!,
+                Limit = query.Limit ?? 50,
                 IncludeItemTypes = new[] { itemType },
                 ParentId = parent?.Id ?? Guid.Empty,
                 GroupItems = true
