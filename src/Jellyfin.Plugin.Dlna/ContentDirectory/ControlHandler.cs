@@ -681,7 +681,11 @@ public class ControlHandler : BaseControlHandler
             new(item, StubType.FavoriteSongs)
         };
 
-        return GetTrimmedArray(serverItems, startIndex, limit);
+        serverItems = GetTrimmedServerItemsArray(serverItems, startIndex, limit);
+        return new QueryResult<ServerItem>(
+            startIndex,
+            serverItems.Length,
+            serverItems);
     }
 
     /// <summary>
@@ -729,7 +733,11 @@ public class ControlHandler : BaseControlHandler
             new(item, StubType.Genres)
         };
 
-        return GetTrimmedArray(array, startIndex, limit);
+        array = GetTrimmedServerItemsArray(array, startIndex, limit);
+        return new QueryResult<ServerItem>(
+            startIndex,
+            array.Length,
+            array);
     }
 
     /// <summary>
@@ -805,7 +813,11 @@ public class ControlHandler : BaseControlHandler
             new(item, StubType.Genres)
         };
 
-        return GetTrimmedArray(serverItems, startIndex, limit);
+        serverItems = GetTrimmedServerItemsArray(serverItems, startIndex, limit);
+        return new QueryResult<ServerItem>(
+            startIndex,
+            serverItems.Length,
+            serverItems);
     }
 
     /// <summary>
@@ -1026,7 +1038,7 @@ public class ControlHandler : BaseControlHandler
         {
             if (items.Length <= query.StartIndex)
             {
-                items = new BaseItem[] { };
+                items = Array.Empty<BaseItem>();
             }
             else if (query.Limit > 0 && items.Length > query.Limit.Value)
             {
@@ -1124,34 +1136,6 @@ public class ControlHandler : BaseControlHandler
         var result = _libraryManager.GetItemsResult(query);
 
         return ToResult(startIndex, result);
-    }
-    
-    private static QueryResult<ServerItem> GetTrimmedArray(ServerItem[] serverItems, int? startIndex, int? limit)
-    {
-        if (startIndex >= serverItems.Length)
-        {
-            serverItems = new ServerItem[] { };
-
-            return new QueryResult<ServerItem>(
-                startIndex,
-                serverItems.Length,
-                serverItems);
-        }
-
-        if (startIndex > 0)
-        {
-            serverItems = serverItems[startIndex.Value..];
-        }
-
-        if (limit < serverItems.Length)
-        {
-            serverItems = serverItems[..limit.Value];
-        }
-
-        return new QueryResult<ServerItem>(
-            startIndex,
-            serverItems.Length,
-            serverItems);
     }
 
     /// <summary>
@@ -1273,5 +1257,32 @@ public class ControlHandler : BaseControlHandler
         Logger.LogError("Error parsing item Id: {Id}. Returning user root folder.", id);
 
         return new ServerItem(_libraryManager.GetUserRootFolder(), null);
+    }
+
+    /// <summary>
+    /// Discards elements before startIndex and elements after startIndex+limit from an array of serverItems.
+    /// </summary>
+    /// <param name="serverItems"></param>
+    /// <param name="startIndex"></param>
+    /// <param name="limit"></param>
+    /// <returns></returns>
+    private static ServerItem[] GetTrimmedServerItemsArray(ServerItem[] serverItems, int? startIndex, int? limit)
+    {
+        if (startIndex >= serverItems.Length)
+        {
+            return Array.Empty<ServerItem>();
+        }
+
+        if (startIndex > 0)
+        {
+            serverItems = serverItems[startIndex.Value..];
+        }
+
+        if (limit < serverItems.Length)
+        {
+            serverItems = serverItems[..limit.Value];
+        }
+
+        return serverItems;
     }
 }

@@ -22,6 +22,8 @@ namespace Jellyfin.Plugin.Dlna.Api;
 [Authorize(Policy = Policies.AnonymousLanAccessPolicy)]
 public class DlnaServerController : ControllerBase
 {
+    private static readonly string[] _relativeUrlUserAgents = { "Bigscreen" };
+
     private readonly IDlnaManager _dlnaManager;
     private readonly IContentDirectory _contentDirectory;
     private readonly IConnectionManager _connectionManager;
@@ -46,10 +48,6 @@ public class DlnaServerController : ControllerBase
         _mediaReceiverRegistrar = mediaReceiverRegistrar;
     }
 
-    private static readonly string[] relativeUrlUserAgents = new string[] {
-        "Bigscreen"
-    };
-
     /// <summary>
     /// Get Description Xml.
     /// </summary>
@@ -69,7 +67,7 @@ public class DlnaServerController : ControllerBase
         if (userAgent is not null)
         {
             userAgent = userAgent.Substring(0, userAgent.IndexOf('/'));
-            useRelativePath = relativeUrlUserAgents.Contains(userAgent, StringComparison.Ordinal);
+            useRelativePath = _relativeUrlUserAgents.Contains(userAgent, StringComparison.Ordinal);
         }
 
         var url = useRelativePath ? GetRelativeUrl() : GetAbsoluteUri();
