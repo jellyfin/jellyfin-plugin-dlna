@@ -70,7 +70,7 @@ public class DlnaServerController : ControllerBase
             useRelativePath = _relativePathUserAgents.Contains(userAgent, StringComparison.Ordinal);
         }
 
-        var url = useRelativePath ? GetRelativeUrl() : GetAbsoluteUri();
+        var url = useRelativePath ? GetRelativePath() : GetAbsoluteUri();
         var serverAddress = url.Substring(0, url.IndexOf("/dlna/", StringComparison.OrdinalIgnoreCase));
         var xml = _dlnaManager.GetServerDescriptionXml(Request.Headers, serverId, serverAddress);
         return Ok(xml);
@@ -290,7 +290,7 @@ public class DlnaServerController : ControllerBase
         return $"{Request.Scheme}://{Request.Host}{Request.PathBase}{Request.Path}";
     }
 
-    private string GetRelativeUrl()
+    private string GetRelativePath()
     {
         return $"{Request.PathBase}{Request.Path}";
     }
