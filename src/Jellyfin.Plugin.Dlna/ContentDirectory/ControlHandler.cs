@@ -1260,12 +1260,12 @@ public class ControlHandler : BaseControlHandler
     }
 
     /// <summary>
-    /// Discards elements before startIndex and elements after startIndex+limit from an array of serverItems.
+    /// Discards elements before startIndex and elements after startIndex+limit from an array of <see cref="ServerItem"/>.
     /// </summary>
-    /// <param name="serverItems"></param>
-    /// <param name="startIndex"></param>
-    /// <param name="limit"></param>
-    /// <returns></returns>
+    /// <param name="serverItems">An array of <see cref="ServerItem"/>.</param>
+    /// <param name="startIndex">The start index.</param>
+    /// <param name="limit">The maximum number to return.</param>
+    /// <returns>The corresponding trimmed array of <see cref="ServerItem"/></returns>
     private static ServerItem[] GetTrimmedServerItemsArray(ServerItem[] serverItems, int? startIndex, int? limit)
     {
         if (startIndex >= serverItems.Length)
