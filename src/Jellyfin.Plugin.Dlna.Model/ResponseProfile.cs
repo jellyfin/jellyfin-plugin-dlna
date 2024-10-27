@@ -3,6 +3,7 @@
 using System;
 using System.Xml.Serialization;
 using MediaBrowser.Model.Dlna;
+using MediaBrowser.Model.Extensions;
 
 namespace Jellyfin.Plugin.Dlna.Model;
 
@@ -34,17 +35,11 @@ public class ResponseProfile
     public ProfileCondition[] Conditions { get; set; }
 
     public string[] GetContainers()
-    {
-        return ContainerProfile.SplitValue(Container);
-    }
+        => ContainerHelper.Split(Container);
 
     public string[] GetAudioCodecs()
-    {
-        return ContainerProfile.SplitValue(AudioCodec);
-    }
+        => ContainerHelper.Split(AudioCodec);
 
     public string[] GetVideoCodecs()
-    {
-        return ContainerProfile.SplitValue(VideoCodec);
-    }
+        => ContainerHelper.Split(VideoCodec);
 }
