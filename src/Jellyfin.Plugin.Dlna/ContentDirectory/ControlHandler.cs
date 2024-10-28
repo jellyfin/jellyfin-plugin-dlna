@@ -1027,7 +1027,7 @@ public class ControlHandler : BaseControlHandler
             {
                 // User cannot be null here as the caller has set it
                 User = query.User!,
-                Limit = query.Limit ?? 50,
+                Limit = limit,
                 IncludeItemTypes = new[] { itemType },
                 ParentId = parent?.Id ?? Guid.Empty,
                 GroupItems = true
