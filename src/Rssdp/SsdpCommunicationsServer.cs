@@ -363,7 +363,7 @@ namespace Rssdp.Infrastructure
             {
                 try
                 {
-                    var socket = CreateUdpMulticastSocket(multicastGroupAddress, intf, _MulticastTtl, SsdpConstants.MulticastPort);
+                    var socket = CreateUdpMulticastSocket(multicastGroupAddress, intf, SsdpConstants.MulticastPort);
                     _ = ListenToSocketInternal(socket, intf);
                     sockets.Add(socket);
                 }
@@ -385,7 +385,7 @@ namespace Rssdp.Infrastructure
             {
                 try
                 {
-                    var socket = CreateSsdpUdpSocket(intf, _LocalPort);
+                    var socket = CreateSsdpUdpSocket(intf, _MulticastTtl, _LocalPort);
                     _ = ListenToSocketInternal(socket, intf);
                     sockets.Add(socket);
                 }
@@ -507,10 +507,15 @@ namespace Rssdp.Infrastructure
             });
         }
 
-        private Socket CreateSsdpUdpSocket(IPData bindInterface, int localPort)
+        private Socket CreateSsdpUdpSocket(IPData bindInterface, int multicastTimeToLive, int localPort)
         {
             var interfaceAddress = bindInterface.Address;
             ArgumentNullException.ThrowIfNull(interfaceAddress);
+
+            if (multicastTimeToLive <= 0)
+            {
+                throw new ArgumentException("multicastTimeToLive cannot be zero or less.", nameof(multicastTimeToLive));
+            }
 
             if (localPort < 0)
             {
@@ -521,6 +526,7 @@ namespace Rssdp.Infrastructure
             try
             {
                 socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, multicastTimeToLive);
                 socket.Bind(new IPEndPoint(interfaceAddress, localPort));
 
                 return socket;
@@ -533,16 +539,11 @@ namespace Rssdp.Infrastructure
             }
         }
 
-        private Socket CreateUdpMulticastSocket(IPAddress multicastAddress, IPData bindInterface, int multicastTimeToLive, int localPort)
+        private Socket CreateUdpMulticastSocket(IPAddress multicastAddress, IPData bindInterface, int localPort)
         {
             var bindIPAddress = bindInterface.Address;
             ArgumentNullException.ThrowIfNull(multicastAddress);
             ArgumentNullException.ThrowIfNull(bindIPAddress);
-
-            if (multicastTimeToLive <= 0)
-            {
-                throw new ArgumentException("multicastTimeToLive cannot be zero or less.", nameof(multicastTimeToLive));
-            }
 
             if (localPort < 0)
             {
@@ -556,7 +557,6 @@ namespace Rssdp.Infrastructure
                 socket.MulticastLoopback = false;
                 socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.PacketInformation, true);
-                socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, multicastTimeToLive);
 
                 if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
                 {
