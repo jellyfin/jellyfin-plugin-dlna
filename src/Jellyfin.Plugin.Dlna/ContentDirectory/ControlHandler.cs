@@ -1036,18 +1036,7 @@ public class ControlHandler : BaseControlHandler
 
         if (query.StartIndex > 0)
         {
-            if (items.Length <= query.StartIndex)
-            {
-                items = Array.Empty<BaseItem>();
-            }
-            else if (query.Limit > 0 && items.Length > limit)
-            {
-                items = items[query.StartIndex.Value..(query.StartIndex + query.Limit - 1).Value];
-            }
-            else
-            {
-                items = items[query.StartIndex.Value..];
-            }
+            items = (items.Length <= query.StartIndex) ? Array.Empty<BaseItem>() : items[query.StartIndex.Value..];
         }
 
         return ToResult(query.StartIndex, items);
