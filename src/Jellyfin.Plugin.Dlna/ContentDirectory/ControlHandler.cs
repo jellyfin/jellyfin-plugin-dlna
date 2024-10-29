@@ -1040,9 +1040,9 @@ public class ControlHandler : BaseControlHandler
             {
                 items = Array.Empty<BaseItem>();
             }
-            else if (query.Limit > 0 && items.Length > query.Limit.Value)
+            else if (query.Limit > 0 && items.Length > limit)
             {
-                items = items[query.StartIndex.Value..(query.StartIndex + query.Limit).Value];
+                items = items[query.StartIndex.Value..(query.StartIndex + query.Limit - 1).Value];
             }
             else
             {
