@@ -65,6 +65,7 @@ public class DlnaManager : IDlnaManager
         try
         {
             await ExtractSystemProfilesAsync().ConfigureAwait(false);
+            _logger.LogDebug("Creating user profiles directory {0} if it doesnt exist", UserProfilesPath);
             Directory.CreateDirectory(UserProfilesPath);
             LoadProfiles();
         }
@@ -76,10 +77,12 @@ public class DlnaManager : IDlnaManager
 
     private void LoadProfiles()
     {
+        _logger.LogInformation("Using user profile directory {0}", UserProfilesPath);
         var list = GetProfiles(UserProfilesPath, DeviceProfileType.User)
             .OrderBy(i => i.Name)
             .ToList();
 
+        _logger.LogInformation("Using system profile directory {0}", SystemProfilesPath);
         list.AddRange(GetProfiles(SystemProfilesPath, DeviceProfileType.System)
             .OrderBy(i => i.Name));
     }
@@ -133,17 +136,17 @@ public class DlnaManager : IDlnaManager
     /// <returns><b>True</b> if they match.</returns>
     public bool IsMatch(DeviceIdentification deviceInfo, DeviceIdentification profileInfo)
     {
-        return IsRegexOrSubstringMatch(deviceInfo.FriendlyName, profileInfo.FriendlyName)
-               && IsRegexOrSubstringMatch(deviceInfo.Manufacturer, profileInfo.Manufacturer)
-               && IsRegexOrSubstringMatch(deviceInfo.ManufacturerUrl, profileInfo.ManufacturerUrl)
-               && IsRegexOrSubstringMatch(deviceInfo.ModelDescription, profileInfo.ModelDescription)
-               && IsRegexOrSubstringMatch(deviceInfo.ModelName, profileInfo.ModelName)
-               && IsRegexOrSubstringMatch(deviceInfo.ModelNumber, profileInfo.ModelNumber)
-               && IsRegexOrSubstringMatch(deviceInfo.ModelUrl, profileInfo.ModelUrl)
-               && IsRegexOrSubstringMatch(deviceInfo.SerialNumber, profileInfo.SerialNumber);
+        return IsRegexOrSubstringMatch(deviceInfo.FriendlyName, profileInfo.FriendlyName, "FriendlyName")
+               && IsRegexOrSubstringMatch(deviceInfo.Manufacturer, profileInfo.Manufacturer, "Manufacturer")
+               && IsRegexOrSubstringMatch(deviceInfo.ManufacturerUrl, profileInfo.ManufacturerUrl, "ManufacturerUrl")
+               && IsRegexOrSubstringMatch(deviceInfo.ModelDescription, profileInfo.ModelDescription, "ModelDescription")
+               && IsRegexOrSubstringMatch(deviceInfo.ModelName, profileInfo.ModelName, "ModelName")
+               && IsRegexOrSubstringMatch(deviceInfo.ModelNumber, profileInfo.ModelNumber, "ModelNumber")
+               && IsRegexOrSubstringMatch(deviceInfo.ModelUrl, profileInfo.ModelUrl, "ModelUrl")
+               && IsRegexOrSubstringMatch(deviceInfo.SerialNumber, profileInfo.SerialNumber, "SerialNumber");
     }
 
-    private bool IsRegexOrSubstringMatch(string input, string pattern)
+    private bool IsRegexOrSubstringMatch(string input, string pattern, string fieldname)
     {
         if (string.IsNullOrEmpty(pattern))
         {
@@ -159,6 +162,7 @@ public class DlnaManager : IDlnaManager
 
         try
         {
+            _logger.LogDebug("Comparing profile field {0} - device input '{1}' and profile pattern '{2}' for profile match", fieldname, input, pattern);
             return input.Equals(pattern, StringComparison.OrdinalIgnoreCase)
                    || Regex.IsMatch(input, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         }

@@ -231,7 +231,7 @@ public sealed class PlayToManager : IDisposable
                 SupportsMediaControl = true
             });
 
-            _logger.LogInformation("DLNA Session created for {0} - {1}", device.Properties.Name, device.Properties.ModelName);
+            _logger.LogInformation("DLNA Session created for {0} - {1} using profile {2}", device.Properties.Name, device.Properties.ModelName, profile.Name);
         }
     }
 
