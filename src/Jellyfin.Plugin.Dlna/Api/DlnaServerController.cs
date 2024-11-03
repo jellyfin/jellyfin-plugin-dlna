@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Mime;
 using System.Threading.Tasks;
+using Jellyfin.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Common.Api;
 using MediaBrowser.Model.Net;
@@ -21,6 +22,8 @@ namespace Jellyfin.Plugin.Dlna.Api;
 [Authorize(Policy = Policies.AnonymousLanAccessPolicy)]
 public class DlnaServerController : ControllerBase
 {
+    private static readonly string[] _relativePathUserAgents = { "Bigscreen" };
+
     private readonly IDlnaManager _dlnaManager;
     private readonly IContentDirectory _contentDirectory;
     private readonly IConnectionManager _connectionManager;
@@ -59,7 +62,15 @@ public class DlnaServerController : ControllerBase
     [Produces(MediaTypeNames.Text.Xml)]
     public ActionResult<string> GetDescriptionXml([FromRoute, Required] string serverId)
     {
-        var url = GetAbsoluteUri();
+        var useRelativePath = false;
+        string? userAgent = Request.Headers.UserAgent;
+        if (userAgent is not null)
+        {
+            userAgent = userAgent.Substring(0, userAgent.IndexOf('/'));
+            useRelativePath = _relativePathUserAgents.Contains(userAgent, StringComparison.Ordinal);
+        }
+
+        var url = useRelativePath ? GetRelativePath() : GetAbsoluteUri();
         var serverAddress = url.Substring(0, url.IndexOf("/dlna/", StringComparison.OrdinalIgnoreCase));
         var xml = _dlnaManager.GetServerDescriptionXml(Request.Headers, serverId, serverAddress);
         return Ok(xml);
@@ -277,6 +288,11 @@ public class DlnaServerController : ControllerBase
     private string GetAbsoluteUri()
     {
         return $"{Request.Scheme}://{Request.Host}{Request.PathBase}{Request.Path}";
+    }
+
+    private string GetRelativePath()
+    {
+        return $"{Request.PathBase}{Request.Path}";
     }
 
     private Task<ControlResponse> ProcessControlRequestInternalAsync(string id, Stream requestStream, IUpnpService service)

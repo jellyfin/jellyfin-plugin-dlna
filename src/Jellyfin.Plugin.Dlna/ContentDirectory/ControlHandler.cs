@@ -681,11 +681,7 @@ public class ControlHandler : BaseControlHandler
             new(item, StubType.FavoriteSongs)
         };
 
-        if (limit < serverItems.Length)
-        {
-            serverItems = serverItems[..limit.Value];
-        }
-
+        serverItems = GetTrimmedServerItemsArray(serverItems, startIndex, limit);
         return new QueryResult<ServerItem>(
             startIndex,
             serverItems.Length,
@@ -737,11 +733,7 @@ public class ControlHandler : BaseControlHandler
             new(item, StubType.Genres)
         };
 
-        if (limit < array.Length)
-        {
-            array = array[..limit.Value];
-        }
-
+        array = GetTrimmedServerItemsArray(array, startIndex, limit);
         return new QueryResult<ServerItem>(
             startIndex,
             array.Length,
@@ -821,11 +813,7 @@ public class ControlHandler : BaseControlHandler
             new(item, StubType.Genres)
         };
 
-        if (limit < serverItems.Length)
-        {
-            serverItems = serverItems[..limit.Value];
-        }
-
+        serverItems = GetTrimmedServerItemsArray(serverItems, startIndex, limit);
         return new QueryResult<ServerItem>(
             startIndex,
             serverItems.Length,
@@ -1023,17 +1011,33 @@ public class ControlHandler : BaseControlHandler
     {
         query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
 
+        int limit;
+
+        if (query.StartIndex > 0)
+        {
+            limit = (query.Limit <= 0) ? int.MaxValue : (query.StartIndex.Value + (query.Limit ?? 50));
+        }
+        else
+        {
+            limit = query.Limit ?? 50;
+        }
+
         var items = _userViewManager.GetLatestItems(
             new LatestItemsQuery
             {
                 // User cannot be null here as the caller has set it
                 User = query.User!,
-                Limit = query.Limit ?? 50,
+                Limit = limit,
                 IncludeItemTypes = new[] { itemType },
                 ParentId = parent?.Id ?? Guid.Empty,
                 GroupItems = true
             },
             query.DtoOptions).Select(i => i.Item1 ?? i.Item2.FirstOrDefault()).Where(i => i is not null).ToArray();
+
+        if (query.StartIndex > 0)
+        {
+            items = (items.Length <= query.StartIndex) ? Array.Empty<BaseItem>() : items[query.StartIndex.Value..];
+        }
 
         return ToResult(query.StartIndex, items);
     }
@@ -1242,5 +1246,32 @@ public class ControlHandler : BaseControlHandler
         Logger.LogError("Error parsing item Id: {Id}. Returning user root folder.", id);
 
         return new ServerItem(_libraryManager.GetUserRootFolder(), null);
+    }
+
+    /// <summary>
+    /// Discards elements before startIndex and elements after startIndex+limit from an array of <see cref="ServerItem"/>.
+    /// </summary>
+    /// <param name="serverItems">An array of <see cref="ServerItem"/>.</param>
+    /// <param name="startIndex">The start index.</param>
+    /// <param name="limit">The maximum number to return.</param>
+    /// <returns>The corresponding trimmed array of <see cref="ServerItem"/></returns>
+    private static ServerItem[] GetTrimmedServerItemsArray(ServerItem[] serverItems, int? startIndex, int? limit)
+    {
+        if (startIndex >= serverItems.Length)
+        {
+            return Array.Empty<ServerItem>();
+        }
+
+        if (startIndex > 0)
+        {
+            serverItems = serverItems[startIndex.Value..];
+        }
+
+        if (limit < serverItems.Length)
+        {
+            serverItems = serverItems[..limit.Value];
+        }
+
+        return serverItems;
     }
 }
