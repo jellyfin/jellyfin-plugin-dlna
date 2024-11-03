@@ -1,7 +1,7 @@
 name: "DLNA"
 guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
 imageUrl: ""
-version: 4
+version: 5
 targetAbi: "10.10.0.0"
 framework: "net8.0"
 owner: "jellyfin"
@@ -16,10 +16,6 @@ artifacts:
   - "Jellyfin.Plugin.Dlna.Playback.dll"
   - "Rssdp.dll"
 changelog: |-
-  - Fixes for 10.10 (#84) @crobibero
-  - Standardize bind IPs in ssdp and dlnahost (#82) @disgustipated
-  - Revert lg profile friendly name (#77) @disgustipated
-  - Add baseurl to descriptoruri (#75) @disgustipated
-
-  ### Dependency updates ###
-  - Update dotnet monorepo (#79) @renovate
+  - Fix Bigscreen compatibility issues (#83) @Nullcaller
+  - Add additional profile logging (#93) @disgustipated
+  - Fix TTL not following SsdpConstants (#88) @Nullcaller
