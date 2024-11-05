@@ -1,12 +1,17 @@
-#pragma warning disable CS1591
-
 using System;
 using System.Text.RegularExpressions;
 
 namespace Jellyfin.Plugin.Dlna.Model;
 
+/// <summary>
+/// Defines the <see cref="SearchCriteria" />.
+/// </summary>
 public partial class SearchCriteria
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SearchCriteria"/> class.
+    /// </summary>
+    /// <param name="search">The search string.</param>
     public SearchCriteria(string search)
     {
         ArgumentException.ThrowIfNullOrEmpty(search);
@@ -44,6 +49,9 @@ public partial class SearchCriteria
         }
     }
 
+    /// <summary>
+    /// Gets or sets the search type.
+    /// </summary>
     public SearchType SearchType { get; set; }
 
     [GeneratedRegex("\\s")]

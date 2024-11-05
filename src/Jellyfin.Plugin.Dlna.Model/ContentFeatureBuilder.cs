@@ -1,6 +1,3 @@
-#nullable disable
-#pragma warning disable CS1591
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -10,15 +7,27 @@ using MediaBrowser.Model.MediaInfo;
 
 namespace Jellyfin.Plugin.Dlna.Model;
 
+/// <summary>
+/// Defines the <see cref="ContentFeatureBuilder" />.
+/// </summary>
 public static class ContentFeatureBuilder
 {
+    /// <summary>
+    /// Gets the image header.
+    /// </summary>
+    /// <param name="profile">The <see cref="DlnaDeviceProfile"/>.</param>
+    /// <param name="container">The container.</param>
+    /// <param name="width">The width.</param>
+    /// <param name="height">The height.</param>
+    /// <param name="isDirectStream">Value indicating wether the stream is direct.</param>
+    /// <param name="orgPn">The orgPn.</param>
     public static string BuildImageHeader(
         DlnaDeviceProfile profile,
         string container,
         int? width,
         int? height,
         bool isDirectStream,
-        string orgPn = null)
+        string? orgPn = null)
     {
         string orgOp = ";DLNA.ORG_OP=" + DlnaMaps.GetImageOrgOpValue();
 
@@ -36,7 +45,7 @@ public static class ContentFeatureBuilder
 
         if (string.IsNullOrEmpty(orgPn))
         {
-            ResponseProfile mediaProfile = profile.GetImageMediaProfile(
+            ResponseProfile? mediaProfile = profile.GetImageMediaProfile(
                 container,
                 width,
                 height);
@@ -57,10 +66,23 @@ public static class ContentFeatureBuilder
         return "DLNA.ORG_PN=" + orgPn + orgOp + orgCi + dlnaflags;
     }
 
+    /// <summary>
+    /// Gets the audio header.
+    /// </summary>
+    /// <param name="profile">The <see cref="DlnaDeviceProfile"/>.</param>
+    /// <param name="container">The container.</param>
+    /// <param name="audioCodec">The codec.</param>
+    /// <param name="audioBitrate">The bitrate.</param>
+    /// <param name="audioSampleRate">The sample rate.</param>
+    /// <param name="audioChannels">The channel count.</param>
+    /// <param name="audioBitDepth">The bit depth.</param>
+    /// <param name="isDirectStream">Value indicating wether the stream is direct.</param>
+    /// <param name="runtimeTicks">The runtime ticks.</param>
+    /// <param name="transcodeSeekInfo">The <see cref="TranscodeSeekInfo"/>.</param>
     public static string BuildAudioHeader(
         DlnaDeviceProfile profile,
-        string container,
-        string audioCodec,
+        string? container,
+        string? audioCodec,
         int? audioBitrate,
         int? audioSampleRate,
         int? audioChannels,
@@ -94,7 +116,7 @@ public static class ContentFeatureBuilder
             ";DLNA.ORG_FLAGS={0}",
             DlnaMaps.FlagsToString(flagValue));
 
-        ResponseProfile mediaProfile = profile.GetAudioMediaProfile(
+        ResponseProfile? mediaProfile = profile.GetAudioMediaProfile(
             container,
             audioCodec,
             audioChannels,
@@ -102,7 +124,7 @@ public static class ContentFeatureBuilder
             audioSampleRate,
             audioBitDepth);
 
-        string orgPn = mediaProfile?.OrgPn;
+        string? orgPn = mediaProfile?.OrgPn;
 
         if (string.IsNullOrEmpty(orgPn))
         {
@@ -117,11 +139,38 @@ public static class ContentFeatureBuilder
         return "DLNA.ORG_PN=" + orgPn + orgOp + orgCi + dlnaflags;
     }
 
+    /// <summary>
+    /// Gets the auvideodio header.
+    /// </summary>
+    /// <param name="profile">The <see cref="DlnaDeviceProfile"/>.</param>
+    /// <param name="container">The container.</param>
+    /// <param name="videoCodec">The video codec.</param>
+    /// <param name="audioCodec">The audio codec.</param>
+    /// <param name="width">The width.</param>
+    /// <param name="height">The height.</param>
+    /// <param name="bitDepth">The bit depth.</param>
+    /// <param name="videoBitrate">The video bitrate.</param>
+    /// <param name="timestamp">The <see cref="TransportStreamTimestamp"/>.</param>
+    /// <param name="isDirectStream">Value indicating wether the stream is direct.</param>
+    /// <param name="runtimeTicks">The runtime ticks.</param>
+    /// <param name="videoProfile">The video profile.</param>
+    /// <param name="videoRangeType">The <see cref="VideoRangeType"/>.</param>
+    /// <param name="videoLevel">The video level.</param>
+    /// <param name="videoFramerate">The video framerate.</param>
+    /// <param name="packetLength">The packet length.</param>
+    /// <param name="transcodeSeekInfo">The <see cref="TranscodeSeekInfo"/>.</param>
+    /// <param name="isAnamorphic">Value indicating wether the stream is anamorphic.</param>
+    /// <param name="isInterlaced">Value indicating wether the stream is interlaced.</param>
+    /// <param name="refFrames">The reference frames.</param>
+    /// <param name="numVideoStreams">The number of video streams.</param>
+    /// <param name="numAudioStreams">The number of audio streams.</param>
+    /// <param name="videoCodecTag">The video codec tag.</param>
+    /// <param name="isAvc">Value indicating wether the stream is AVC.</param>
     public static IEnumerable<string> BuildVideoHeader(
         DlnaDeviceProfile profile,
-        string container,
-        string videoCodec,
-        string audioCodec,
+        string? container,
+        string? videoCodec,
+        string? audioCodec,
         int? width,
         int? height,
         int? bitDepth,
@@ -129,7 +178,7 @@ public static class ContentFeatureBuilder
         TransportStreamTimestamp timestamp,
         bool isDirectStream,
         long? runtimeTicks,
-        string videoProfile,
+        string? videoProfile,
         VideoRangeType videoRangeType,
         double? videoLevel,
         float? videoFramerate,
@@ -140,7 +189,7 @@ public static class ContentFeatureBuilder
         int? refFrames,
         int? numVideoStreams,
         int? numAudioStreams,
-        string videoCodecTag,
+        string? videoCodecTag,
         bool? isAvc)
     {
         // first bit means Time based seek supported, second byte range seek supported (not sure about the order now), so 01 = only byte seek, 10 = time based, 11 = both, 00 = none
@@ -170,7 +219,7 @@ public static class ContentFeatureBuilder
             ";DLNA.ORG_FLAGS={0}",
             DlnaMaps.FlagsToString(flagValue));
 
-        ResponseProfile mediaProfile = profile.GetVideoMediaProfile(
+        ResponseProfile? mediaProfile = profile.GetVideoMediaProfile(
             container,
             audioCodec,
             videoCodec,
@@ -234,14 +283,14 @@ public static class ContentFeatureBuilder
         return contentFeatureList;
     }
 
-    private static string GetImageOrgPnValue(string container, int? width, int? height)
+    private static string? GetImageOrgPnValue(string container, int? width, int? height)
     {
         MediaFormatProfile? format = MediaFormatProfileResolver.ResolveImageFormat(container, width, height);
 
         return format.HasValue ? format.Value.ToString() : null;
     }
 
-    private static string GetAudioOrgPnValue(string container, int? audioBitrate, int? audioSampleRate, int? audioChannels)
+    private static string? GetAudioOrgPnValue(string? container, int? audioBitrate, int? audioSampleRate, int? audioChannels)
     {
         MediaFormatProfile? format = MediaFormatProfileResolver.ResolveAudioFormat(
             container,
@@ -252,7 +301,7 @@ public static class ContentFeatureBuilder
         return format.HasValue ? format.Value.ToString() : null;
     }
 
-    private static MediaFormatProfile[] GetVideoOrgPnValue(string container, string videoCodec, string audioCodec, int? width, int? height, TransportStreamTimestamp timestamp)
+    private static MediaFormatProfile[] GetVideoOrgPnValue(string? container, string? videoCodec, string? audioCodec, int? width, int? height, TransportStreamTimestamp timestamp)
     {
         return MediaFormatProfileResolver.ResolveVideoFormat(container, videoCodec, audioCodec, width, height, timestamp);
     }

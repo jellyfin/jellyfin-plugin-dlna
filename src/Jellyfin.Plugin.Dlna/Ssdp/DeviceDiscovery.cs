@@ -1,9 +1,6 @@
 #nullable disable
 
-#pragma warning disable CS1591
-
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Jellyfin.Data.Events;
 using Jellyfin.Plugin.Dlna.Model;
@@ -12,9 +9,12 @@ using Rssdp.Infrastructure;
 
 namespace Jellyfin.Plugin.Dlna.Ssdp;
 
+/// <summary>
+/// Defines the <see cref="DeviceDiscovery" />.
+/// </summary>
 public sealed class DeviceDiscovery : IDeviceDiscovery, IDisposable
 {
-    private readonly object _syncLock = new object();
+    private readonly object _syncLock = new();
 
     private SsdpDeviceLocator _deviceLocator;
     private ISsdpCommunicationsServer _commsServer;
@@ -51,7 +51,9 @@ public sealed class DeviceDiscovery : IDeviceDiscovery, IDisposable
     /// <inheritdoc />
     public event EventHandler<GenericEventArgs<UpnpDeviceInfo>> DeviceLeft;
 
-    // Call this method from somewhere in your code to start the search.
+    /// <summary>
+    /// Starts device discovery.
+    /// </summary>
     public void Start(ISsdpCommunicationsServer communicationsServer)
     {
         _commsServer = communicationsServer;
@@ -94,7 +96,7 @@ public sealed class DeviceDiscovery : IDeviceDiscovery, IDisposable
     {
         var originalHeaders = e.DiscoveredDevice.ResponseHeaders;
 
-        var headerDict = originalHeaders is null ? new Dictionary<string, KeyValuePair<string, IEnumerable<string>>>() : originalHeaders.ToDictionary(i => i.Key, StringComparer.OrdinalIgnoreCase);
+        var headerDict = originalHeaders is null ? [] : originalHeaders.ToDictionary(i => i.Key, StringComparer.OrdinalIgnoreCase);
 
         var headers = headerDict.ToDictionary(i => i.Key, i => i.Value.Value.FirstOrDefault(), StringComparer.OrdinalIgnoreCase);
 
@@ -113,7 +115,7 @@ public sealed class DeviceDiscovery : IDeviceDiscovery, IDisposable
     {
         var originalHeaders = e.DiscoveredDevice.ResponseHeaders;
 
-        var headerDict = originalHeaders is null ? new Dictionary<string, KeyValuePair<string, IEnumerable<string>>>() : originalHeaders.ToDictionary(i => i.Key, StringComparer.OrdinalIgnoreCase);
+        var headerDict = originalHeaders is null ? [] : originalHeaders.ToDictionary(i => i.Key, StringComparer.OrdinalIgnoreCase);
 
         var headers = headerDict.ToDictionary(i => i.Key, i => i.Value.Value.FirstOrDefault(), StringComparer.OrdinalIgnoreCase);
 
