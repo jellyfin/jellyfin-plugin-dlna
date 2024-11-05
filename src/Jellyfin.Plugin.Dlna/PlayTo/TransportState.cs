@@ -1,4 +1,4 @@
-#pragma warning disable CS1591
+#pragma warning disable CA1707
 
 namespace Jellyfin.Plugin.Dlna.PlayTo;
 
@@ -8,8 +8,23 @@ namespace Jellyfin.Plugin.Dlna.PlayTo;
 /// </summary>
 public enum TransportState
 {
+    /// <summary>
+    /// Stopped state.
+    /// </summary>
     STOPPED,
+
+    /// <summary>
+    /// Playing state.
+    /// </summary>
     PLAYING,
+
+    /// <summary>
+    /// Transitioning state.
+    /// </summary>
     TRANSITIONING,
+
+    /// <summary>
+    /// Paused state.
+    /// </summary>
     PAUSED_PLAYBACK
 }

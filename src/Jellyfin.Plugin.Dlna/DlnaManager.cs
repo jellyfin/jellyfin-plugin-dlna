@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -17,9 +15,7 @@ using Jellyfin.Plugin.Dlna.Server;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Controller;
-using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Model.Dlna;
-using MediaBrowser.Model.Drawing;
 using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Serialization;
 using Microsoft.AspNetCore.Http;
@@ -29,6 +25,9 @@ using IDlnaManager = Jellyfin.Plugin.Dlna.Model.IDlnaManager;
 
 namespace Jellyfin.Plugin.Dlna;
 
+/// <summary>
+/// Defines the <see cref="DlnaManager" />.
+/// </summary>
 public class DlnaManager : IDlnaManager
 {
     private readonly IApplicationPaths _appPaths;
@@ -42,6 +41,14 @@ public class DlnaManager : IDlnaManager
     private readonly Dictionary<string, Tuple<InternalProfileInfo, DlnaDeviceProfile>> _profiles
         = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DlnaManager"/> class.
+    /// </summary>
+    /// <param name="xmlSerializer">Instance of the <see cref="IXmlSerializer"/> interface.</param>
+    /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
+    /// <param name="appPaths">Instance of the <see cref="IApplicationPaths"/> interface.</param>
+    /// <param name="loggerFactory">Instance of the <see cref="ILoggerFactory"/> interface.</param>
+    /// <param name="appHost">Instance of the <see cref="IServerApplicationHost"/> interface.</param>
     public DlnaManager(
         IXmlSerializer xmlSerializer,
         IFileSystem fileSystem,
@@ -58,8 +65,11 @@ public class DlnaManager : IDlnaManager
 
     private string UserProfilesPath => Path.Combine(_appPaths.PluginConfigurationsPath, "dlna", "user");
 
-    private string SystemProfilesPath => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "profiles");
+    private static string SystemProfilesPath => Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "profiles");
 
+    /// <summary>
+    /// Initializes the profiles asynchronously.
+    /// </summary>
     public async Task InitProfilesAsync()
     {
         try
@@ -87,6 +97,9 @@ public class DlnaManager : IDlnaManager
             .OrderBy(i => i.Name));
     }
 
+    /// <summary>
+    /// Gets the profiles.
+    /// </summary>
     public IEnumerable<DlnaDeviceProfile> GetProfiles()
     {
         lock (_profiles)
@@ -196,7 +209,7 @@ public class DlnaManager : IDlnaManager
         return profileInfo.Headers.Any(i => IsMatch(headers, i));
     }
 
-    private bool IsMatch(IHeaderDictionary headers, HttpHeaderInfo header)
+    private static bool IsMatch(IHeaderDictionary headers, HttpHeaderInfo header)
     {
         // Handle invalid user setup
         if (string.IsNullOrEmpty(header.Name))
@@ -216,7 +229,7 @@ public class DlnaManager : IDlnaManager
                 case HeaderMatchType.Equals:
                     return string.Equals(value, header.Value, StringComparison.OrdinalIgnoreCase);
                 case HeaderMatchType.Substring:
-                    var isMatch = value.ToString().IndexOf(header.Value, StringComparison.OrdinalIgnoreCase) != -1;
+                    var isMatch = value.ToString().Contains(header.Value, StringComparison.OrdinalIgnoreCase);
                     // _logger.LogDebug("IsMatch-Substring value: {0} testValue: {1} isMatch: {2}", value, header.Value, isMatch);
                     return isMatch;
                 case HeaderMatchType.Regex:
@@ -396,7 +409,7 @@ public class DlnaManager : IDlnaManager
 
         if (profile.Id.IsNullOrEmpty())
         {
-            throw new ArgumentException("Profile id cannot be empty.", nameof(profile.Id));
+            throw new ArgumentException("Profile id cannot be empty. ProfileId: {Id}", nameof(profile));
         }
 
         ArgumentException.ThrowIfNullOrEmpty(profile.Name);
@@ -472,7 +485,7 @@ public class DlnaManager : IDlnaManager
         return _assembly.GetManifestResourceStream(resource);
     }
 
-    private class InternalProfileInfo
+    private sealed class InternalProfileInfo
     {
         internal InternalProfileInfo(DeviceProfileInfo info, string path)
         {

@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System;
 using System.Globalization;
 using System.IO;
@@ -25,6 +23,11 @@ public partial class DlnaHttpClient
     private readonly ILogger _logger;
     private readonly IHttpClientFactory _httpClientFactory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Device"/> class.
+    /// </summary>
+    /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
+    /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
     public DlnaHttpClient(ILogger logger, IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
@@ -69,7 +72,7 @@ public partial class DlnaHttpClient
             {
                 // try correcting the Xml response with common errors
                 stream.Position = 0;
-                using StreamReader sr = new StreamReader(stream);
+                using StreamReader sr = new(stream);
                 var xmlString = await sr.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
 
                 // find and replace unescaped ampersands (&)
@@ -95,6 +98,12 @@ public partial class DlnaHttpClient
         }
     }
 
+    /// <summary>
+    /// Gets data of a URL.
+    /// </summary>
+    /// <param name="url">The URL.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <returns>Task.</returns>
     public async Task<XDocument?> GetDataAsync(string url, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
@@ -103,6 +112,16 @@ public partial class DlnaHttpClient
         return await SendRequestAsync(request, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Sends command async.
+    /// </summary>
+    /// <param name="baseUrl">The base URL.</param>
+    /// <param name="service">The <see cref="DeviceService"/>.</param>
+    /// <param name="command">The command.</param>
+    /// <param name="postData">The POST data.</param>
+    /// <param name="header">The header.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <returns>Task.</returns>
     public async Task<XDocument?> SendCommandAsync(
         string baseUrl,
         DeviceService service,

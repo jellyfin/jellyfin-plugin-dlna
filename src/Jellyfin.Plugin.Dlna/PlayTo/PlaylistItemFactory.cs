@@ -1,7 +1,3 @@
-#nullable disable
-
-#pragma warning disable CS1591
-
 using System.IO;
 using System.Linq;
 using Jellyfin.Plugin.Dlna.Model;
@@ -11,8 +7,16 @@ using MediaBrowser.Model.Session;
 
 namespace Jellyfin.Plugin.Dlna.PlayTo;
 
+/// <summary>
+/// Defines the <see cref="PlaylistItemFactory" />.
+/// </summary>
 public static class PlaylistItemFactory
 {
+    /// <summary>
+    /// Creates a new playlist item.
+    /// </summary>
+    /// <param name="item">The <see cref="Photo"/>.</param>
+    /// <param name="profile">The <see cref="DlnaDeviceProfile"/>.</param>
     public static PlaylistItem Create(Photo item, DlnaDeviceProfile profile)
     {
         var playlistItem = new PlaylistItem

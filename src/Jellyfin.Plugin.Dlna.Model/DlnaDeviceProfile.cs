@@ -1,3 +1,5 @@
+#pragma warning disable CA1819 // Properties should not return arrays
+
 using System;
 using System.ComponentModel;
 using System.Linq;
@@ -10,6 +12,9 @@ using MediaBrowser.Model.MediaInfo;
 
 namespace Jellyfin.Plugin.Dlna.Model;
 
+/// <summary>
+/// Defines the <see cref="DlnaDeviceProfile" />.
+/// </summary>
 [XmlRoot("Profile")]
 public class DlnaDeviceProfile : DeviceProfile
 {
@@ -154,18 +159,18 @@ public class DlnaDeviceProfile : DeviceProfile
     /// <summary>
     /// Gets or sets the XmlRootAttributes.
     /// </summary>
-    public XmlAttribute[] XmlRootAttributes { get; set; } = Array.Empty<XmlAttribute>();
+    public XmlAttribute[] XmlRootAttributes { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the ResponseProfiles.
     /// </summary>
-    public ResponseProfile[] ResponseProfiles { get; set; } = Array.Empty<ResponseProfile>();
+    public ResponseProfile[] ResponseProfiles { get; set; } = [];
 
     /// <summary>
-    /// The GetSupportedMediaTypes.
+    /// The supported media types.
     /// </summary>
     /// <returns>The .</returns>
-    public MediaType[] GetSupportedMediaTypes()
+    public MediaType[] FetchSupportedMediaTypes()
     {
         return ContainerHelper.Split(SupportedMediaTypes)
             .Select(m => Enum.TryParse<MediaType>(m, out var parsed) ? parsed : MediaType.Unknown)
@@ -265,8 +270,13 @@ public class DlnaDeviceProfile : DeviceProfile
     /// <param name="width">The width.</param>
     /// <param name="height">The height.</param>
     /// <returns>The <see cref="ResponseProfile"/>.</returns>
-    public ResponseProfile? GetImageMediaProfile(string container, int? width, int? height)
+    public ResponseProfile? GetImageMediaProfile(string? container, int? width, int? height)
     {
+        if (container is null)
+        {
+            return null;
+        }
+
         foreach (var i in ResponseProfiles)
         {
             if (i.Type != DlnaProfileType.Photo)

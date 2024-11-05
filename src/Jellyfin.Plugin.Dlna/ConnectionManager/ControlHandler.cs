@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System;
 using System.Collections.Generic;
 using System.Xml;
@@ -20,8 +18,8 @@ public class ControlHandler : BaseControlHandler
     /// <summary>
     /// Initializes a new instance of the <see cref="ControlHandler"/> class.
     /// </summary>
-    /// <param name="logger">The <see cref="ILogger"/> for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="profile">The <see cref="DlnaDeviceProfile"/> for use with the <see cref="ControlHandler"/> instance.</param>
+    /// <param name="logger">The <see cref="ILogger"/>.</param>
+    /// <param name="profile">The <see cref="DlnaDeviceProfile"/>.</param>
     public ControlHandler(ILogger logger, DlnaDeviceProfile profile)
         : base(logger)
     {

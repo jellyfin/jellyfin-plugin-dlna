@@ -1,13 +1,18 @@
-#pragma warning disable CS1591
-
 using System;
 using System.Xml.Linq;
 using Jellyfin.Plugin.Dlna.Ssdp;
 
 namespace Jellyfin.Plugin.Dlna.PlayTo;
 
+/// <summary>
+/// Defines the <see cref="UpnpContainer" />.
+/// </summary>
 public class UpnpContainer : UBaseObject
 {
+    /// <summary>
+    /// Create a <see cref="UBaseObject"/>.
+    /// </summary>
+    /// <param name="container">The <see cref="XElement"/>.</param>
     public static UBaseObject Create(XElement container)
     {
         ArgumentNullException.ThrowIfNull(container);

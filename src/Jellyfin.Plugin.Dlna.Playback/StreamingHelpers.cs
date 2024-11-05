@@ -130,7 +130,7 @@ public static class StreamingHelpers
 
         var item = libraryManager.GetItemById(streamingRequest.Id);
 
-        state.IsInputVideo = item.MediaType == MediaType.Video;
+        state.IsInputVideo = item?.MediaType == MediaType.Video;
 
         MediaSourceInfo? mediaSource = null;
         if (string.IsNullOrWhiteSpace(streamingRequest.LiveStreamId))
@@ -251,8 +251,8 @@ public static class StreamingHelpers
         }
 
         var deviceProfileId = state.IsVideoRequest
-            ? (streamingRequest as DlnaVideoRequestDto).DeviceProfileId
-            : (streamingRequest as DlnaStreamingRequestDto).DeviceProfileId;
+            ? (streamingRequest as DlnaVideoRequestDto)?.DeviceProfileId
+            : (streamingRequest as DlnaStreamingRequestDto)?.DeviceProfileId;
         ApplyDeviceProfileSettings(state, dlnaManager, deviceManager, httpRequest, deviceProfileId, streamingRequest.Static);
 
         var ext = string.IsNullOrWhiteSpace(state.OutputContainer)
@@ -357,8 +357,8 @@ public static class StreamingHelpers
 
         var index = value.IndexOf('-');
         value = index == -1
-            ? value.Slice(npt.Length)
-            : value.Slice(npt.Length, index - npt.Length);
+            ? value[npt.Length..]
+            : value[npt.Length..index];
         if (!value.Contains(':'))
         {
             // Parses npt times in the format of '417.33'

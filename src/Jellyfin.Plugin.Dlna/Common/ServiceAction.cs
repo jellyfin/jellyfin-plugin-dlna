@@ -12,7 +12,7 @@ public class ServiceAction
     /// </summary>
     public ServiceAction()
     {
-        ArgumentList = new List<Argument>();
+        ArgumentList = [];
     }
 
     /// <summary>
@@ -23,7 +23,7 @@ public class ServiceAction
     /// <summary>
     /// Gets the ArgumentList.
     /// </summary>
-    public List<Argument> ArgumentList { get; }
+    public IReadOnlyList<Argument> ArgumentList { get; set;}
 
     /// <inheritdoc />
     public override string ToString() => Name;
