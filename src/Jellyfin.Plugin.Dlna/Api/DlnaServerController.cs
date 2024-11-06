@@ -66,7 +66,12 @@ public class DlnaServerController : ControllerBase
         string? userAgent = Request.Headers.UserAgent;
         if (userAgent is not null)
         {
-            userAgent = userAgent.Substring(0, userAgent.IndexOf('/'));
+            var firstIndexOfSlash = userAgent.IndexOf('/');
+            if (firstIndexOfSlash > 0)
+            {
+                userAgent = userAgent.Substring(0, firstIndexOfSlash);
+            }
+
             useRelativePath = _relativePathUserAgents.Contains(userAgent, StringComparison.Ordinal);
         }
 
