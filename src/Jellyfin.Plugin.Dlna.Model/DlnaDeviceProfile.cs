@@ -1,5 +1,6 @@
+#pragma warning disable CA1819 // Properties should not return arrays
+
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Xml.Serialization;
@@ -158,12 +159,12 @@ public class DlnaDeviceProfile : DeviceProfile
     /// <summary>
     /// Gets or sets the XmlRootAttributes.
     /// </summary>
-    public IReadOnlyList<XmlAttribute> XmlRootAttributes { get; set; } = [];
+    public XmlAttribute[] XmlRootAttributes { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the ResponseProfiles.
     /// </summary>
-    public IReadOnlyList<ResponseProfile> ResponseProfiles { get; set; } = [];
+    public ResponseProfile[] ResponseProfiles { get; set; } = [];
 
     /// <summary>
     /// The supported media types.

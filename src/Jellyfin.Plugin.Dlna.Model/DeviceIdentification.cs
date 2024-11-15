@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+#pragma warning disable CA1819 // Properties should not return arrays
 
 namespace Jellyfin.Plugin.Dlna.Model;
 
@@ -59,5 +59,5 @@ public class DeviceIdentification
     /// Gets or sets the headers.
     /// </summary>
     /// <value>The headers.</value>
-    public IReadOnlyList<HttpHeaderInfo> Headers { get; set; } = [];
+    public HttpHeaderInfo[] Headers { get; set; } = [];
 }

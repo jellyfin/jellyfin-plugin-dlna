@@ -1,6 +1,6 @@
+#pragma warning disable CA1819 // Properties should not return arrays
 #nullable disable
 
-using System.Collections.Generic;
 using System.Xml.Serialization;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Extensions;
@@ -59,7 +59,7 @@ public class ResponseProfile
     /// <summary>
     /// Gets or sets the conditions.
     /// </summary>
-    public IReadOnlyList<ProfileCondition> Conditions { get; set; }
+    public ProfileCondition[] Conditions { get; set; }
 
     /// <summary>
     /// Gets the containers.
