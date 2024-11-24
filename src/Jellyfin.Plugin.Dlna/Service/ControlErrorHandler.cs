@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System;
 using System.IO;
 using System.Text;
@@ -8,10 +6,17 @@ using Jellyfin.Plugin.Dlna.Didl;
 
 namespace Jellyfin.Plugin.Dlna.Service;
 
+/// <summary>
+/// Defines the <see cref="ControlErrorHandler" />.
+/// </summary>
 public static class ControlErrorHandler
 {
     private const string NsSoapEnv = "http://schemas.xmlsoap.org/soap/envelope/";
 
+    /// <summary>
+    /// Gets the response for an <see cref="Exception"/>.
+    /// </summary>
+    /// <param name="ex">The <see cref="Exception"/>.</param>
     public static ControlResponse GetResponse(Exception ex)
     {
         var settings = new XmlWriterSettings

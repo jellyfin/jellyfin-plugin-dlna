@@ -14,8 +14,8 @@ public static class ServiceActionListBuilder
     /// <returns>An <see cref="IEnumerable{ServiceAction}"/>.</returns>
     public static IEnumerable<ServiceAction> GetActions()
     {
-        return new[]
-        {
+        return
+        [
             GetSearchCapabilitiesAction(),
             GetSortCapabilitiesAction(),
             GetGetSystemUpdateIDAction(),
@@ -24,7 +24,7 @@ public static class ServiceActionListBuilder
             GetX_GetFeatureListAction(),
             GetXSetBookmarkAction(),
             GetBrowseByLetterAction()
-        };
+        ];
     }
 
     /// <summary>
@@ -35,15 +35,16 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "GetSystemUpdateID"
+            Name = "GetSystemUpdateID",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "Id",
+                    Direction = "out",
+                    RelatedStateVariable = "SystemUpdateID"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "Id",
-            Direction = "out",
-            RelatedStateVariable = "SystemUpdateID"
-        });
 
         return action;
     }
@@ -56,15 +57,16 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "GetSearchCapabilities"
+            Name = "GetSearchCapabilities",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "SearchCaps",
+                    Direction = "out",
+                    RelatedStateVariable = "SearchCapabilities"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "SearchCaps",
-            Direction = "out",
-            RelatedStateVariable = "SearchCapabilities"
-        });
 
         return action;
     }
@@ -77,15 +79,16 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "GetSortCapabilities"
+            Name = "GetSortCapabilities",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "SortCaps",
+                    Direction = "out",
+                    RelatedStateVariable = "SortCapabilities"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "SortCaps",
-            Direction = "out",
-            RelatedStateVariable = "SortCapabilities"
-        });
 
         return action;
     }
@@ -98,15 +101,16 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "X_GetFeatureList"
+            Name = "X_GetFeatureList",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "FeatureList",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_Featurelist"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "FeatureList",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_Featurelist"
-        });
 
         return action;
     }
@@ -119,78 +123,70 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "Search"
+            Name = "Search",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "ContainerID",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_ObjectID"
+                },
+                new Argument
+                {
+                    Name = "SearchCriteria",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_SearchCriteria"
+                },
+                new Argument
+                {
+                    Name = "Filter",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_Filter"
+                },
+                new Argument
+                {
+                    Name = "StartingIndex",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_Index"
+                },
+                new Argument
+                {
+                    Name = "RequestedCount",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_Count"
+                },
+                new Argument
+                {
+                    Name = "SortCriteria",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_SortCriteria"
+                },
+                new Argument
+                {
+                    Name = "Result",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_Result"
+                },
+                new Argument
+                {
+                    Name = "NumberReturned",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_Count"
+                },
+                new Argument
+                {
+                    Name = "TotalMatches",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_Count"
+                },
+                new Argument
+                {
+                    Name = "UpdateID",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_UpdateID"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "ContainerID",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_ObjectID"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "SearchCriteria",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_SearchCriteria"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "Filter",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_Filter"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "StartingIndex",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_Index"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "RequestedCount",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_Count"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "SortCriteria",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_SortCriteria"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "Result",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_Result"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "NumberReturned",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_Count"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "TotalMatches",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_Count"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "UpdateID",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_UpdateID"
-        });
 
         return action;
     }
@@ -203,78 +199,70 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "Browse"
+            Name = "Browse",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "ObjectID",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_ObjectID"
+                },
+                new Argument
+                {
+                    Name = "BrowseFlag",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_BrowseFlag"
+                },
+                new Argument
+                {
+                    Name = "Filter",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_Filter"
+                },
+                new Argument
+                {
+                    Name = "StartingIndex",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_Index"
+                },
+                new Argument
+                {
+                    Name = "RequestedCount",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_Count"
+                },
+                new Argument
+                {
+                    Name = "SortCriteria",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_SortCriteria"
+                },
+                new Argument
+                {
+                    Name = "Result",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_Result"
+                },
+                new Argument
+                {
+                    Name = "NumberReturned",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_Count"
+                },
+                new Argument
+                {
+                    Name = "TotalMatches",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_Count"
+                },
+                new Argument
+                {
+                    Name = "UpdateID",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_UpdateID"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "ObjectID",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_ObjectID"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "BrowseFlag",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_BrowseFlag"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "Filter",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_Filter"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "StartingIndex",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_Index"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "RequestedCount",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_Count"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "SortCriteria",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_SortCriteria"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "Result",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_Result"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "NumberReturned",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_Count"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "TotalMatches",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_Count"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "UpdateID",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_UpdateID"
-        });
 
         return action;
     }
@@ -287,85 +275,76 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "X_BrowseByLetter"
+            Name = "X_BrowseByLetter",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "ObjectID",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_ObjectID"
+                },
+                new Argument
+                {
+                    Name = "BrowseFlag",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_BrowseFlag"
+                },
+                new Argument
+                {
+                    Name = "Filter",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_Filter"
+                },
+                new Argument
+                {
+                    Name = "StartingLetter",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_BrowseLetter"
+                },
+                new Argument
+                {
+                    Name = "RequestedCount",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_Count"
+                },
+                new Argument
+                {
+                    Name = "SortCriteria",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_SortCriteria"
+                },
+                new Argument
+                {
+                    Name = "Result",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_Result"
+                },
+                new Argument
+                {
+                    Name = "NumberReturned",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_Count"
+                },
+                new Argument
+                {
+                    Name = "TotalMatches",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_Count"
+                },
+                new Argument
+                {
+                    Name = "UpdateID",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_UpdateID"
+                },
+                new Argument
+                {
+                    Name = "StartingIndex",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_Index"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "ObjectID",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_ObjectID"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "BrowseFlag",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_BrowseFlag"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "Filter",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_Filter"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "StartingLetter",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_BrowseLetter"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "RequestedCount",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_Count"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "SortCriteria",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_SortCriteria"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "Result",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_Result"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "NumberReturned",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_Count"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "TotalMatches",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_Count"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "UpdateID",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_UpdateID"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "StartingIndex",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_Index"
-        });
 
         return action;
     }
@@ -378,36 +357,34 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "X_SetBookmark"
+            Name = "X_SetBookmark",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "CategoryType",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_CategoryType"
+                },
+                new Argument
+                {
+                    Name = "RID",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_RID"
+                },
+                new Argument
+                {
+                    Name = "ObjectID",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_ObjectID"
+                },
+                new Argument
+                {
+                    Name = "PosSecond",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_PosSec"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "CategoryType",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_CategoryType"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "RID",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_RID"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "ObjectID",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_ObjectID"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "PosSecond",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_PosSec"
-        });
 
         return action;
     }

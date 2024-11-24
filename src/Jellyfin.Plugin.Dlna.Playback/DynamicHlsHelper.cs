@@ -12,7 +12,6 @@ using Jellyfin.Data.Enums;
 using Jellyfin.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Playback.Extensions;
-using Jellyfin.Plugin.Dlna.Playback.Model;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Common.Net;
@@ -151,7 +150,7 @@ public class DynamicHlsHelper
         _httpContextAccessor.HttpContext.Response.Headers.Append(HeaderNames.Expires, "0");
         if (isHeadRequest)
         {
-            return new FileContentResult(Array.Empty<byte>(), MimeTypes.GetMimeType("playlist.m3u8"));
+            return new FileContentResult([], MimeTypes.GetMimeType("playlist.m3u8"));
         }
 
         var totalBitrate = (state.OutputAudioBitrate ?? 0) + (state.OutputVideoBitrate ?? 0);
@@ -569,7 +568,7 @@ public class DynamicHlsHelper
             && state.VideoStream is not null
             && state.VideoStream.Level.HasValue)
         {
-            levelString = state.VideoStream.Level.ToString() ?? string.Empty;
+            levelString = state.VideoStream.Level?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
         }
         else
         {
