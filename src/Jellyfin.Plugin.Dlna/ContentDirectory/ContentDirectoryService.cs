@@ -1,11 +1,10 @@
-#pragma warning disable CS1591
-
 using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
+using Jellyfin.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Service;
 using MediaBrowser.Controller.Drawing;

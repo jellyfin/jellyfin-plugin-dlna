@@ -1,7 +1,3 @@
-#nullable disable
-
-#pragma warning disable CS1591
-
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -18,24 +14,40 @@ using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Dlna.Eventing;
 
+/// <summary>
+/// Defines the <see cref="DlnaEventManager" />.
+/// </summary>
 public class DlnaEventManager : IDlnaEventManager
 {
     private readonly ConcurrentDictionary<string, EventSubscription> _subscriptions =
-        new ConcurrentDictionary<string, EventSubscription>(StringComparer.OrdinalIgnoreCase);
+        new(StringComparer.OrdinalIgnoreCase);
 
     private readonly ILogger _logger;
     private readonly IHttpClientFactory _httpClientFactory;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DlnaEventManager"/> class.
+    /// </summary>
+    /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
+    /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
     public DlnaEventManager(ILogger logger, IHttpClientFactory httpClientFactory)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
 
-    public EventSubscriptionResponse RenewEventSubscription(string subscriptionId, string notificationType, string requestedTimeoutString, string callbackUrl)
+    /// <summary>
+    /// Renews an event subscription.
+    /// </summary>
+    /// <param name="subscriptionId">The subscription id.</param>
+    /// <param name="notificationType">The notification type.</param>
+    /// <param name="requestedTimeoutString">The requested timeout string.</param>
+    /// <param name="callbackUrl">The callback URL.</param>
+    /// <returns>EventSubscriptionResponse.</returns>
+    public EventSubscriptionResponse RenewEventSubscription(string? subscriptionId, string? notificationType, string? requestedTimeoutString, string? callbackUrl)
     {
         var subscription = GetSubscription(subscriptionId, false);
-        if (subscription is not null)
+        if (subscription is not null && subscriptionId is not null)
         {
             subscription.TimeoutSeconds = ParseTimeout(requestedTimeoutString) ?? 300;
             int timeoutSeconds = subscription.TimeoutSeconds;
@@ -53,7 +65,14 @@ public class DlnaEventManager : IDlnaEventManager
         return new EventSubscriptionResponse(string.Empty, "text/plain");
     }
 
-    public EventSubscriptionResponse CreateEventSubscription(string notificationType, string requestedTimeoutString, string callbackUrl)
+    /// <summary>
+    /// Creates an event subscription.
+    /// </summary>
+    /// <param name="notificationType">The notification type.</param>
+    /// <param name="requestedTimeoutString">The requested timeout string.</param>
+    /// <param name="callbackUrl">The callback URL.</param>
+    /// <returns>EventSubscriptionResponse.</returns>
+    public EventSubscriptionResponse CreateEventSubscription(string? notificationType, string? requestedTimeoutString, string? callbackUrl)
     {
         var timeout = ParseTimeout(requestedTimeoutString) ?? 300;
         var id = "uuid:" + Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture);
@@ -76,7 +95,7 @@ public class DlnaEventManager : IDlnaEventManager
         return GetEventSubscriptionResponse(id, requestedTimeoutString, timeout);
     }
 
-    private int? ParseTimeout(string header)
+    private static int? ParseTimeout(string? header)
     {
         if (!string.IsNullOrEmpty(header))
         {
@@ -90,16 +109,24 @@ public class DlnaEventManager : IDlnaEventManager
         return null;
     }
 
-    public EventSubscriptionResponse CancelEventSubscription(string subscriptionId)
+    /// <summary>
+    /// Cancels the event subscription of an subscriptionId.
+    /// </summary>
+    /// <param name="subscriptionId">The subscription id.</param>
+    /// <returns>EventSubscriptionResponse.</returns>
+    public EventSubscriptionResponse CancelEventSubscription(string? subscriptionId)
     {
         _logger.LogDebug("Cancelling event subscription {0}", subscriptionId);
 
-        _subscriptions.TryRemove(subscriptionId, out _);
+        if (subscriptionId is not null)
+        {
+            _subscriptions.TryRemove(subscriptionId, out _);
+        }
 
         return new EventSubscriptionResponse(string.Empty, "text/plain");
     }
 
-    private EventSubscriptionResponse GetEventSubscriptionResponse(string subscriptionId, string requestedTimeoutString, int timeoutSeconds)
+    private static EventSubscriptionResponse GetEventSubscriptionResponse(string subscriptionId, string? requestedTimeoutString, int timeoutSeconds)
     {
         var response = new EventSubscriptionResponse(string.Empty, "text/plain");
 
@@ -109,14 +136,19 @@ public class DlnaEventManager : IDlnaEventManager
         return response;
     }
 
-    public EventSubscription GetSubscription(string id)
+    /// <summary>
+    /// Gets the subscription of an id.
+    /// </summary>
+    /// <param name="id">The id.</param>
+    /// <returns>EventSubscription.</returns>
+    public EventSubscription? GetSubscription(string id)
     {
         return GetSubscription(id, false);
     }
 
-    private EventSubscription GetSubscription(string id, bool throwOnMissing)
+    private EventSubscription? GetSubscription(string? id, bool throwOnMissing)
     {
-        if (!_subscriptions.TryGetValue(id, out EventSubscription e) && throwOnMissing)
+        if (id is null || !_subscriptions.TryGetValue(id, out var e) && throwOnMissing)
         {
             throw new ResourceNotFoundException("Event with Id " + id + " not found.");
         }
@@ -124,6 +156,12 @@ public class DlnaEventManager : IDlnaEventManager
         return e;
     }
 
+    /// <summary>
+    /// Triggers an event.
+    /// </summary>
+    /// <param name="notificationType">The notification type.</param>
+    /// <param name="stateVariables">The state variables.</param>
+    /// <returns>Task.</returns>
     public Task TriggerEvent(string notificationType, IDictionary<string, string> stateVariables)
     {
         var subs = _subscriptions.Values

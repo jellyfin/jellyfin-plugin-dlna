@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System.Collections.Generic;
 using Jellyfin.Plugin.Dlna.Common;
 using Jellyfin.Plugin.Dlna.Service;
@@ -18,7 +16,7 @@ public static class ContentDirectoryXmlBuilder
     /// <returns>An XML description of this service.</returns>
     public static string GetXml()
     {
-        return new ServiceXmlBuilder().GetXml(ServiceActionListBuilder.GetActions(), GetStateVariables());
+        return ServiceXmlBuilder.GetXml(ServiceActionListBuilder.GetActions(), GetStateVariables());
     }
 
     /// <summary>
@@ -27,8 +25,8 @@ public static class ContentDirectoryXmlBuilder
     /// <returns>The <see cref="IEnumerable{StateVariable}"/>.</returns>
     private static IEnumerable<StateVariable> GetStateVariables()
     {
-        return new StateVariable[]
-        {
+        return
+        [
             new StateVariable
             {
                 Name = "A_ARG_TYPE_Filter",
@@ -112,11 +110,11 @@ public static class ContentDirectoryXmlBuilder
                 DataType = "string",
                 SendsEvents = false,
 
-                AllowedValues = new[]
-                {
+                AllowedValues =
+                [
                     "BrowseMetadata",
                     "BrowseDirectChildren"
-                }
+                ]
             },
 
             new StateVariable
@@ -153,6 +151,6 @@ public static class ContentDirectoryXmlBuilder
                 DataType = "string",
                 SendsEvents = false
             }
-        };
+        ];
     }
 }

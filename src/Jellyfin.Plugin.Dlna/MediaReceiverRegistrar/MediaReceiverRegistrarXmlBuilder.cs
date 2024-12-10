@@ -16,74 +16,64 @@ public static class MediaReceiverRegistrarXmlBuilder
     /// <returns>An XML representation of this service.</returns>
     public static string GetXml()
     {
-        return new ServiceXmlBuilder().GetXml(ServiceActionListBuilder.GetActions(), GetStateVariables());
+        return ServiceXmlBuilder.GetXml(ServiceActionListBuilder.GetActions(), GetStateVariables());
     }
 
     /// <summary>
     /// The a list of all the state variables for this invocation.
     /// </summary>
     /// <returns>The <see cref="IEnumerable{StateVariable}"/>.</returns>
-    private static IEnumerable<StateVariable> GetStateVariables()
+    private static IReadOnlyList<StateVariable> GetStateVariables()
     {
-        var list = new List<StateVariable>
-        {
-            new StateVariable
-            {
+        return
+        [
+            new() {
                 Name = "AuthorizationGrantedUpdateID",
                 DataType = "ui4",
                 SendsEvents = true
             },
 
-            new StateVariable
-            {
+            new() {
                 Name = "A_ARG_TYPE_DeviceID",
                 DataType = "string",
                 SendsEvents = false
             },
 
-            new StateVariable
-            {
+            new() {
                 Name = "AuthorizationDeniedUpdateID",
                 DataType = "ui4",
                 SendsEvents = true
             },
 
-            new StateVariable
-            {
+            new() {
                 Name = "ValidationSucceededUpdateID",
                 DataType = "ui4",
                 SendsEvents = true
             },
 
-            new StateVariable
-            {
+            new() {
                 Name = "A_ARG_TYPE_RegistrationRespMsg",
                 DataType = "bin.base64",
                 SendsEvents = false
             },
 
-            new StateVariable
-            {
+            new() {
                 Name = "A_ARG_TYPE_RegistrationReqMsg",
                 DataType = "bin.base64",
                 SendsEvents = false
             },
 
-            new StateVariable
-            {
+            new() {
                 Name = "ValidationRevokedUpdateID",
                 DataType = "ui4",
                 SendsEvents = true
             },
 
-            new StateVariable
-            {
+            new() {
                 Name = "A_ARG_TYPE_Result",
                 DataType = "int",
                 SendsEvents = false
             }
-        };
-
-        return list;
+        ];
     }
 }

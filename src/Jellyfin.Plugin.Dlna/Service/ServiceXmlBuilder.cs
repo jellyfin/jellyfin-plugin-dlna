@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System.Collections.Generic;
 using System.Security;
 using System.Text;
@@ -7,9 +5,17 @@ using Jellyfin.Plugin.Dlna.Common;
 
 namespace Jellyfin.Plugin.Dlna.Service;
 
-public class ServiceXmlBuilder
+/// <summary>
+/// Defines the <see cref="ServiceXmlBuilder" />.
+/// </summary>
+public static class ServiceXmlBuilder
 {
-    public string GetXml(IEnumerable<ServiceAction> actions, IEnumerable<StateVariable> stateVariables)
+    /// <summary>
+    /// Gets the XML equivalent of the action and state variable inputs.
+    /// </summary>
+    /// <param name="actions">The actions.</param>
+    /// <param name="stateVariables">The state variables.</param>
+    public static string GetXml(IEnumerable<ServiceAction> actions, IEnumerable<StateVariable> stateVariables)
     {
         var builder = new StringBuilder();
 
