@@ -18,6 +18,8 @@
     <ItemGroup>
       <EmbeddedResource Include="Configuration\config.html" />
       <EmbeddedResource Include="Configuration\config.js" />
+      <EmbeddedResource Include="Images\*.jpg" />      
+      <EmbeddedResource Include="Images\*.png" />
       <EmbeddedResource Include="Profiles\Xml\*.xml" />
     </ItemGroup>
 </Project>
