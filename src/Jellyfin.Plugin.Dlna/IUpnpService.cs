@@ -1,9 +1,10 @@
-#pragma warning disable CS1591
-
 using System.Threading.Tasks;
 
 namespace Jellyfin.Plugin.Dlna;
 
+/// <summary>
+/// Defines the <see cref="IUpnpService" /> interface.
+/// </summary>
 public interface IUpnpService
 {
     /// <summary>

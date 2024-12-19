@@ -1,5 +1,3 @@
-#pragma warning disable CA1031 // Do not catch general exception types.
-
 using System;
 using System.Globalization;
 using System.Linq;
@@ -270,7 +268,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
             uri.Scheme = "http://";
             uri.Port = httpBindPort;
 
-            _logger.LogInformation("Registering publisher for {ResourceName} on {DeviceAddress} with uri {fulluri}", fullService, intf.Address, uri);
+            _logger.LogInformation("Registering publisher for {ResourceName} on {DeviceAddress} with uri {FullUri}", fullService, intf.Address, uri);
 
             var device = new SsdpRootDevice
             {

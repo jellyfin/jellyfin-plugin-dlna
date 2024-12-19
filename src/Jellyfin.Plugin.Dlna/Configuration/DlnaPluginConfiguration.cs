@@ -3,6 +3,9 @@ using MediaBrowser.Model.Plugins;
 
 namespace Jellyfin.Plugin.Dlna.Configuration;
 
+/// <summary>
+/// Defines the <see cref="DlnaPluginConfiguration" />.
+/// </summary>
 public class DlnaPluginConfiguration : BasePluginConfiguration
 {
     /// <summary>

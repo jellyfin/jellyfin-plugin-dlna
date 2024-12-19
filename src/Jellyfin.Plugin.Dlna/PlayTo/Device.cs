@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -16,13 +14,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Dlna.PlayTo;
 
+/// <summary>
+/// Defines the <see cref="Device" />.
+/// </summary>
 public class Device : IDisposable
 {
     private readonly IHttpClientFactory _httpClientFactory;
-
     private readonly ILogger _logger;
-
-    private readonly object _timerLock = new object();
+    private readonly object _timerLock = new();
     private Timer? _timer;
     private int _muteVol;
     private int _volume;
@@ -31,6 +30,12 @@ public class Device : IDisposable
     private int _connectFailureCount;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Device"/> class.
+    /// </summary>
+    /// <param name="deviceProperties">The <see cref="DeviceInfo"/>.</param>
+    /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
+    /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
     public Device(DeviceInfo deviceProperties, IHttpClientFactory httpClientFactory, ILogger logger)
     {
         Properties = deviceProperties;
@@ -38,18 +43,39 @@ public class Device : IDisposable
         _logger = logger;
     }
 
+    /// <summary>
+    /// Raised when playback starts.
+    /// </summary>
     public event EventHandler<PlaybackStartEventArgs>? PlaybackStart;
 
+    /// <summary>
+    /// Raised when playback progresses.
+    /// </summary>
     public event EventHandler<PlaybackProgressEventArgs>? PlaybackProgress;
 
+    /// <summary>
+    /// Raised when playback stopped.
+    /// </summary>
     public event EventHandler<PlaybackStoppedEventArgs>? PlaybackStopped;
 
+    /// <summary>
+    /// Raised when media changed.
+    /// </summary>
     public event EventHandler<MediaChangedEventArgs>? MediaChanged;
 
+    /// <summary>
+    /// Gets or sets the properties.
+    /// </summary>
     public DeviceInfo Properties { get; set; }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the device is muted.
+    /// </summary>
     public bool IsMuted { get; set; }
 
+    /// <summary>
+    /// Gets or sets the volume.
+    /// </summary>
     public int Volume
     {
         get
@@ -61,26 +87,59 @@ public class Device : IDisposable
         set => _volume = value;
     }
 
+    /// <summary>
+    /// Gets or sets the playback duration.
+    /// </summary>
     public TimeSpan? Duration { get; set; }
 
+    /// <summary>
+    /// Gets or sets the playback position.
+    /// </summary>
     public TimeSpan Position { get; set; } = TimeSpan.FromSeconds(0);
 
+    /// <summary>
+    /// Gets or sets the transport state.
+    /// </summary>
     public TransportState TransportState { get; private set; }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the device is playing.
+    /// </summary>
     public bool IsPlaying => TransportState == TransportState.PLAYING;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the device is paused.
+    /// </summary>
     public bool IsPaused => TransportState == TransportState.PAUSED_PLAYBACK;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the device is stopped.
+    /// </summary>
     public bool IsStopped => TransportState == TransportState.STOPPED;
 
+    /// <summary>
+    /// Gets or sets the action to be executed when the device becomes unavailable.
+    /// </summary>
     public Action? OnDeviceUnavailable { get; set; }
 
+    /// <summary>
+    /// Gets or sets the AV commands.
+    /// </summary>
     private TransportCommands? AvCommands { get; set; }
 
+    /// <summary>
+    /// Gets or sets the render commands.
+    /// </summary>
     private TransportCommands? RendererCommands { get; set; }
 
+    /// <summary>
+    /// Gets or sets the current media info.
+    /// </summary>
     public UBaseObject? CurrentMediaInfo { get; private set; }
 
+    /// <summary>
+    /// Starts the device.
+    /// </summary>
     public void Start()
     {
         _logger.LogDebug("Dlna Device.Start");
@@ -151,6 +210,9 @@ public class Device : IDisposable
         }
     }
 
+    /// <summary>
+    /// Lowers the volume.
+    /// </summary>
     public Task VolumeDown(CancellationToken cancellationToken)
     {
         var sendVolume = Math.Max(Volume - 5, 0);
@@ -158,6 +220,9 @@ public class Device : IDisposable
         return SetVolume(sendVolume, cancellationToken);
     }
 
+    /// <summary>
+    /// Rises the volume.
+    /// </summary>
     public Task VolumeUp(CancellationToken cancellationToken)
     {
         var sendVolume = Math.Min(Volume + 5, 100);
@@ -165,6 +230,9 @@ public class Device : IDisposable
         return SetVolume(sendVolume, cancellationToken);
     }
 
+    /// <summary>
+    /// Toggles mute.
+    /// </summary>
     public Task ToggleMute(CancellationToken cancellationToken)
     {
         if (IsMuted)
@@ -175,6 +243,9 @@ public class Device : IDisposable
         return Mute(cancellationToken);
     }
 
+    /// <summary>
+    /// Mutes the device.
+    /// </summary>
     public async Task Mute(CancellationToken cancellationToken)
     {
         var success = await SetMute(true, cancellationToken).ConfigureAwait(true);
@@ -185,6 +256,9 @@ public class Device : IDisposable
         }
     }
 
+    /// <summary>
+    /// Un-mutes the device.
+    /// </summary>
     public async Task Unmute(CancellationToken cancellationToken)
     {
         var success = await SetMute(false, cancellationToken).ConfigureAwait(true);
@@ -279,6 +353,11 @@ public class Device : IDisposable
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Seeks playback.
+    /// </summary>
+    /// <param name="value">The value to seek to.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     public async Task Seek(TimeSpan value, CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -302,6 +381,13 @@ public class Device : IDisposable
         RestartTimer(true);
     }
 
+    /// <summary>
+    /// Sets AV transport.
+    /// </summary>
+    /// <param name="url">The URL.</param>
+    /// <param name="header">The header.</param>
+    /// <param name="metaData">The meta data.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     public async Task SetAvTransport(string url, string? header, string metaData, CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -349,10 +435,17 @@ public class Device : IDisposable
         RestartTimer(true);
     }
 
-    /*
-     * SetNextAvTransport is used to specify to the DLNA device what is the next track to play.
-     * Without that information, the next track command on the device does not work.
-     */
+    /// <summary>
+    /// Sets next AV transport.
+    /// </summary>
+    /// <param name="url">The URL.</param>
+    /// <param name="header">The header.</param>
+    /// <param name="metaData">The meta data.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <remarks>
+    /// SetNextAvTransport is used to specify to the DLNA device what is the next track to play.
+    /// Without that information, the next track command on the device does not work.
+    /// </remarks>
     public async Task SetNextAvTransport(string url, string? header, string metaData, CancellationToken cancellationToken = default)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -407,6 +500,10 @@ public class Device : IDisposable
             cancellationToken: cancellationToken);
     }
 
+    /// <summary>
+    /// Sends play command.
+    /// </summary>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     public async Task SetPlay(CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -420,6 +517,10 @@ public class Device : IDisposable
         RestartTimer(true);
     }
 
+    /// <summary>
+    /// Sends stop command.
+    /// </summary>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     public async Task SetStop(CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -443,6 +544,10 @@ public class Device : IDisposable
         RestartTimer(true);
     }
 
+    /// <summary>
+    /// Sends pause command.
+    /// </summary>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     public async Task SetPause(CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -863,7 +968,7 @@ public class Device : IDisposable
         return (true, uTrack);
     }
 
-    private XElement? ParseResponse(string xml)
+    private static XElement? ParseResponse(string xml)
     {
         // Handle different variations sent back by devices.
         try
@@ -944,10 +1049,7 @@ public class Device : IDisposable
             return AvCommands;
         }
 
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(GetType().Name);
-        }
+        ObjectDisposedException.ThrowIf(_disposed, GetType().Name);
 
         var avService = GetAvTransportService();
         if (avService is null)
@@ -976,10 +1078,7 @@ public class Device : IDisposable
             return RendererCommands;
         }
 
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(GetType().Name);
-        }
+        ObjectDisposedException.ThrowIf(_disposed, GetType().Name);
 
         var avService = GetServiceRenderingControl();
         ArgumentNullException.ThrowIfNull(avService);
@@ -998,7 +1097,7 @@ public class Device : IDisposable
         return RendererCommands;
     }
 
-    private string NormalizeUrl(string baseUrl, string url)
+    private static string NormalizeUrl(string baseUrl, string url)
     {
         // If it's already a complete url, don't stick anything onto the front of it
         if (url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
@@ -1019,6 +1118,13 @@ public class Device : IDisposable
         return baseUrl + url;
     }
 
+    /// <summary>
+    /// Creates uPNP device.
+    /// </summary>
+    /// <param name="url">The <see cref="Uri"/>.</param>
+    /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
+    /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     public static async Task<Device?> CreateuPnpDeviceAsync(Uri url, IHttpClientFactory httpClientFactory, ILogger logger, CancellationToken cancellationToken)
     {
         var ssdpHttpClient = new DlnaHttpClient(logger, httpClientFactory);
@@ -1046,7 +1152,8 @@ public class Device : IDisposable
         var deviceProperties = new DeviceInfo()
         {
             Name = string.Join(' ', friendlyNames),
-            BaseUrl = string.Format(CultureInfo.InvariantCulture, "http://{0}:{1}", url.Host, url.Port)
+            BaseUrl = string.Format(CultureInfo.InvariantCulture, "http://{0}:{1}", url.Host, url.Port),
+            Services = GetServices(document)
         };
 
         var model = document.Descendants(UPnpNamespaces.Ud.GetName("modelName")).FirstOrDefault();
@@ -1109,30 +1216,6 @@ public class Device : IDisposable
             deviceProperties.Icon = CreateIcon(icon);
         }
 
-        foreach (var services in document.Descendants(UPnpNamespaces.Ud.GetName("serviceList")))
-        {
-            if (services is null)
-            {
-                continue;
-            }
-
-            var servicesList = services.Descendants(UPnpNamespaces.Ud.GetName("service"));
-            if (servicesList is null)
-            {
-                continue;
-            }
-
-            foreach (var element in servicesList)
-            {
-                var service = Create(element);
-
-                if (service is not null)
-                {
-                    deviceProperties.Services.Add(service);
-                }
-            }
-        }
-
         return new Device(deviceProperties, httpClientFactory, logger);
     }
 
@@ -1157,7 +1240,7 @@ public class Device : IDisposable
     }
 
     private static DeviceService Create(XElement element)
-        => new DeviceService()
+        => new()
         {
             ControlUrl = element.GetDescendantValue(UPnpNamespaces.Ud.GetName("controlURL")) ?? string.Empty,
             EventSubUrl = element.GetDescendantValue(UPnpNamespaces.Ud.GetName("eventSubURL")) ?? string.Empty,
@@ -1165,6 +1248,36 @@ public class Device : IDisposable
             ServiceId = element.GetDescendantValue(UPnpNamespaces.Ud.GetName("serviceId")) ?? string.Empty,
             ServiceType = element.GetDescendantValue(UPnpNamespaces.Ud.GetName("serviceType")) ?? string.Empty
         };
+
+        private static List<DeviceService> GetServices(XDocument document)
+        {
+            List<DeviceService> deviceServices = [];
+            foreach (var services in document.Descendants(UPnpNamespaces.Ud.GetName("serviceList")))
+            {
+                if (services is null)
+                {
+                    continue;
+                }
+
+                var servicesList = services.Descendants(UPnpNamespaces.Ud.GetName("service"));
+                if (servicesList is null)
+                {
+                    continue;
+                }
+
+                foreach (var element in servicesList)
+                {
+                    var service = Create(element);
+
+                    if (service is not null)
+                    {
+                        deviceServices.Add(service);
+                    }
+                }
+            }
+
+            return deviceServices;
+        }
 
     private void UpdateMediaInfo(UBaseObject? mediaInfo, TransportState state)
     {

@@ -19,11 +19,15 @@ using Rssdp.Infrastructure;
 
 namespace Jellyfin.Plugin.Dlna;
 
+/// <summary>
+/// Defines the <see cref="DlnaServiceRegistrator" />.
+/// </summary>
 public class DlnaServiceRegistrator : IPluginServiceRegistrator
 {
-    public void RegisterServices(IServiceCollection services, IServerApplicationHost applicationHost)
+    /// <inheritdoc />
+    public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
-        services.AddHttpClient(NamedClient.Dlna, c =>
+        serviceCollection.AddHttpClient(NamedClient.Dlna, c =>
             {
                 c.DefaultRequestHeaders.UserAgent.ParseAdd(
                     string.Format(
@@ -43,22 +47,22 @@ public class DlnaServiceRegistrator : IPluginServiceRegistrator
                 RequestHeaderEncodingSelector = (_, _) => Encoding.UTF8
             });
 
-        services.AddSingleton<IDlnaManager, DlnaManager>();
-        services.AddSingleton<IDeviceDiscovery, DeviceDiscovery>();
-        services.AddSingleton<IContentDirectory, ContentDirectoryService>();
-        services.AddSingleton<IConnectionManager, ConnectionManagerService>();
-        services.AddSingleton<IMediaReceiverRegistrar, MediaReceiverRegistrarService>();
+        serviceCollection.AddSingleton<IDlnaManager, DlnaManager>();
+        serviceCollection.AddSingleton<IDeviceDiscovery, DeviceDiscovery>();
+        serviceCollection.AddSingleton<IContentDirectory, ContentDirectoryService>();
+        serviceCollection.AddSingleton<IConnectionManager, ConnectionManagerService>();
+        serviceCollection.AddSingleton<IMediaReceiverRegistrar, MediaReceiverRegistrarService>();
 
-        services.AddScoped<AudioHelper>();
-        services.AddScoped<DynamicHlsHelper>();
+        serviceCollection.AddScoped<AudioHelper>();
+        serviceCollection.AddScoped<DynamicHlsHelper>();
 
-        services.AddSingleton<ISsdpCommunicationsServer>(provider => new SsdpCommunicationsServer(
+        serviceCollection.AddSingleton<ISsdpCommunicationsServer>(provider => new SsdpCommunicationsServer(
             provider.GetRequiredService<INetworkManager>(),
             provider.GetRequiredService<ILogger<SsdpCommunicationsServer>>())
         {
             IsShared = true
         });
 
-        services.AddHostedService<DlnaHost>();
+        serviceCollection.AddHostedService<DlnaHost>();
     }
 }
