@@ -1,8 +1,8 @@
 name: "DLNA"
 guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
 imageUrl: ""
-version: 5
-targetAbi: "10.10.0.0"
+version: 6
+targetAbi: "10.10.3.0"
 framework: "net8.0"
 owner: "jellyfin"
 overview: "DLNA Service"
@@ -16,6 +16,6 @@ artifacts:
   - "Jellyfin.Plugin.Dlna.Playback.dll"
   - "Rssdp.dll"
 changelog: |-
-  - Fix Bigscreen compatibility issues (#83) @Nullcaller
-  - Add additional profile logging (#93) @disgustipated
-  - Fix TTL not following SsdpConstants (#88) @Nullcaller
+  - fix: add the icons to the compiled resources (#109) (#114) @FelixPetriconi
+  - fix: adjusted typo in configuration page title (#112) @shindai
+  - Only split user agent if it can be split (#95) @Shadowghost
