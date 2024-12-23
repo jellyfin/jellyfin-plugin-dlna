@@ -35,4 +35,14 @@ public class EventSubscriptionResponse
     /// Gets the headers dictionary.
     /// </summary>
     public Dictionary<string, string> Headers { get; }
+
+    public override string ToString() 
+    {
+        if (ContentType.Equals("text/plain", StringComparison.OrdinalIgnoreCase))
+        {
+            return Content.Trim() + "\r\n" + string.Join(Environment.NewLine, Headers);
+        }
+
+        return Content;
+    }
 }
