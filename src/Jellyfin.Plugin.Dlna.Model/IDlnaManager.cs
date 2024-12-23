@@ -77,4 +77,10 @@ public interface IDlnaManager
     /// <param name="filename">The filename.</param>
     /// <returns>DlnaIconResponse.</returns>
     Stream? GetIcon(string filename);
+
+    /// <summary>
+    /// Gets the server name.
+    /// </summary>
+    /// <returns>string</returns>
+    string GetServerName();
 }

@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Mime;
+using System.Reflection.PortableExecutable;
 using System.Threading.Tasks;
 using Jellyfin.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
@@ -199,10 +200,10 @@ public class DlnaServerController : ControllerBase
     [SuppressMessage("Microsoft.Performance", "CA1801:ReviewUnusedParameters", MessageId = "serverId", Justification = "Required for DLNA")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
-    [Produces(MediaTypeNames.Text.Xml)]
-    public ActionResult<EventSubscriptionResponse> ProcessMediaReceiverRegistrarEventRequest(string serverId)
+    public ActionResult ProcessMediaReceiverRegistrarEventRequest(string serverId)
     {
-        return ProcessEventRequest(_mediaReceiverRegistrar);
+        SetResponse(ProcessEventRequest(_mediaReceiverRegistrar));
+        return new EmptyResult();
     }
 
     /// <summary>
@@ -218,10 +219,10 @@ public class DlnaServerController : ControllerBase
     [SuppressMessage("Microsoft.Performance", "CA1801:ReviewUnusedParameters", MessageId = "serverId", Justification = "Required for DLNA")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
-    [Produces(MediaTypeNames.Text.Xml)]
-    public ActionResult<EventSubscriptionResponse> ProcessContentDirectoryEventRequest(string serverId)
+    public ActionResult ProcessContentDirectoryEventRequest(string serverId)
     {
-        return ProcessEventRequest(_contentDirectory);
+        SetResponse(ProcessEventRequest(_contentDirectory));
+        return new EmptyResult();
     }
 
     /// <summary>
@@ -237,10 +238,10 @@ public class DlnaServerController : ControllerBase
     [SuppressMessage("Microsoft.Performance", "CA1801:ReviewUnusedParameters", MessageId = "serverId", Justification = "Required for DLNA")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
-    [Produces(MediaTypeNames.Text.Xml)]
-    public ActionResult<EventSubscriptionResponse> ProcessConnectionManagerEventRequest(string serverId)
+    public ActionResult ProcessConnectionManagerEventRequest(string serverId)
     {
-        return ProcessEventRequest(_connectionManager);
+        SetResponse(ProcessEventRequest(_connectionManager));
+        return new EmptyResult();
     }
 
     /// <summary>
@@ -332,5 +333,14 @@ public class DlnaServerController : ControllerBase
         }
 
         return dlnaEventManager.CancelEventSubscription(subscriptionId);
+    }
+
+    private void SetResponse(EventSubscriptionResponse eventSubscriptionResponse)
+    {
+        var text = eventSubscriptionResponse.ToString();
+        Response.Headers["Server"] = _dlnaManager.GetServerName();
+        Response.Headers.Append("SID", eventSubscriptionResponse.Headers["SID"]);
+        Response.Headers["Timeout"] = Request.Headers["Timeout"];
+        Response.ContentLength = 0;
     }
 }
