@@ -337,7 +337,6 @@ public class DlnaServerController : ControllerBase
 
     private void SetResponse(EventSubscriptionResponse eventSubscriptionResponse)
     {
-        var text = eventSubscriptionResponse.ToString();
         Response.Headers["Server"] = _dlnaManager.GetServerName();
         Response.Headers.Append("SID", eventSubscriptionResponse.Headers["SID"]);
         Response.Headers["Timeout"] = Request.Headers["Timeout"];
