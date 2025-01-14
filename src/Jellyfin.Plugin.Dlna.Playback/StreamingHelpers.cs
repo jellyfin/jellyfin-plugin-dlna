@@ -46,7 +46,7 @@ public static class StreamingHelpers
     /// <param name="deviceManager">Instance of the <see cref="IDeviceManager"/> interface.</param>
     /// <param name="transcodeManager">Initialized <see cref="ITranscodeManager"/>.</param>
     /// <param name="transcodingJobType">The <see cref="TranscodingJobType"/>.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>A <see cref="Task"/> containing the current <see cref="StreamState"/>.</returns>
     public static async Task<DlnaStreamState> GetStreamingState(
         StreamingRequestDto streamingRequest,

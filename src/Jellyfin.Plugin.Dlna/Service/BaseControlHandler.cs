@@ -35,7 +35,7 @@ public abstract class BaseControlHandler
     /// Processes a control request asynchronously.
     /// </summary>
     /// <param name="request">The <see cref="ControlRequest"/>.</param>
-    /// <returns>Task{ControlResponse}.</returns>
+    /// <returns>The task object representing the asynchronous control request processing operation.</returns>
     public async Task<ControlResponse> ProcessControlRequestAsync(ControlRequest request)
     {
         try

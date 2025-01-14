@@ -18,13 +18,13 @@ public static class DlnaMaps
         return string.Format(CultureInfo.InvariantCulture, "{0:X8}{1:D24}", (ulong)flags, 0);
     }
 
-        /// <summary>
-        /// Gets the org operation value.
-        /// </summary>
-        /// <param name="hasKnownRuntime">Value indicating whether the stream has a known runtime.</param>
-        /// <param name="isDirectStream">Value indicating whether the stream is a direct stream.</param>
-        /// <param name="profileTranscodeSeekInfo">The <see cref="TranscodeSeekInfo"/>.</param>
-        /// <returns>System.String.</returns>
+    /// <summary>
+    /// Gets the org operation value.
+    /// </summary>
+    /// <param name="hasKnownRuntime">Value indicating whether the stream has a known runtime.</param>
+    /// <param name="isDirectStream">Value indicating whether the stream is a direct stream.</param>
+    /// <param name="profileTranscodeSeekInfo">The <see cref="TranscodeSeekInfo"/>.</param>
+    /// <returns>The org operation value.</returns>
     public static string GetOrgOpValue(bool hasKnownRuntime, bool isDirectStream, TranscodeSeekInfo profileTranscodeSeekInfo)
     {
         if (hasKnownRuntime)

@@ -376,8 +376,8 @@ public class PlayToController : ISessionController, IDisposable
     /// Sends a play command.
     /// </summary>
     /// <param name="command">The <see cref="PlayRequest"/>.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
-    /// <returns>Task.</returns>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>The task object representing the asynchronous play command sending operation.</returns>
     public Task SendPlayCommand(PlayRequest command, CancellationToken cancellationToken)
     {
         _logger.LogDebug("{0} - Received PlayRequest: {1}", _session.DeviceName, command.PlayCommand);
@@ -879,9 +879,9 @@ public class PlayToController : ISessionController, IDisposable
     /// <inheritdoc />
     public Task SendMessage<T>(SessionMessageType name, Guid messageId, T data, CancellationToken cancellationToken)
     {
-        return _disposed
-            ? throw new ObjectDisposedException(GetType().Name)
-            : name switch
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        return name switch
         {
             SessionMessageType.Play => SendPlayCommand((data as PlayRequest)!, cancellationToken),
             SessionMessageType.Playstate => SendPlaystateCommand((data as PlaystateRequest)!, cancellationToken),

@@ -11,7 +11,7 @@ namespace Jellyfin.Plugin.Dlna.Model;
 public enum DlnaFlags : ulong
 {
     /// <summary>
-    /// Defines the <see cref="DlnaFlags" />.
+    /// Defines the transfer mode.
     /// </summary>
     /// <remarks>
     /// <i>Background</i> transfer mode.

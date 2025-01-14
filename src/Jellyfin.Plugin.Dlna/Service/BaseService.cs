@@ -34,7 +34,7 @@ public class BaseService : IDlnaEventManager
     /// Cancels an event subscription.
     /// </summary>
     /// <param name="subscriptionId">The subscription id.</param>
-    /// <returns>EventSubscriptionResponse.</returns>
+    /// <returns>The response to the cancel event subscription request.</returns>
     public EventSubscriptionResponse CancelEventSubscription(string? subscriptionId)
     {
         return EventManager.CancelEventSubscription(subscriptionId);

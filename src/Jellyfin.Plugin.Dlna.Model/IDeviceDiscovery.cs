@@ -6,7 +6,6 @@ namespace Jellyfin.Plugin.Dlna.Model;
 /// <summary>
 /// Defines the <see cref="IDeviceDiscovery" /> interface.
 /// </summary>
-
 public interface IDeviceDiscovery
 {
     /// <summary>

@@ -380,7 +380,7 @@ public static class MediaFormatProfileResolver
     /// <param name="bitrate">The bitrate.</param>
     /// <param name="frequency">The frequency.</param>
     /// <param name="channels">The channel count.</param>
-    /// <returns>MediaFormatProfile.</returns>
+    /// <returns>The audio format profile.</returns>
     public static MediaFormatProfile? ResolveAudioFormat(string? container, int? bitrate, int? frequency, int? channels)
     {
         if (string.Equals(container, "asf", StringComparison.OrdinalIgnoreCase))
@@ -489,7 +489,7 @@ public static class MediaFormatProfileResolver
     /// <param name="container">The container.</param>
     /// <param name="width">The width.</param>
     /// <param name="height">The height.</param>
-    /// <returns>MediaFormatProfile.</returns>
+    /// <returns>The image format profile.</returns>
     public static MediaFormatProfile? ResolveImageFormat(string container, int? width, int? height)
     {
         if (string.Equals(container, "jpeg", StringComparison.OrdinalIgnoreCase) ||

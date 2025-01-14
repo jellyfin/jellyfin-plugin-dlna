@@ -357,7 +357,7 @@ public class Device : IDisposable
     /// Seeks playback.
     /// </summary>
     /// <param name="value">The value to seek to.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     public async Task Seek(TimeSpan value, CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -387,7 +387,7 @@ public class Device : IDisposable
     /// <param name="url">The URL.</param>
     /// <param name="header">The header.</param>
     /// <param name="metaData">The meta data.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     public async Task SetAvTransport(string url, string? header, string metaData, CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -441,7 +441,7 @@ public class Device : IDisposable
     /// <param name="url">The URL.</param>
     /// <param name="header">The header.</param>
     /// <param name="metaData">The meta data.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <remarks>
     /// SetNextAvTransport is used to specify to the DLNA device what is the next track to play.
     /// Without that information, the next track command on the device does not work.
@@ -503,7 +503,7 @@ public class Device : IDisposable
     /// <summary>
     /// Sends play command.
     /// </summary>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     public async Task SetPlay(CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -520,7 +520,7 @@ public class Device : IDisposable
     /// <summary>
     /// Sends stop command.
     /// </summary>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     public async Task SetStop(CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -547,7 +547,7 @@ public class Device : IDisposable
     /// <summary>
     /// Sends pause command.
     /// </summary>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     public async Task SetPause(CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -1124,7 +1124,7 @@ public class Device : IDisposable
     /// <param name="url">The <see cref="Uri"/>.</param>
     /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
     /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     public static async Task<Device?> CreateuPnpDeviceAsync(Uri url, IHttpClientFactory httpClientFactory, ILogger logger, CancellationToken cancellationToken)
     {
         var ssdpHttpClient = new DlnaHttpClient(logger, httpClientFactory);

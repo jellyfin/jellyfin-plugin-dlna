@@ -43,7 +43,7 @@ public class DlnaEventManager : IDlnaEventManager
     /// <param name="notificationType">The notification type.</param>
     /// <param name="requestedTimeoutString">The requested timeout string.</param>
     /// <param name="callbackUrl">The callback URL.</param>
-    /// <returns>EventSubscriptionResponse.</returns>
+    /// <returns>The response to the renew subscription request.</returns>
     public EventSubscriptionResponse RenewEventSubscription(string? subscriptionId, string? notificationType, string? requestedTimeoutString, string? callbackUrl)
     {
         var subscription = GetSubscription(subscriptionId, false);
@@ -71,7 +71,7 @@ public class DlnaEventManager : IDlnaEventManager
     /// <param name="notificationType">The notification type.</param>
     /// <param name="requestedTimeoutString">The requested timeout string.</param>
     /// <param name="callbackUrl">The callback URL.</param>
-    /// <returns>EventSubscriptionResponse.</returns>
+    /// <returns>The response to the subscription request.</returns>
     public EventSubscriptionResponse CreateEventSubscription(string? notificationType, string? requestedTimeoutString, string? callbackUrl)
     {
         var timeout = ParseTimeout(requestedTimeoutString) ?? 300;
@@ -113,7 +113,7 @@ public class DlnaEventManager : IDlnaEventManager
     /// Cancels the event subscription of an subscriptionId.
     /// </summary>
     /// <param name="subscriptionId">The subscription id.</param>
-    /// <returns>EventSubscriptionResponse.</returns>
+    /// <returns>The response to the subscription cancellation request.</returns>
     public EventSubscriptionResponse CancelEventSubscription(string? subscriptionId)
     {
         _logger.LogDebug("Cancelling event subscription {0}", subscriptionId);
@@ -140,7 +140,7 @@ public class DlnaEventManager : IDlnaEventManager
     /// Gets the subscription of an id.
     /// </summary>
     /// <param name="id">The id.</param>
-    /// <returns>EventSubscription.</returns>
+    /// <returns>The EventSubscription.</returns>
     public EventSubscription? GetSubscription(string id)
     {
         return GetSubscription(id, false);
@@ -161,7 +161,7 @@ public class DlnaEventManager : IDlnaEventManager
     /// </summary>
     /// <param name="notificationType">The notification type.</param>
     /// <param name="stateVariables">The state variables.</param>
-    /// <returns>Task.</returns>
+    /// <returns>The task object representing the asynchronous event trigger operation.</returns>
     public Task TriggerEvent(string notificationType, IDictionary<string, string> stateVariables)
     {
         var subs = _subscriptions.Values

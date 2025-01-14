@@ -102,8 +102,8 @@ public partial class DlnaHttpClient
     /// Gets data of a URL.
     /// </summary>
     /// <param name="url">The URL.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
-    /// <returns>Task.</returns>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>The task object representing the asynchronous data fetching operation.</returns>
     public async Task<XDocument?> GetDataAsync(string url, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
@@ -120,8 +120,8 @@ public partial class DlnaHttpClient
     /// <param name="command">The command.</param>
     /// <param name="postData">The POST data.</param>
     /// <param name="header">The header.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
-    /// <returns>Task.</returns>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>The task object representing the asynchronous send operation.</returns>
     public async Task<XDocument?> SendCommandAsync(
         string baseUrl,
         DeviceService service,

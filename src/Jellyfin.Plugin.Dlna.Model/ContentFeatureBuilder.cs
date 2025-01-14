@@ -140,7 +140,7 @@ public static class ContentFeatureBuilder
     }
 
     /// <summary>
-    /// Gets the auvideodio header.
+    /// Gets the video header.
     /// </summary>
     /// <param name="profile">The <see cref="DlnaDeviceProfile"/>.</param>
     /// <param name="container">The container.</param>

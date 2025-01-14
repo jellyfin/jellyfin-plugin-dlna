@@ -18,7 +18,7 @@ public static class StreamInfoExtensions
     /// <param name="streamInfo">The <see cref="StreamInfo"/>.</param>
     /// <param name="baseUrl">The base URL.</param>
     /// <param name="accessToken">The access token.</param>
-    /// <returns>User id.</returns>
+    /// <returns>The DLNA URL.</returns>
     public static string ToDlnaUrl(this StreamInfo streamInfo, string baseUrl, string? accessToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(baseUrl);
