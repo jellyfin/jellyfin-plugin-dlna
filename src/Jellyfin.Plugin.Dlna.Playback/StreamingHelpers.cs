@@ -258,6 +258,7 @@ public static class StreamingHelpers
         var ext = string.IsNullOrWhiteSpace(state.OutputContainer)
             ? GetOutputFileExtension(state, mediaSource)
             : ("." + state.OutputContainer);
+        ext = ext.AsSpan().LeftPart('?').ToString();
 
         state.OutputFilePath = GetOutputFilePath(state, ext, serverConfigurationManager, streamingRequest.DeviceId, streamingRequest.PlaySessionId);
 
