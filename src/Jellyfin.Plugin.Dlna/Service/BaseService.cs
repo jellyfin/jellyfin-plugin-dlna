@@ -47,7 +47,7 @@ public class BaseService : IDlnaEventManager
     /// <param name="notificationType">The notification type.</param>
     /// <param name="requestedTimeoutString">The requested timeout string.</param>
     /// <param name="callbackUrl">The callback URL.</param>
-    /// <returns>EventSubscriptionResponse.</returns>
+    /// <returns>The response to the renew event subscription request.</returns>
     public EventSubscriptionResponse RenewEventSubscription(string? subscriptionId, string? notificationType, string? requestedTimeoutString, string? callbackUrl)
     {
         return EventManager.RenewEventSubscription(subscriptionId, notificationType, requestedTimeoutString, callbackUrl);
@@ -59,7 +59,7 @@ public class BaseService : IDlnaEventManager
     /// <param name="notificationType">The notification type.</param>
     /// <param name="requestedTimeoutString">The requested timeout string.</param>
     /// <param name="callbackUrl">The callback URL.</param>
-    /// <returns>EventSubscriptionResponse.</returns>
+    /// <returns>The response to the event subscription request.</returns>
     public EventSubscriptionResponse CreateEventSubscription(string? notificationType, string? requestedTimeoutString, string? callbackUrl)
     {
         return EventManager.CreateEventSubscription(notificationType, requestedTimeoutString, callbackUrl);
