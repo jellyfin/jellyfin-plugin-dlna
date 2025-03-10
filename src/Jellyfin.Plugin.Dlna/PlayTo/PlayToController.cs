@@ -594,7 +594,8 @@ public class PlayToController2 : ISessionController, IDisposable
                     MaxBitrate = profile.MaxStreamingBitrate,
                     MediaSourceId = mediaSourceId,
                     AudioStreamIndex = audioStreamIndex,
-                    SubtitleStreamIndex = subtitleStreamIndex
+                    SubtitleStreamIndex = subtitleStreamIndex,
+                    EnableDirectStream = false
                 }),
                 Profile = profile
             },
