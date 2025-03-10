@@ -1,5 +1,3 @@
-#nullable disable
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -43,7 +41,7 @@ public class ControlHandler : BaseControlHandler
 
     private readonly ILibraryManager _libraryManager;
     private readonly IUserDataManager _userDataManager;
-    private readonly User _user;
+    private readonly User? _user;
     private readonly IUserViewManager _userViewManager;
     private readonly ITVSeriesManager _tvSeriesManager;
 
@@ -56,29 +54,29 @@ public class ControlHandler : BaseControlHandler
     /// <summary>
     /// Initializes a new instance of the <see cref="ControlHandler"/> class.
     /// </summary>
-    /// <param name="logger">The <see cref="ILogger"/> for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="libraryManager">The <see cref="ILibraryManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="profile">The <see cref="DeviceProfile"/> for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="serverAddress">The server address to use in this instance> for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="accessToken">The <see cref="string"/> for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="imageProcessor">The <see cref="IImageProcessor"/> for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="userDataManager">The <see cref="IUserDataManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="user">The <see cref="User"/> for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="systemUpdateId">The system id for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="localization">The <see cref="ILocalizationManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="mediaSourceManager">The <see cref="IMediaSourceManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="userViewManager">The <see cref="IUserViewManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="mediaEncoder">The <see cref="IMediaEncoder"/> for use with the <see cref="ControlHandler"/> instance.</param>
-    /// <param name="tvSeriesManager">The <see cref="ITVSeriesManager"/> for use with the <see cref="ControlHandler"/> instance.</param>
+    /// <param name="logger">The <see cref="ILogger"/>.</param>
+    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="profile">The <see cref="DeviceProfile"/>.</param>
+    /// <param name="serverAddress">The server address.</param>
+    /// <param name="accessToken">The access token.</param>
+    /// <param name="imageProcessor">Instance of the <see cref="IImageProcessor"/> interface.</param>
+    /// <param name="userDataManager">Instance of the <see cref="IUserDataManager"/> interface.</param>
+    /// <param name="user">The <see cref="User"/>.</param>
+    /// <param name="systemUpdateId">The system id.</param>
+    /// <param name="localization">Instance of the <see cref="ILocalizationManager"/> interface.</param>
+    /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
+    /// <param name="userViewManager">Instance of the <see cref="IUserViewManager"/> interface.</param>
+    /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
+    /// <param name="tvSeriesManager">Instance of the <see cref="ITVSeriesManager"/> interface.</param>
     public ControlHandler(
         ILogger logger,
         ILibraryManager libraryManager,
         DlnaDeviceProfile profile,
         string serverAddress,
-        string accessToken,
+        string? accessToken,
         IImageProcessor imageProcessor,
         IUserDataManager userDataManager,
-        User user,
+        User? user,
         int systemUpdateId,
         ILocalizationManager localization,
         IMediaSourceManager mediaSourceManager,
@@ -186,6 +184,11 @@ public class ControlHandler : BaseControlHandler
     /// <param name="sparams">The method parameters.</param>
     private void HandleXSetBookmark(IReadOnlyDictionary<string, string> sparams)
     {
+        if (_user is null)
+        {
+            return;
+        }
+
         var id = sparams["ObjectID"];
 
         var serverItem = GetItemFromObjectId(id);
@@ -487,25 +490,25 @@ public class ControlHandler : BaseControlHandler
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
     /// <returns>The <see cref="QueryResult{BaseItem}"/>.</returns>
-    private static QueryResult<BaseItem> GetChildrenSorted(BaseItem item, User user, SearchCriteria search, SortCriteria sort, int? startIndex, int? limit)
+    private static QueryResult<BaseItem> GetChildrenSorted(BaseItem item, User? user, SearchCriteria search, SortCriteria sort, int? startIndex, int? limit)
     {
         var folder = (Folder)item;
 
-        MediaType[] mediaTypes = Array.Empty<MediaType>();
+        MediaType[] mediaTypes = [];
         bool? isFolder = null;
 
         switch (search.SearchType)
         {
             case SearchType.Audio:
-                mediaTypes = new[] { MediaType.Audio };
+                mediaTypes = [MediaType.Audio];
                 isFolder = false;
                 break;
             case SearchType.Video:
-                mediaTypes = new[] { MediaType.Video };
+                mediaTypes = [MediaType.Video];
                 isFolder = false;
                 break;
             case SearchType.Image:
-                mediaTypes = new[] { MediaType.Photo };
+                mediaTypes = [MediaType.Photo];
                 isFolder = false;
                 break;
             case SearchType.Playlist:
@@ -522,7 +525,7 @@ public class ControlHandler : BaseControlHandler
             User = user,
             Recursive = true,
             IsMissing = false,
-            ExcludeItemTypes = new[] { BaseItemKind.Book },
+            ExcludeItemTypes = [BaseItemKind.Book],
             IsFolder = isFolder,
             MediaTypes = mediaTypes,
             DtoOptions = GetDtoOptions()
@@ -548,32 +551,35 @@ public class ControlHandler : BaseControlHandler
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetUserItems(BaseItem item, StubType? stubType, User user, SortCriteria sort, int? startIndex, int? limit)
+    private QueryResult<ServerItem> GetUserItems(BaseItem item, StubType? stubType, User? user, SortCriteria sort, int? startIndex, int? limit)
     {
-        switch (item)
+        if (user is not null)
         {
-            case MusicGenre:
-                return GetMusicGenreItems(item, user, sort, startIndex, limit);
-            case MusicArtist:
-                return GetMusicArtistItems(item, user, sort, startIndex, limit);
-            case Genre:
-                return GetGenreItems(item, user, sort, startIndex, limit);
-        }
-
-        if (stubType != StubType.Folder && item is IHasCollectionType collectionFolder)
-        {
-            switch (collectionFolder.CollectionType)
+            switch (item)
             {
-                case CollectionType.music:
-                    return GetMusicFolders(item, user, stubType, sort, startIndex, limit);
-                case CollectionType.movies:
-                    return GetMovieFolders(item, user, stubType, sort, startIndex, limit);
-                case CollectionType.tvshows:
-                    return GetTvFolders(item, user, stubType, sort, startIndex, limit);
-                case CollectionType.folders:
-                    return GetFolders(user, startIndex, limit);
-                case CollectionType.livetv:
-                    return GetLiveTvChannels(user, sort, startIndex, limit);
+                case MusicGenre:
+                    return GetMusicGenreItems(item, user, sort, startIndex, limit);
+                case MusicArtist:
+                    return GetMusicArtistItems(item, user, sort, startIndex, limit);
+                case Genre:
+                    return GetGenreItems(item, user, sort, startIndex, limit);
+            }
+
+            if (stubType != StubType.Folder && item is IHasCollectionType collectionFolder)
+            {
+                switch (collectionFolder.CollectionType)
+                {
+                    case CollectionType.music:
+                        return GetMusicFolders(item, user, stubType, sort, startIndex, limit);
+                    case CollectionType.movies:
+                        return GetMovieFolders(item, user, stubType, sort, startIndex, limit);
+                    case CollectionType.tvshows:
+                        return GetTvFolders(item, user, stubType, sort, startIndex, limit);
+                    case CollectionType.folders:
+                        return GetFolders(user, startIndex, limit);
+                    case CollectionType.livetv:
+                        return GetLiveTvChannels(user, sort, startIndex, limit);
+                }
             }
         }
 
@@ -590,7 +596,7 @@ public class ControlHandler : BaseControlHandler
             Limit = limit,
             StartIndex = startIndex,
             IsVirtualItem = false,
-            ExcludeItemTypes = new[] { BaseItemKind.Book },
+            ExcludeItemTypes = [BaseItemKind.Book],
             IsPlaceHolder = false,
             DtoOptions = GetDtoOptions(),
             OrderBy = GetOrderBy(sort, folder.IsPreSorted)
@@ -615,7 +621,7 @@ public class ControlHandler : BaseControlHandler
         {
             StartIndex = startIndex,
             Limit = limit,
-            IncludeItemTypes = new[] { BaseItemKind.LiveTvChannel },
+            IncludeItemTypes = [BaseItemKind.LiveTvChannel],
             OrderBy = GetOrderBy(sort, false)
         };
 
@@ -831,11 +837,11 @@ public class ControlHandler : BaseControlHandler
         query.Recursive = true;
         query.Parent = parent;
 
-        query.OrderBy = new[]
-        {
+        query.OrderBy =
+        [
             (ItemSortBy.DatePlayed, SortOrder.Descending),
             (ItemSortBy.SortName, SortOrder.Ascending)
-        };
+        ];
 
         query.IsResumable = true;
         query.Limit ??= 10;
@@ -853,7 +859,7 @@ public class ControlHandler : BaseControlHandler
     private QueryResult<ServerItem> GetMovieCollections(InternalItemsQuery query)
     {
         query.Recursive = true;
-        query.IncludeItemTypes = new[] { BaseItemKind.BoxSet };
+        query.IncludeItemTypes = [BaseItemKind.BoxSet];
 
         var result = _libraryManager.GetItemsResult(query);
 
@@ -873,7 +879,7 @@ public class ControlHandler : BaseControlHandler
         query.Recursive = true;
         query.Parent = parent;
         query.IsFavorite = isFavorite;
-        query.IncludeItemTypes = new[] { itemType };
+        query.IncludeItemTypes = [itemType];
 
         var result = _libraryManager.GetItemsResult(query);
 
@@ -891,7 +897,7 @@ public class ControlHandler : BaseControlHandler
     {
         // Don't sort
         query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
-        query.AncestorIds = new[] { parent.Id };
+        query.AncestorIds = [parent.Id];
         var genresResult = _libraryManager.GetGenres(query);
 
         return ToResult(query.StartIndex, genresResult);
@@ -907,7 +913,7 @@ public class ControlHandler : BaseControlHandler
     {
         // Don't sort
         query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
-        query.AncestorIds = new[] { parent.Id };
+        query.AncestorIds = [parent.Id];
         var genresResult = _libraryManager.GetMusicGenres(query);
 
         return ToResult(query.StartIndex, genresResult);
@@ -923,7 +929,7 @@ public class ControlHandler : BaseControlHandler
     {
         // Don't sort
         query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
-        query.AncestorIds = new[] { parent.Id };
+        query.AncestorIds = [parent.Id];
         var artists = _libraryManager.GetAlbumArtists(query);
 
         return ToResult(query.StartIndex, artists);
@@ -939,7 +945,7 @@ public class ControlHandler : BaseControlHandler
     {
         // Don't sort
         query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
-        query.AncestorIds = new[] { parent.Id };
+        query.AncestorIds = [parent.Id];
         var artists = _libraryManager.GetArtists(query);
         return ToResult(query.StartIndex, artists);
     }
@@ -954,7 +960,7 @@ public class ControlHandler : BaseControlHandler
     {
         // Don't sort
         query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
-        query.AncestorIds = new[] { parent.Id };
+        query.AncestorIds = [parent.Id];
         query.IsFavorite = true;
         var artists = _libraryManager.GetArtists(query);
         return ToResult(query.StartIndex, artists);
@@ -968,7 +974,7 @@ public class ControlHandler : BaseControlHandler
     private QueryResult<ServerItem> GetMusicPlaylists(InternalItemsQuery query)
     {
         query.Parent = null;
-        query.IncludeItemTypes = new[] { BaseItemKind.Playlist };
+        query.IncludeItemTypes = [BaseItemKind.Playlist];
         query.Recursive = true;
 
         var result = _libraryManager.GetItemsResult(query);
@@ -994,7 +1000,7 @@ public class ControlHandler : BaseControlHandler
                 // User cannot be null here as the caller has set it
                 User = query.User!
             },
-            new[] { parent },
+            [parent],
             query.DtoOptions);
 
         return ToResult(query.StartIndex, result);
@@ -1028,15 +1034,15 @@ public class ControlHandler : BaseControlHandler
                 // User cannot be null here as the caller has set it
                 User = query.User!,
                 Limit = limit,
-                IncludeItemTypes = new[] { itemType },
+                IncludeItemTypes = [itemType],
                 ParentId = parent?.Id ?? Guid.Empty,
                 GroupItems = true
             },
-            query.DtoOptions).Select(i => i.Item1 ?? i.Item2.FirstOrDefault()).Where(i => i is not null).ToArray();
+            query.DtoOptions).Select(i => i.Item1 ?? i.Item2.FirstOrDefault()).OfType<BaseItem>().ToArray();
 
         if (query.StartIndex > 0)
         {
-            items = (items.Length <= query.StartIndex) ? Array.Empty<BaseItem>() : items[query.StartIndex.Value..];
+            items = (items.Length <= query.StartIndex) ? [] : items[query.StartIndex.Value..];
         }
 
         return ToResult(query.StartIndex, items);
@@ -1056,8 +1062,8 @@ public class ControlHandler : BaseControlHandler
         var query = new InternalItemsQuery(user)
         {
             Recursive = true,
-            ArtistIds = new[] { item.Id },
-            IncludeItemTypes = new[] { BaseItemKind.MusicAlbum },
+            ArtistIds = [item.Id],
+            IncludeItemTypes = [BaseItemKind.MusicAlbum],
             Limit = limit,
             StartIndex = startIndex,
             DtoOptions = GetDtoOptions(),
@@ -1083,12 +1089,12 @@ public class ControlHandler : BaseControlHandler
         var query = new InternalItemsQuery(user)
         {
             Recursive = true,
-            GenreIds = new[] { item.Id },
-            IncludeItemTypes = new[]
-            {
+            GenreIds = [item.Id],
+            IncludeItemTypes =
+            [
                 BaseItemKind.Movie,
                 BaseItemKind.Series
-            },
+            ],
             Limit = limit,
             StartIndex = startIndex,
             DtoOptions = GetDtoOptions(),
@@ -1114,8 +1120,8 @@ public class ControlHandler : BaseControlHandler
         var query = new InternalItemsQuery(user)
         {
             Recursive = true,
-            GenreIds = new[] { item.Id },
-            IncludeItemTypes = new[] { BaseItemKind.MusicAlbum },
+            GenreIds = [item.Id],
+            IncludeItemTypes = [BaseItemKind.MusicAlbum],
             Limit = limit,
             StartIndex = startIndex,
             DtoOptions = GetDtoOptions(),
@@ -1133,16 +1139,16 @@ public class ControlHandler : BaseControlHandler
     /// <param name="startIndex">The start index.</param>
     /// <param name="result">An array of <see cref="BaseItem"/>.</param>
     /// <returns>A <see cref="QueryResult{ServerItem}"/>.</returns>
-    private static QueryResult<ServerItem> ToResult(int? startIndex, IReadOnlyCollection<BaseItem> result)
+    private static QueryResult<ServerItem> ToResult(int? startIndex, BaseItem[]? result)
     {
-        var serverItems = result
+        var serverItems = result?
             .Select(i => new ServerItem(i, null))
             .ToArray();
 
         return new QueryResult<ServerItem>(
             startIndex,
-            result.Count,
-            serverItems);
+            result?.Length ?? 0,
+            serverItems ?? []);
     }
 
     /// <summary>
@@ -1194,7 +1200,7 @@ public class ControlHandler : BaseControlHandler
     /// <param name="isPreSorted">True if pre-sorted.</param>
     private static (ItemSortBy SortName, SortOrder SortOrder)[] GetOrderBy(SortCriteria sort, bool isPreSorted)
     {
-        return isPreSorted ? Array.Empty<(ItemSortBy, SortOrder)>() : new[] { (ItemSortBy.SortName, sort.SortOrder) };
+        return isPreSorted ? Array.Empty<(ItemSortBy, SortOrder)>() : [(ItemSortBy.SortName, sort.SortOrder)];
     }
 
     /// <summary>
@@ -1239,8 +1245,10 @@ public class ControlHandler : BaseControlHandler
         if (Guid.TryParse(id, out var itemId))
         {
             var item = _libraryManager.GetItemById(itemId);
-
-            return new ServerItem(item, stubType);
+            if (item is not null)
+            {
+                return new ServerItem(item, stubType);
+            }
         }
 
         Logger.LogError("Error parsing item Id: {Id}. Returning user root folder.", id);
@@ -1259,7 +1267,7 @@ public class ControlHandler : BaseControlHandler
     {
         if (startIndex >= serverItems.Length)
         {
-            return Array.Empty<ServerItem>();
+            return [];
         }
 
         if (startIndex > 0)

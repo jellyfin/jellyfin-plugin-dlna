@@ -1,7 +1,10 @@
-using System;
+#pragma warning disable CA1819 // Properties should not return arrays
 
 namespace Jellyfin.Plugin.Dlna.Model;
 
+/// <summary>
+/// Defines the <see cref="DeviceIdentification" />.
+/// </summary>
 public class DeviceIdentification
 {
     /// <summary>
@@ -56,5 +59,5 @@ public class DeviceIdentification
     /// Gets or sets the headers.
     /// </summary>
     /// <value>The headers.</value>
-    public HttpHeaderInfo[] Headers { get; set; } = Array.Empty<HttpHeaderInfo>();
+    public HttpHeaderInfo[] Headers { get; set; } = [];
 }

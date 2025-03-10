@@ -2,6 +2,9 @@
 
 namespace Jellyfin.Plugin.Dlna.Model;
 
+/// <summary>
+/// Defines the <see cref="DeviceProfileInfo" />.
+/// </summary>
 public class DeviceProfileInfo
 {
     /// <summary>

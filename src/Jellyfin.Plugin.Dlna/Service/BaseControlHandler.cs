@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,17 +10,32 @@ using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Dlna.Service;
 
+/// <summary>
+/// Defines the <see cref="BaseControlHandler" />.
+/// </summary>
 public abstract class BaseControlHandler
 {
     private const string NsSoapEnv = "http://schemas.xmlsoap.org/soap/envelope/";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BaseControlHandler"/> class.
+    /// </summary>
+    /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
     protected BaseControlHandler(ILogger logger)
     {
         Logger = logger;
     }
 
+    /// <summary>
+    /// Gets the <see cref="ILogger"/> instance.
+    /// </summary>
     protected ILogger Logger { get; }
 
+    /// <summary>
+    /// Processes a control request asynchronously.
+    /// </summary>
+    /// <param name="request">The <see cref="ControlRequest"/>.</param>
+    /// <returns>The task object representing the asynchronous control request processing operation.</returns>
     public async Task<ControlResponse> ProcessControlRequestAsync(ControlRequest request)
     {
         try
@@ -178,7 +191,7 @@ public abstract class BaseControlHandler
         throw new EndOfStreamException("Stream ended but no control found.");
     }
 
-    private async Task ParseFirstBodyChildAsync(XmlReader reader, IDictionary<string, string> headers)
+    private static async Task ParseFirstBodyChildAsync(XmlReader reader, Dictionary<string, string> headers)
     {
         await reader.MoveToContentAsync().ConfigureAwait(false);
         await reader.ReadAsync().ConfigureAwait(false);
@@ -198,9 +211,15 @@ public abstract class BaseControlHandler
         }
     }
 
+    /// <summary>
+    /// Writes the result.
+    /// </summary>
+    /// <param name="methodName">The method name.</param>
+    /// <param name="methodParams">The method parameters.</param>
+    /// <param name="xmlWriter">The <see cref="XmlWriter"/>.</param>
     protected abstract void WriteResult(string methodName, IReadOnlyDictionary<string, string> methodParams, XmlWriter xmlWriter);
 
-    private class ControlRequestInfo
+    private sealed class ControlRequestInfo
     {
         public ControlRequestInfo(string localName, string namespaceUri)
         {

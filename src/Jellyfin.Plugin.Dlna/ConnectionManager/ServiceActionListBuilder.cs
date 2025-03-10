@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System.Collections.Generic;
 using Jellyfin.Plugin.Dlna.Common;
 
@@ -11,7 +9,7 @@ namespace Jellyfin.Plugin.Dlna.ConnectionManager;
 public static class ServiceActionListBuilder
 {
     /// <summary>
-    /// Returns an enumerable of the ConnectionManagar:1 DLNA actions.
+    /// Returns an enumerable of the ConnectionManager:1 DLNA actions.
     /// </summary>
     /// <returns>An <see cref="IEnumerable{ServiceAction}"/>.</returns>
     public static IEnumerable<ServiceAction> GetActions()
@@ -36,57 +34,52 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "PrepareForConnection"
+            Name = "PrepareForConnection",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "RemoteProtocolInfo",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_ProtocolInfo"
+                },
+                new Argument
+                {
+                    Name = "PeerConnectionManager",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_ConnectionManager"
+                },
+                new Argument
+                {
+                    Name = "PeerConnectionID",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_ConnectionID"
+                },
+                new Argument
+                {
+                    Name = "Direction",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_Direction"
+                },
+                new Argument
+                {
+                    Name = "ConnectionID",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_ConnectionID"
+                },
+                new Argument
+                {
+                    Name = "AVTransportID",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_AVTransportID"
+                },
+                new Argument
+                {
+                    Name = "RcsID",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_RcsID"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "RemoteProtocolInfo",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_ProtocolInfo"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "PeerConnectionManager",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_ConnectionManager"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "PeerConnectionID",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_ConnectionID"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "Direction",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_Direction"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "ConnectionID",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_ConnectionID"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "AVTransportID",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_AVTransportID"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "RcsID",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_RcsID"
-        });
 
         return action;
     }
@@ -99,64 +92,58 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "GetCurrentConnectionInfo"
+            Name = "GetCurrentConnectionInfo",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "ConnectionID",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_ConnectionID"
+                },
+                new Argument
+                {
+                    Name = "RcsID",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_RcsID"
+                },
+                new Argument
+                {
+                    Name = "AVTransportID",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_AVTransportID"
+                },
+                new Argument
+                {
+                    Name = "ProtocolInfo",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_ProtocolInfo"
+                },
+                new Argument
+                {
+                    Name = "PeerConnectionManager",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_ConnectionManager"
+                },
+                new Argument
+                {
+                    Name = "PeerConnectionID",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_ConnectionID"
+                },
+                new Argument
+                {
+                    Name = "Direction",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_Direction"
+                },
+                new Argument
+                {
+                    Name = "Status",
+                    Direction = "out",
+                    RelatedStateVariable = "A_ARG_TYPE_ConnectionStatus"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "ConnectionID",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_ConnectionID"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "RcsID",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_RcsID"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "AVTransportID",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_AVTransportID"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "ProtocolInfo",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_ProtocolInfo"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "PeerConnectionManager",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_ConnectionManager"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "PeerConnectionID",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_ConnectionID"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "Direction",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_Direction"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "Status",
-            Direction = "out",
-            RelatedStateVariable = "A_ARG_TYPE_ConnectionStatus"
-        });
 
         return action;
     }
@@ -169,22 +156,22 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "GetProtocolInfo"
+            Name = "GetProtocolInfo",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "Source",
+                    Direction = "out",
+                    RelatedStateVariable = "SourceProtocolInfo"
+                },
+                new Argument
+                {
+                    Name = "Sink",
+                    Direction = "out",
+                    RelatedStateVariable = "SinkProtocolInfo"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "Source",
-            Direction = "out",
-            RelatedStateVariable = "SourceProtocolInfo"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "Sink",
-            Direction = "out",
-            RelatedStateVariable = "SinkProtocolInfo"
-        });
 
         return action;
     }
@@ -197,15 +184,16 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "GetCurrentConnectionIDs"
+            Name = "GetCurrentConnectionIDs",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "ConnectionIDs",
+                    Direction = "out",
+                    RelatedStateVariable = "CurrentConnectionIDs"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "ConnectionIDs",
-            Direction = "out",
-            RelatedStateVariable = "CurrentConnectionIDs"
-        });
 
         return action;
     }
@@ -218,15 +206,16 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "ConnectionComplete"
+            Name = "ConnectionComplete",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "ConnectionID",
+                    Direction = "in",
+                    RelatedStateVariable = "A_ARG_TYPE_ConnectionID"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "ConnectionID",
-            Direction = "in",
-            RelatedStateVariable = "A_ARG_TYPE_ConnectionID"
-        });
 
         return action;
     }

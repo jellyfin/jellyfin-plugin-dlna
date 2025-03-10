@@ -1,62 +1,69 @@
-#pragma warning disable CS1591
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Xml.Linq;
 using Jellyfin.Plugin.Dlna.Common;
 using Jellyfin.Plugin.Dlna.Ssdp;
 
 namespace Jellyfin.Plugin.Dlna.PlayTo;
 
+/// <summary>
+/// Defines the <see cref="TransportCommands" />.
+/// </summary>
 public class TransportCommands
 {
-    private const string CommandBase = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" + "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">" + "<SOAP-ENV:Body>" + "<m:{0} xmlns:m=\"{1}\">" + "{2}" + "</m:{0}>" + "</SOAP-ENV:Body></SOAP-ENV:Envelope>";
+    private static readonly CompositeFormat _commandBase = CompositeFormat.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" + "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">" + "<SOAP-ENV:Body>" + "<m:{0} xmlns:m=\"{1}\">" + "{2}" + "</m:{0}>" + "</SOAP-ENV:Body></SOAP-ENV:Envelope>");
 
-    public List<StateVariable> StateVariables { get; } = new List<StateVariable>();
+    /// <summary>
+    /// Gets or sets the state variables.
+    /// </summary>
+    public IReadOnlyList<StateVariable> StateVariables { get; set; } = [];
 
-    public List<ServiceAction> ServiceActions { get; } = new List<ServiceAction>();
+    /// <summary>
+    /// Gets or sets the service actions.
+    /// </summary>
+    public IReadOnlyList<ServiceAction> ServiceActions { get; set; } = [];
 
+    /// <summary>
+    /// Creates <see cref="TransportCommands"/> based on the input <see cref="XDocument"/>.
+    /// </summary>
+    /// <param name="document">The <see cref="XDocument"/>.</param>
     public static TransportCommands Create(XDocument document)
     {
-        var command = new TransportCommands();
-
         var actionList = document.Descendants(UPnpNamespaces.Svc + "actionList");
-
-        foreach (var container in actionList.Descendants(UPnpNamespaces.Svc + "action"))
-        {
-            command.ServiceActions.Add(ServiceActionFromXml(container));
-        }
-
         var stateValues = document.Descendants(UPnpNamespaces.ServiceStateTable).FirstOrDefault();
 
-        if (stateValues is not null)
+        return new()
         {
-            foreach (var container in stateValues.Elements(UPnpNamespaces.Svc + "stateVariable"))
-            {
-                command.StateVariables.Add(FromXml(container));
-            }
-        }
+            ServiceActions = GetServiceActions(actionList),
+            StateVariables = GetStateVariables(stateValues)
+        };
+    }
 
-        return command;
+    private static List<StateVariable> GetStateVariables(XElement? stateValues)
+    {
+        return stateValues?.Descendants(UPnpNamespaces.Svc + "stateVariable").Select(FromXml).ToList() ?? [];
+    }
+
+    private static List<ServiceAction> GetServiceActions(IEnumerable<XElement> actionList)
+    {
+        return actionList.Descendants(UPnpNamespaces.Svc + "action").Select(ServiceActionFromXml).ToList();
     }
 
     private static ServiceAction ServiceActionFromXml(XElement container)
     {
-        var serviceAction = new ServiceAction
+        return new()
         {
             Name = container.GetValue(UPnpNamespaces.Svc + "name") ?? string.Empty,
+            ArgumentList = GetArguments(container)
         };
+    }
 
-        var argumentList = serviceAction.ArgumentList;
-
-        foreach (var arg in container.Descendants(UPnpNamespaces.Svc + "argument"))
-        {
-            argumentList.Add(ArgumentFromXml(arg));
-        }
-
-        return serviceAction;
+    private static List<Argument> GetArguments(XElement container)
+    {
+        return container.Descendants(UPnpNamespaces.Svc + "argument").Select(ArgumentFromXml).ToList();
     }
 
     private static Argument ArgumentFromXml(XElement container)
@@ -92,6 +99,11 @@ public class TransportCommands
         };
     }
 
+    /// <summary>
+    /// Builds the POST payload for a <see cref="ServiceAction"/>.
+    /// </summary>
+    /// <param name="action">The <see cref="ServiceAction"/>.</param>
+    /// <param name="xmlNamespace">The XML namespace.</param>
     public string BuildPost(ServiceAction action, string xmlNamespace)
     {
         var stateString = string.Empty;
@@ -113,9 +125,16 @@ public class TransportCommands
             }
         }
 
-        return string.Format(CultureInfo.InvariantCulture, CommandBase, action.Name, xmlNamespace, stateString);
+        return string.Format(CultureInfo.InvariantCulture, _commandBase, action.Name, xmlNamespace, stateString);
     }
 
+    /// <summary>
+    /// Builds the POST payload for a <see cref="ServiceAction"/>.
+    /// </summary>
+    /// <param name="action">The <see cref="ServiceAction"/>.</param>
+    /// <param name="xmlNamespace">The XML namespace.</param>
+    /// <param name="value">The value.</param>
+    /// <param name="commandParameter">The command parameter.</param>
     public string BuildPost(ServiceAction action, string xmlNamespace, object value, string commandParameter = "")
     {
         var stateString = string.Empty;
@@ -137,10 +156,17 @@ public class TransportCommands
             }
         }
 
-        return string.Format(CultureInfo.InvariantCulture, CommandBase, action.Name, xmlNamespace, stateString);
+        return string.Format(CultureInfo.InvariantCulture, _commandBase, action.Name, xmlNamespace, stateString);
     }
 
-    public string BuildPost(ServiceAction action, string xmlNamespace, object value, Dictionary<string, string> dictionary)
+    /// <summary>
+    /// Builds the POST payload for a <see cref="ServiceAction"/>.
+    /// </summary>
+    /// <param name="action">The <see cref="ServiceAction"/>.</param>
+    /// <param name="xmlNamespace">The XML namespace.</param>
+    /// <param name="value">The value.</param>
+    /// <param name="argumentValueDictionary">The argument values.</param>
+    public string BuildPost(ServiceAction action, string xmlNamespace, object value, Dictionary<string, string> argumentValueDictionary)
     {
         var stateString = string.Empty;
 
@@ -150,7 +176,7 @@ public class TransportCommands
             {
                 stateString += BuildArgumentXml(arg, "0");
             }
-            else if (dictionary.TryGetValue(arg.Name, out var argValue))
+            else if (argumentValueDictionary.TryGetValue(arg.Name, out var argValue))
             {
                 stateString += BuildArgumentXml(arg, argValue);
             }
@@ -160,7 +186,7 @@ public class TransportCommands
             }
         }
 
-        return string.Format(CultureInfo.InvariantCulture, CommandBase, action.Name, xmlNamespace, stateString);
+        return string.Format(CultureInfo.InvariantCulture, _commandBase, action.Name, xmlNamespace, stateString);
     }
 
     private string BuildArgumentXml(Argument argument, string? value, string commandParameter = "")

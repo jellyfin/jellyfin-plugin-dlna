@@ -124,9 +124,8 @@ namespace Rssdp.Infrastructure
             bool wasRemoved = false;
             lock (_Devices)
             {
-                if (_Devices.Contains(device))
+                if (_Devices.Remove(device))
                 {
-                    _Devices.Remove(device);
                     wasRemoved = true;
                 }
             }
@@ -259,7 +258,7 @@ namespace Rssdp.Infrastructure
                     }
                     else if (searchTarget.Trim().StartsWith("uuid:", StringComparison.OrdinalIgnoreCase))
                     {
-                        devices = GetAllDevicesAsFlatEnumerable().Where(d => string.Compare(d.Uuid, searchTarget.Substring(5), StringComparison.OrdinalIgnoreCase) == 0).ToArray();
+                        devices = GetAllDevicesAsFlatEnumerable().Where(d => string.Compare(d.Uuid, searchTarget[5..], StringComparison.OrdinalIgnoreCase) == 0).ToArray();
                     }
                     else if (searchTarget.StartsWith("urn:", StringComparison.OrdinalIgnoreCase))
                     {
@@ -363,9 +362,8 @@ namespace Rssdp.Infrastructure
             var newRequest = new SearchRequest() { EndPoint = endPoint, SearchTarget = searchTarget, Received = DateTime.UtcNow };
             lock (_RecentSearchRequests)
             {
-                if (_RecentSearchRequests.ContainsKey(newRequest.Key))
+                if (_RecentSearchRequests.TryGetValue(newRequest.Key, out var lastRequest))
                 {
-                    var lastRequest = _RecentSearchRequests[newRequest.Key];
                     if (lastRequest.IsOld())
                     {
                         _RecentSearchRequests[newRequest.Key] = newRequest;
@@ -541,7 +539,7 @@ namespace Rssdp.Infrastructure
                 where device.CacheLifetime != TimeSpan.Zero
                 select device.CacheLifetime).ToList();
 
-            if (nonzeroCacheLifetimesQuery.Any())
+            if (nonzeroCacheLifetimesQuery.Count > 0)
             {
                 return nonzeroCacheLifetimesQuery.Min();
             }

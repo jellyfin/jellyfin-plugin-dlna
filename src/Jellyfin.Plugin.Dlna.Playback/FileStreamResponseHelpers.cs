@@ -93,7 +93,7 @@ public static class FileStreamResponseHelpers
             return new OkResult();
         }
 
-        using var transcodingLock = await transcodeManager.LockAsync(outputPath, cancellationTokenSource.Token);
+        using var transcodingLock = await transcodeManager.LockAsync(outputPath, cancellationTokenSource.Token).ConfigureAwait(false);
 
         TranscodingJob? job;
         if (!File.Exists(outputPath))

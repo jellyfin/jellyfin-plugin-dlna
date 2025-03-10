@@ -1,6 +1,3 @@
-#nullable disable
-#pragma warning disable CS1591
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -8,41 +5,54 @@ using MediaBrowser.Model.MediaInfo;
 
 namespace Jellyfin.Plugin.Dlna.Model;
 
+/// <summary>
+/// Defines the <see cref="MediaFormatProfileResolver" />.
+/// </summary>
 public static class MediaFormatProfileResolver
 {
-    public static MediaFormatProfile[] ResolveVideoFormat(string container, string videoCodec, string audioCodec, int? width, int? height, TransportStreamTimestamp timestampType)
+    /// <summary>
+    /// Gets the video format profiles.
+    /// </summary>
+    /// <param name="container">The container.</param>
+    /// <param name="videoCodec">The video codec.</param>
+    /// <param name="audioCodec">The audio codec.</param>
+    /// <param name="width">The width.</param>
+    /// <param name="height">The height.</param>
+    /// <param name="timestampType">The <see cref="TransportStreamTimestamp"/>.</param>
+    /// <returns>DeviceProfile[].</returns>
+    public static MediaFormatProfile[] ResolveVideoFormat(string? container, string? videoCodec, string? audioCodec, int? width, int? height, TransportStreamTimestamp timestampType)
     {
         if (string.Equals(container, "asf", StringComparison.OrdinalIgnoreCase))
         {
             MediaFormatProfile? val = ResolveVideoASFFormat(videoCodec, audioCodec, width, height);
-            return val.HasValue ? new MediaFormatProfile[] { val.Value } : Array.Empty<MediaFormatProfile>();
+            return val.HasValue ? [val.Value] : [];
         }
 
         if (string.Equals(container, "mp4", StringComparison.OrdinalIgnoreCase))
         {
             MediaFormatProfile? val = ResolveVideoMP4Format(videoCodec, audioCodec, width, height);
-            return val.HasValue ? new MediaFormatProfile[] { val.Value } : Array.Empty<MediaFormatProfile>();
+            return val.HasValue ? [val.Value] : [];
         }
 
         if (string.Equals(container, "avi", StringComparison.OrdinalIgnoreCase))
         {
-            return new MediaFormatProfile[] { MediaFormatProfile.AVI };
+            return [MediaFormatProfile.AVI];
         }
 
         if (string.Equals(container, "mkv", StringComparison.OrdinalIgnoreCase))
         {
-            return new MediaFormatProfile[] { MediaFormatProfile.MATROSKA };
+            return [MediaFormatProfile.MATROSKA];
         }
 
         if (string.Equals(container, "mpeg2ps", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(container, "ts", StringComparison.OrdinalIgnoreCase))
         {
-            return new MediaFormatProfile[] { MediaFormatProfile.MPEG_PS_NTSC, MediaFormatProfile.MPEG_PS_PAL };
+            return [MediaFormatProfile.MPEG_PS_NTSC, MediaFormatProfile.MPEG_PS_PAL];
         }
 
         if (string.Equals(container, "mpeg1video", StringComparison.OrdinalIgnoreCase))
         {
-            return new MediaFormatProfile[] { MediaFormatProfile.MPEG1 };
+            return [MediaFormatProfile.MPEG1];
         }
 
         if (string.Equals(container, "mpeg2ts", StringComparison.OrdinalIgnoreCase) ||
@@ -54,29 +64,29 @@ public static class MediaFormatProfileResolver
 
         if (string.Equals(container, "flv", StringComparison.OrdinalIgnoreCase))
         {
-            return new MediaFormatProfile[] { MediaFormatProfile.FLV };
+            return [MediaFormatProfile.FLV];
         }
 
         if (string.Equals(container, "wtv", StringComparison.OrdinalIgnoreCase))
         {
-            return new MediaFormatProfile[] { MediaFormatProfile.WTV };
+            return [MediaFormatProfile.WTV];
         }
 
         if (string.Equals(container, "3gp", StringComparison.OrdinalIgnoreCase))
         {
             MediaFormatProfile? val = ResolveVideo3GPFormat(videoCodec, audioCodec);
-            return val.HasValue ? new MediaFormatProfile[] { val.Value } : Array.Empty<MediaFormatProfile>();
+            return val.HasValue ? [val.Value] : [];
         }
 
         if (string.Equals(container, "ogv", StringComparison.OrdinalIgnoreCase) || string.Equals(container, "ogg", StringComparison.OrdinalIgnoreCase))
         {
-            return new MediaFormatProfile[] { MediaFormatProfile.OGV };
+            return [MediaFormatProfile.OGV];
         }
 
-        return Array.Empty<MediaFormatProfile>();
+        return [];
     }
 
-    private static MediaFormatProfile[] ResolveVideoMPEG2TSFormat(string videoCodec, string audioCodec, int? width, int? height, TransportStreamTimestamp timestampType)
+    private static MediaFormatProfile[] ResolveVideoMPEG2TSFormat(string? videoCodec, string? audioCodec, int? width, int? height, TransportStreamTimestamp timestampType)
     {
         string suffix = string.Empty;
 
@@ -117,43 +127,43 @@ public static class MediaFormatProfileResolver
         {
             if (string.Equals(audioCodec, "lpcm", StringComparison.OrdinalIgnoreCase))
             {
-                return new MediaFormatProfile[] { MediaFormatProfile.AVC_TS_HD_50_LPCM_T };
+                return [MediaFormatProfile.AVC_TS_HD_50_LPCM_T];
             }
 
             if (string.Equals(audioCodec, "dts", StringComparison.OrdinalIgnoreCase))
             {
                 if (timestampType == TransportStreamTimestamp.None)
                 {
-                    return new MediaFormatProfile[] { MediaFormatProfile.AVC_TS_HD_DTS_ISO };
+                    return [MediaFormatProfile.AVC_TS_HD_DTS_ISO];
                 }
 
-                return new MediaFormatProfile[] { MediaFormatProfile.AVC_TS_HD_DTS_T };
+                return [MediaFormatProfile.AVC_TS_HD_DTS_T];
             }
 
             if (string.Equals(audioCodec, "mp2", StringComparison.OrdinalIgnoreCase))
             {
                 if (timestampType == TransportStreamTimestamp.None)
                 {
-                    return new MediaFormatProfile[] { ValueOf(string.Format(CultureInfo.InvariantCulture, "AVC_TS_HP_{0}D_MPEG1_L2_ISO", resolution)) };
+                    return [ValueOf(string.Format(CultureInfo.InvariantCulture, "AVC_TS_HP_{0}D_MPEG1_L2_ISO", resolution))];
                 }
 
-                return new MediaFormatProfile[] { ValueOf(string.Format(CultureInfo.InvariantCulture, "AVC_TS_HP_{0}D_MPEG1_L2_T", resolution)) };
+                return [ValueOf(string.Format(CultureInfo.InvariantCulture, "AVC_TS_HP_{0}D_MPEG1_L2_T", resolution))];
             }
 
             if (string.Equals(audioCodec, "aac", StringComparison.OrdinalIgnoreCase))
             {
-                return new MediaFormatProfile[] { ValueOf(string.Format(CultureInfo.InvariantCulture, "AVC_TS_MP_{0}D_AAC_MULT5{1}", resolution, suffix)) };
+                return [ValueOf(string.Format(CultureInfo.InvariantCulture, "AVC_TS_MP_{0}D_AAC_MULT5{1}", resolution, suffix))];
             }
 
             if (string.Equals(audioCodec, "mp3", StringComparison.OrdinalIgnoreCase))
             {
-                return new MediaFormatProfile[] { ValueOf(string.Format(CultureInfo.InvariantCulture, "AVC_TS_MP_{0}D_MPEG1_L3{1}", resolution, suffix)) };
+                return [ValueOf(string.Format(CultureInfo.InvariantCulture, "AVC_TS_MP_{0}D_MPEG1_L3{1}", resolution, suffix))];
             }
 
             if (string.IsNullOrEmpty(audioCodec) ||
                 string.Equals(audioCodec, "ac3", StringComparison.OrdinalIgnoreCase))
             {
-                return new MediaFormatProfile[] { ValueOf(string.Format(CultureInfo.InvariantCulture, "AVC_TS_MP_{0}D_AC3{1}", resolution, suffix)) };
+                return [ValueOf(string.Format(CultureInfo.InvariantCulture, "AVC_TS_MP_{0}D_AC3{1}", resolution, suffix))];
             }
         }
         else if (string.Equals(videoCodec, "vc1", StringComparison.OrdinalIgnoreCase))
@@ -162,43 +172,43 @@ public static class MediaFormatProfileResolver
             {
                 if ((width.HasValue && width.Value > 720) || (height.HasValue && height.Value > 576))
                 {
-                    return new MediaFormatProfile[] { MediaFormatProfile.VC1_TS_AP_L2_AC3_ISO };
+                    return [MediaFormatProfile.VC1_TS_AP_L2_AC3_ISO];
                 }
 
-                return new MediaFormatProfile[] { MediaFormatProfile.VC1_TS_AP_L1_AC3_ISO };
+                return [MediaFormatProfile.VC1_TS_AP_L1_AC3_ISO];
             }
 
             if (string.Equals(audioCodec, "dts", StringComparison.OrdinalIgnoreCase))
             {
                 suffix = string.Equals(suffix, "_ISO", StringComparison.OrdinalIgnoreCase) ? suffix : "_T";
 
-                return new MediaFormatProfile[] { ValueOf(string.Format(CultureInfo.InvariantCulture, "VC1_TS_HD_DTS{0}", suffix)) };
+                return [ValueOf(string.Format(CultureInfo.InvariantCulture, "VC1_TS_HD_DTS{0}", suffix))];
             }
         }
         else if (string.Equals(videoCodec, "mpeg4", StringComparison.OrdinalIgnoreCase) || string.Equals(videoCodec, "msmpeg4", StringComparison.OrdinalIgnoreCase))
         {
             if (string.Equals(audioCodec, "aac", StringComparison.OrdinalIgnoreCase))
             {
-                return new MediaFormatProfile[] { ValueOf(string.Format(CultureInfo.InvariantCulture, "MPEG4_P2_TS_ASP_AAC{0}", suffix)) };
+                return [ValueOf(string.Format(CultureInfo.InvariantCulture, "MPEG4_P2_TS_ASP_AAC{0}", suffix))];
             }
 
             if (string.Equals(audioCodec, "mp3", StringComparison.OrdinalIgnoreCase))
             {
-                return new MediaFormatProfile[] { ValueOf(string.Format(CultureInfo.InvariantCulture, "MPEG4_P2_TS_ASP_MPEG1_L3{0}", suffix)) };
+                return [ValueOf(string.Format(CultureInfo.InvariantCulture, "MPEG4_P2_TS_ASP_MPEG1_L3{0}", suffix))];
             }
 
             if (string.Equals(audioCodec, "mp2", StringComparison.OrdinalIgnoreCase))
             {
-                return new MediaFormatProfile[] { ValueOf(string.Format(CultureInfo.InvariantCulture, "MPEG4_P2_TS_ASP_MPEG2_L2{0}", suffix)) };
+                return [ValueOf(string.Format(CultureInfo.InvariantCulture, "MPEG4_P2_TS_ASP_MPEG2_L2{0}", suffix))];
             }
 
             if (string.Equals(audioCodec, "ac3", StringComparison.OrdinalIgnoreCase))
             {
-                return new MediaFormatProfile[] { ValueOf(string.Format(CultureInfo.InvariantCulture, "MPEG4_P2_TS_ASP_AC3{0}", suffix)) };
+                return [ValueOf(string.Format(CultureInfo.InvariantCulture, "MPEG4_P2_TS_ASP_AC3{0}", suffix))];
             }
         }
 
-        return Array.Empty<MediaFormatProfile>();
+        return [];
     }
 
     private static MediaFormatProfile ValueOf(string value)
@@ -206,7 +216,7 @@ public static class MediaFormatProfileResolver
         return (MediaFormatProfile)Enum.Parse(typeof(MediaFormatProfile), value, true);
     }
 
-    private static MediaFormatProfile? ResolveVideoMP4Format(string videoCodec, string audioCodec, int? width, int? height)
+    private static MediaFormatProfile? ResolveVideoMP4Format(string? videoCodec, string? audioCodec, int? width, int? height)
     {
         if (string.Equals(videoCodec, "h264", StringComparison.OrdinalIgnoreCase))
         {
@@ -279,7 +289,7 @@ public static class MediaFormatProfileResolver
         return null;
     }
 
-    private static MediaFormatProfile? ResolveVideo3GPFormat(string videoCodec, string audioCodec)
+    private static MediaFormatProfile? ResolveVideo3GPFormat(string? videoCodec, string? audioCodec)
     {
         if (string.Equals(videoCodec, "h264", StringComparison.OrdinalIgnoreCase))
         {
@@ -309,7 +319,7 @@ public static class MediaFormatProfileResolver
         return null;
     }
 
-    private static MediaFormatProfile? ResolveVideoASFFormat(string videoCodec, string audioCodec, int? width, int? height)
+    private static MediaFormatProfile? ResolveVideoASFFormat(string? videoCodec, string? audioCodec, int? width, int? height)
     {
         if (string.Equals(videoCodec, "wmv", StringComparison.OrdinalIgnoreCase) &&
             (string.IsNullOrEmpty(audioCodec) || string.Equals(audioCodec, "wma", StringComparison.OrdinalIgnoreCase) || string.Equals(videoCodec, "wmapro", StringComparison.OrdinalIgnoreCase)))
@@ -363,7 +373,15 @@ public static class MediaFormatProfileResolver
         return null;
     }
 
-    public static MediaFormatProfile? ResolveAudioFormat(string container, int? bitrate, int? frequency, int? channels)
+    /// <summary>
+    /// Gets the audio format profile.
+    /// </summary>
+    /// <param name="container">The container.</param>
+    /// <param name="bitrate">The bitrate.</param>
+    /// <param name="frequency">The frequency.</param>
+    /// <param name="channels">The channel count.</param>
+    /// <returns>The audio format profile.</returns>
+    public static MediaFormatProfile? ResolveAudioFormat(string? container, int? bitrate, int? frequency, int? channels)
     {
         if (string.Equals(container, "asf", StringComparison.OrdinalIgnoreCase))
         {
@@ -465,6 +483,13 @@ public static class MediaFormatProfileResolver
         return MediaFormatProfile.AAC_ADTS;
     }
 
+    /// <summary>
+    /// Gets the image format profile.
+    /// </summary>
+    /// <param name="container">The container.</param>
+    /// <param name="width">The width.</param>
+    /// <param name="height">The height.</param>
+    /// <returns>The image format profile.</returns>
     public static MediaFormatProfile? ResolveImageFormat(string container, int? width, int? height)
     {
         if (string.Equals(container, "jpeg", StringComparison.OrdinalIgnoreCase) ||

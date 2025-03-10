@@ -1,17 +1,30 @@
-#pragma warning disable CS1591
-
 using System.Globalization;
 using MediaBrowser.Model.Dlna;
 
 namespace Jellyfin.Plugin.Dlna.Model;
 
+/// <summary>
+/// Defines the <see cref="DlnaMaps" />.
+/// </summary>
 public static class DlnaMaps
 {
+    /// <summary>
+    /// Takes DLNA flags and stringifies them.
+    /// </summary>
+    /// <param name="flags">The <see cref="DlnaFlags"/>.</param>
+    /// <returns>The flags string.</returns>
     public static string FlagsToString(DlnaFlags flags)
     {
         return string.Format(CultureInfo.InvariantCulture, "{0:X8}{1:D24}", (ulong)flags, 0);
     }
 
+    /// <summary>
+    /// Gets the org operation value.
+    /// </summary>
+    /// <param name="hasKnownRuntime">Value indicating whether the stream has a known runtime.</param>
+    /// <param name="isDirectStream">Value indicating whether the stream is a direct stream.</param>
+    /// <param name="profileTranscodeSeekInfo">The <see cref="TranscodeSeekInfo"/>.</param>
+    /// <returns>The org operation value.</returns>
     public static string GetOrgOpValue(bool hasKnownRuntime, bool isDirectStream, TranscodeSeekInfo profileTranscodeSeekInfo)
     {
         if (hasKnownRuntime)
@@ -31,6 +44,9 @@ public static class DlnaMaps
         return "00";
     }
 
+    /// <summary>
+    /// Gets the image org operation value.
+    /// </summary>
     public static string GetImageOrgOpValue()
     {
         string orgOp = string.Empty;
