@@ -368,7 +368,7 @@ public class ControlHandler : BaseControlHandler
 
                     if (childItem.IsDisplayedAsFolder || displayStubType.HasValue)
                     {
-                        var childCount = GetUserItems(childItem, displayStubType, _user, sortCriteria, null, 0)
+                        var childCount = GetUserItems(childItem, displayStubType, _user, sortCriteria, null, null)
                             .TotalRecordCount;
 
                         _didlBuilder.WriteFolderElement(writer, childItem, displayStubType, item, childCount, filter);
