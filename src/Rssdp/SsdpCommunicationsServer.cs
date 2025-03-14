@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -151,7 +150,7 @@ namespace Rssdp.Infrastructure
         /// <summary>
         /// Sends a message to a particular address (uni or multicast) and port.
         /// </summary>
-        public async Task SendMessage(byte[] messageData, IPEndPoint destination, IPAddress fromlocalIPAddress, CancellationToken cancellationToken)
+        public async Task SendMessage(byte[] messageData, IPEndPoint destination, IPAddress fromLocalIPAddress, CancellationToken cancellationToken)
         {
             if (messageData is null)
             {
@@ -160,7 +159,7 @@ namespace Rssdp.Infrastructure
 
             ThrowIfDisposed();
 
-            var sockets = GetSendSockets(fromlocalIPAddress, destination);
+            var sockets = GetSendSockets(fromLocalIPAddress, destination);
 
             if (sockets.Count == 0)
             {
@@ -247,15 +246,15 @@ namespace Rssdp.Infrastructure
             return iplist;
         }
 
-        public Task SendMulticastMessage(string message, IPAddress fromlocalIPAddress, CancellationToken cancellationToken)
+        public Task SendMulticastMessage(string message, IPAddress fromLocalIPAddress, CancellationToken cancellationToken)
         {
-            return SendMulticastMessage(message, SsdpConstants.UdpResendCount, fromlocalIPAddress, cancellationToken);
+            return SendMulticastMessage(message, SsdpConstants.UdpResendCount, fromLocalIPAddress, cancellationToken);
         }
 
         /// <summary>
         /// Sends a message to the SSDP multicast address and port.
         /// </summary>
-        public async Task SendMulticastMessage(string message, int sendCount, IPAddress fromlocalIPAddress, CancellationToken cancellationToken)
+        public async Task SendMulticastMessage(string message, int sendCount, IPAddress fromLocalIPAddress, CancellationToken cancellationToken)
         {
             if (message is null)
             {
@@ -278,7 +277,7 @@ namespace Rssdp.Infrastructure
                     new IPEndPoint(
                         IPAddress.Parse(SsdpConstants.MulticastLocalAdminAddress),
                         SsdpConstants.MulticastPort),
-                    fromlocalIPAddress,
+                    fromLocalIPAddress,
                     cancellationToken).ConfigureAwait(false);
 
                 await Task.Delay(100, cancellationToken).ConfigureAwait(false);
@@ -441,13 +440,13 @@ namespace Rssdp.Infrastructure
             }
         }
 
-        private void ProcessMessage(string data, IPEndPoint endPoint, IPAddress receivedOnlocalIPAddress)
+        private void ProcessMessage(string data, IPEndPoint endPoint, IPAddress receivedOnLocalIPAddress)
         {
             // Responses start with the HTTP version, prefixed with HTTP/ while
             // requests start with a method which can vary and might be one we haven't
             // seen/don't know. We'll check if this message is a request or a response
             // by checking for the HTTP/ prefix on the start of the message.
-            _logger.LogDebug("Received data from {From} on {Port} at {Address}:\n{Data}", endPoint.Address, endPoint.Port, receivedOnlocalIPAddress, data);
+            _logger.LogDebug("Received data from {From} on {Port} at {Address}:\n{Data}", endPoint.Address, endPoint.Port, receivedOnLocalIPAddress, data);
             if (data.StartsWith("HTTP/", StringComparison.OrdinalIgnoreCase))
             {
                 HttpResponseMessage responseMessage = null;
@@ -462,7 +461,7 @@ namespace Rssdp.Infrastructure
 
                 if (responseMessage is not null)
                 {
-                    OnResponseReceived(responseMessage, endPoint, receivedOnlocalIPAddress);
+                    OnResponseReceived(responseMessage, endPoint, receivedOnLocalIPAddress);
                 }
             }
             else
@@ -479,12 +478,12 @@ namespace Rssdp.Infrastructure
 
                 if (requestMessage is not null)
                 {
-                    OnRequestReceived(requestMessage, endPoint, receivedOnlocalIPAddress);
+                    OnRequestReceived(requestMessage, endPoint, receivedOnLocalIPAddress);
                 }
             }
         }
 
-        private void OnRequestReceived(HttpRequestMessage data, IPEndPoint remoteEndPoint, IPAddress receivedOnlocalIPAddress)
+        private void OnRequestReceived(HttpRequestMessage data, IPEndPoint remoteEndPoint, IPAddress receivedOnLocalIPAddress)
         {
             // SSDP specification says only * is currently used but other uri's might
             // be implemented in the future and should be ignored unless understood.
@@ -495,7 +494,7 @@ namespace Rssdp.Infrastructure
             }
 
             var handlers = RequestReceived;
-            handlers?.Invoke(this, new RequestReceivedEventArgs(data, remoteEndPoint, receivedOnlocalIPAddress));
+            handlers?.Invoke(this, new RequestReceivedEventArgs(data, remoteEndPoint, receivedOnLocalIPAddress));
         }
 
         private void OnResponseReceived(HttpResponseMessage data, IPEndPoint endPoint, IPAddress localIPAddress)

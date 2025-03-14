@@ -1,15 +1,18 @@
-#pragma warning disable CS1591
-
 using System;
-using System.Globalization;
 using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Model.Dlna;
 
 namespace Jellyfin.Plugin.Dlna.Profiles;
 
+/// <summary>
+/// Defines the <see cref="DefaultProfile" />.
+/// </summary>
 [System.Xml.Serialization.XmlRoot("Profile")]
 public class DefaultProfile : DlnaDeviceProfile
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultProfile"/> class.
+    /// </summary>
     public DefaultProfile()
     {
         Id = Guid.NewGuid();
@@ -38,8 +41,8 @@ public class DefaultProfile : DlnaDeviceProfile
 
         EnableAlbumArtInDidl = false;
 
-        TranscodingProfiles = new[]
-        {
+        TranscodingProfiles =
+        [
             new TranscodingProfile
             {
                 Container = "mp3",
@@ -60,10 +63,10 @@ public class DefaultProfile : DlnaDeviceProfile
                 Container = "jpeg",
                 Type = DlnaProfileType.Photo
             }
-        };
+        ];
 
-        DirectPlayProfiles = new[]
-        {
+        DirectPlayProfiles =
+        [
             new DirectPlayProfile
             {
                 // play all
@@ -77,10 +80,10 @@ public class DefaultProfile : DlnaDeviceProfile
                 Container = string.Empty,
                 Type = DlnaProfileType.Audio
             }
-        };
+        ];
 
-        SubtitleProfiles = new[]
-        {
+        SubtitleProfiles =
+        [
             new SubtitleProfile
             {
                 Format = "srt",
@@ -164,16 +167,16 @@ public class DefaultProfile : DlnaDeviceProfile
                 Format = "vtt",
                 Method = SubtitleDeliveryMethod.Embed
             }
-        };
+        ];
 
-        ResponseProfiles = new[]
-        {
+        ResponseProfiles =
+        [
             new ResponseProfile
             {
                 Container = "m4v",
                 Type = DlnaProfileType.Video,
                 MimeType = "video/mp4"
             }
-        };
+        ];
     }
 }

@@ -46,7 +46,7 @@ namespace Rssdp.Infrastructure
                 throw new ArgumentException("data is not a valid request, it does not contain any CRLF/LF terminators.", nameof(data));
             }
 
-            using (var retVal = new ByteArrayContent(Array.Empty<byte>()))
+            using (var retVal = new ByteArrayContent([]))
             {
                 var lines = data.Split(LineTerminators, StringSplitOptions.None);
 
@@ -88,7 +88,7 @@ namespace Rssdp.Infrastructure
                 throw new ArgumentException("request header line is invalid. Http Version not supplied or incorrect format.", nameof(versionData));
             }
 
-            return Version.Parse(versionData.Substring(versionSeparatorIndex + 1));
+            return Version.Parse(versionData[(versionSeparatorIndex + 1)..]);
         }
 
         /// <summary>
@@ -102,8 +102,8 @@ namespace Rssdp.Infrastructure
             // Header format is
             // name: value
             var headerKeySeparatorIndex = line.IndexOf(':', StringComparison.Ordinal);
-            var headerName = line.Substring(0, headerKeySeparatorIndex).Trim();
-            var headerValue = line.Substring(headerKeySeparatorIndex + 1).Trim();
+            var headerName = line[..headerKeySeparatorIndex].Trim();
+            var headerValue = line[(headerKeySeparatorIndex + 1)..].Trim();
 
             // Not sure how to determine where request headers and content headers begin,
             // at least not without a known set of headers (general headers first the content headers)
@@ -177,7 +177,7 @@ namespace Rssdp.Infrastructure
                     for (int segmentIndex = 0; segmentIndex < segments.Length; segmentIndex++)
                     {
                         var segment = segments[segmentIndex];
-                        if (segment.Trim().StartsWith("\"", StringComparison.OrdinalIgnoreCase))
+                        if (segment.Trim().StartsWith('\\'))
                         {
                             segment = CombineQuotedSegments(segments, ref segmentIndex, segment);
                         }
@@ -201,13 +201,13 @@ namespace Rssdp.Infrastructure
             {
                 if (trimmedSegment == "\"\"" ||
                     (
-                        trimmedSegment.EndsWith("\"", StringComparison.OrdinalIgnoreCase)
+                        trimmedSegment.EndsWith('\\')
                         && !trimmedSegment.EndsWith("\"\"", StringComparison.OrdinalIgnoreCase)
                         && !trimmedSegment.EndsWith("\\\"", StringComparison.OrdinalIgnoreCase))
                     )
                 {
                     segmentIndex = index;
-                    return trimmedSegment.Substring(1, trimmedSegment.Length - 2);
+                    return trimmedSegment[1..^1];
                 }
 
                 if (index + 1 < segments.Length)
@@ -217,9 +217,9 @@ namespace Rssdp.Infrastructure
             }
 
             segmentIndex = segments.Length;
-            if (trimmedSegment.StartsWith("\"", StringComparison.OrdinalIgnoreCase) && trimmedSegment.EndsWith("\"", StringComparison.OrdinalIgnoreCase))
+            if (trimmedSegment.StartsWith('\\') && trimmedSegment.EndsWith('\\'))
             {
-                return trimmedSegment.Substring(1, trimmedSegment.Length - 2);
+                return trimmedSegment[1..^1];
             }
 
             return trimmedSegment;

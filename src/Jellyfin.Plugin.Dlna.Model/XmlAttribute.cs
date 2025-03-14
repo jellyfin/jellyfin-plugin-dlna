@@ -1,5 +1,7 @@
 #nullable disable
 
+#pragma warning disable CA1711
+
 using System.Xml.Serialization;
 
 namespace Jellyfin.Plugin.Dlna.Model;

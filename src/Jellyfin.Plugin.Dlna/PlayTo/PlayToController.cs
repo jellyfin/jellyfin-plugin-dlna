@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -31,7 +29,10 @@ using UpnpDeviceInfo = Jellyfin.Plugin.Dlna.Model.UpnpDeviceInfo;
 
 namespace Jellyfin.Plugin.Dlna.PlayTo;
 
-public class PlayToController2 : ISessionController, IDisposable
+/// <summary>
+/// Defines the <see cref="PlayToController" />.
+/// </summary>
+public class PlayToController : ISessionController, IDisposable
 {
     private readonly SessionInfo _session;
     private readonly ISessionManager _sessionManager;
@@ -44,18 +45,33 @@ public class PlayToController2 : ISessionController, IDisposable
     private readonly ILocalizationManager _localization;
     private readonly IMediaSourceManager _mediaSourceManager;
     private readonly IMediaEncoder _mediaEncoder;
-
     private readonly IDeviceDiscovery _deviceDiscovery;
     private readonly string _serverAddress;
     private readonly string? _accessToken;
-
-    private readonly List<PlaylistItem> _playlist = new List<PlaylistItem>();
+    private readonly List<PlaylistItem> _playlist = [];
     private Device _device;
     private int _currentPlaylistIndex;
-
     private bool _disposed;
 
-    public PlayToController2(
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PlayToController"/> class.
+    /// </summary>
+    /// <param name="session">The <see cref="SessionInfo"/>.</param>
+    /// <param name="sessionManager">Instance of the <see cref="ISessionManager"/> interface.</param>
+    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
+    /// <param name="dlnaManager">Instance of the <see cref="IDlnaManager"/> interface.</param>
+    /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
+    /// <param name="imageProcessor">Instance of the <see cref="IImageProcessor"/> interface.</param>
+    /// <param name="serverAddress">The server address.</param>
+    /// <param name="accessToken">The access token.</param>
+    /// <param name="deviceDiscovery">Instance of the <see cref="IDeviceDiscovery"/> interface.</param>
+    /// <param name="userDataManager">Instance of the <see cref="IUserDataManager"/> interface.</param>
+    /// <param name="localization">Instance of the <see cref="ILocalizationManager"/> interface.</param>
+    /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
+    /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
+    /// <param name="device">The <see cref="Device"/>.</param>
+    public PlayToController(
         SessionInfo session,
         ISessionManager sessionManager,
         ILibraryManager libraryManager,
@@ -99,8 +115,14 @@ public class PlayToController2 : ISessionController, IDisposable
         _deviceDiscovery.DeviceLeft += OnDeviceDiscoveryDeviceLeft;
     }
 
+    /// <summary>
+    /// Gets or sets a value indicating the session is active.
+    /// </summary>
     public bool IsSessionActive => !_disposed;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether media control is supported.
+    /// </summary>
     public bool SupportsMediaControl => IsSessionActive;
 
     /*
@@ -114,16 +136,21 @@ public class PlayToController2 : ISessionController, IDisposable
             var nextItemIndex = currentPlayListItemIndex + 1;
             var nextItem = _playlist[nextItemIndex];
 
+            if (nextItem is null)
+            {
+                return;
+            }
+
             // Send the SetNextAvTransport message.
             await _device.SetNextAvTransport(nextItem.StreamUrl, GetDlnaHeaders(nextItem), nextItem.Didl, cancellationToken).ConfigureAwait(false);
         }
     }
 
-    private void OnDeviceUnavailable()
+    private async void OnDeviceUnavailable()
     {
         try
         {
-            _sessionManager.ReportSessionEnded(_session.Id);
+            await _sessionManager.ReportSessionEnded(_session.Id).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -138,10 +165,10 @@ public class PlayToController2 : ISessionController, IDisposable
 
         if (!_disposed
             && info.Headers.TryGetValue("USN", out string? usn)
-            && usn.IndexOf(_device.Properties.UUID, StringComparison.OrdinalIgnoreCase) != -1
-            && (usn.IndexOf("MediaRenderer:", StringComparison.OrdinalIgnoreCase) != -1
+            && usn.Contains(_device.Properties.UUID, StringComparison.OrdinalIgnoreCase)
+            && (usn.Contains("MediaRenderer:", StringComparison.OrdinalIgnoreCase)
                 || (info.Headers.TryGetValue("NT", out string? nt)
-                    && nt.IndexOf("MediaRenderer:", StringComparison.OrdinalIgnoreCase) != -1)))
+                    && nt.Contains("MediaRenderer:", StringComparison.OrdinalIgnoreCase))))
         {
             OnDeviceUnavailable();
         }
@@ -345,6 +372,12 @@ public class PlayToController2 : ISessionController, IDisposable
         };
     }
 
+    /// <summary>
+    /// Sends a play command.
+    /// </summary>
+    /// <param name="command">The <see cref="PlayRequest"/>.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>The task object representing the asynchronous play command sending operation.</returns>
     public Task SendPlayCommand(PlayRequest command, CancellationToken cancellationToken)
     {
         _logger.LogDebug("{0} - Received PlayRequest: {1}", _session.DeviceName, command.PlayCommand);
@@ -466,12 +499,12 @@ public class PlayToController2 : ISessionController, IDisposable
         }
     }
 
-    private bool EnableClientSideSeek(StreamParams info)
+    private static bool EnableClientSideSeek(StreamParams info)
     {
         return info.IsDirectStream;
     }
 
-    private bool EnableClientSideSeek(StreamInfo info)
+    private static bool EnableClientSideSeek(StreamInfo info)
     {
         return info.IsDirectStream;
     }
@@ -479,7 +512,7 @@ public class PlayToController2 : ISessionController, IDisposable
     private void AddItemFromId(Guid id, List<BaseItem> list)
     {
         var item = _libraryManager.GetItemById(id);
-        if (item.MediaType == MediaType.Audio || item.MediaType == MediaType.Video)
+        if (item?.MediaType == MediaType.Audio || item?.MediaType == MediaType.Video)
         {
             list.Add(item);
         }
@@ -500,7 +533,7 @@ public class PlayToController2 : ISessionController, IDisposable
 
         var mediaSources = item is IHasMediaSources
             ? _mediaSourceManager.GetStaticMediaSources(item, true, user).ToArray()
-            : Array.Empty<MediaSourceInfo>();
+            : [];
 
         var playlistItem = GetPlaylistItem(item, mediaSources, profile, _session.DeviceId, mediaSourceId, audioStreamIndex, subtitleStreamIndex);
         playlistItem.StreamInfo.StartPositionTicks = startPostionTicks;
@@ -526,7 +559,7 @@ public class PlayToController2 : ISessionController, IDisposable
         return playlistItem;
     }
 
-    private string? GetDlnaHeaders(PlaylistItem item)
+    private static string? GetDlnaHeaders(PlaylistItem item)
     {
         var profile = item.Profile;
         var streamInfo = item.StreamInfo;
@@ -594,7 +627,8 @@ public class PlayToController2 : ISessionController, IDisposable
                     MaxBitrate = profile.MaxStreamingBitrate,
                     MediaSourceId = mediaSourceId,
                     AudioStreamIndex = audioStreamIndex,
-                    SubtitleStreamIndex = subtitleStreamIndex
+                    SubtitleStreamIndex = subtitleStreamIndex,
+                    EnableDirectStream = false
                 }),
                 Profile = profile
             },
@@ -846,10 +880,7 @@ public class PlayToController2 : ISessionController, IDisposable
     /// <inheritdoc />
     public Task SendMessage<T>(SessionMessageType name, Guid messageId, T data, CancellationToken cancellationToken)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(GetType().Name);
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         return name switch
         {
@@ -860,7 +891,7 @@ public class PlayToController2 : ISessionController, IDisposable
         };
     }
 
-    private class StreamParams
+    private sealed class StreamParams
     {
         private MediaSourceInfo? _mediaSource;
         private IMediaSourceManager? _mediaSourceManager;
@@ -948,7 +979,7 @@ public class PlayToController2 : ISessionController, IDisposable
                 return request;
             }
 
-            var query = url.Substring(index + 1);
+            var query = url[(index + 1)..];
             Dictionary<string, string> values = QueryHelpers.ParseQuery(query).ToDictionary(kv => kv.Key, kv => kv.Value.ToString());
 
             request.DeviceProfileId = values.GetValueOrDefault("DeviceProfileId");

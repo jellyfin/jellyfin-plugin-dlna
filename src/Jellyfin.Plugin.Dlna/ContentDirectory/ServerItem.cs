@@ -5,7 +5,7 @@ namespace Jellyfin.Plugin.Dlna.ContentDirectory;
 /// <summary>
 /// Defines the <see cref="ServerItem" />.
 /// </summary>
-internal class ServerItem
+internal sealed class ServerItem
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ServerItem"/> class.
