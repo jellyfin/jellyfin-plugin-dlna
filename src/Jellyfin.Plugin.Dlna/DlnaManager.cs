@@ -204,6 +204,10 @@ public class DlnaManager : IDlnaManager
         return profile;
     }
 
+    /// <summary>
+    /// Returns the server name
+    /// </summary>
+    /// <returns>string</returns>
     public string GetServerName()
     {
         return _appHost.FriendlyName;
