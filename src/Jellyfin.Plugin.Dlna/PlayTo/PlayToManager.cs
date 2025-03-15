@@ -245,8 +245,8 @@ public sealed class PlayToManager : IDisposable
             {
                 PlayableMediaTypes = profile.FetchSupportedMediaTypes(),
 
-                SupportedCommands =
-                [
+                SupportedCommands = new[]
+                {
                     GeneralCommandType.VolumeDown,
                     GeneralCommandType.VolumeUp,
                     GeneralCommandType.Mute,
@@ -256,7 +256,7 @@ public sealed class PlayToManager : IDisposable
                     GeneralCommandType.SetAudioStreamIndex,
                     GeneralCommandType.SetSubtitleStreamIndex,
                     GeneralCommandType.PlayMediaSource
-                ],
+                },
 
                 SupportsMediaControl = true
             });
