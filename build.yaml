@@ -1,7 +1,7 @@
 name: "DLNA"
 guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
 imageUrl: ""
-version: 7
+version: 8
 targetAbi: "10.10.6.0"
 framework: "net8.0"
 owner: "jellyfin"
@@ -16,6 +16,4 @@ artifacts:
   - "Jellyfin.Plugin.Dlna.Playback.dll"
   - "Rssdp.dll"
 changelog: |-
-  - Fix: ChildCount When Viewing Folders in Directory (GetBrowse) (#128) @tfink419
-  - Add rules, fix issues and cleanup (#96) @Shadowghost
-  - Disable DirectStream for video playback (#124) @ACertainCoder
+  - Revert collection expression (#132) @crobibero
