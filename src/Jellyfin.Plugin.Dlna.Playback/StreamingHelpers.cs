@@ -437,7 +437,7 @@ public static class StreamingHelpers
         var ext = Path.GetExtension(state.RequestedUrl);
         if (!string.IsNullOrEmpty(ext))
         {
-            return ext;
+            return ext.AsSpan().LeftPart('?').ToString();
         }
 
         // Try to infer based on the desired video codec
