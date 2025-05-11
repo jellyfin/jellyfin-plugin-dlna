@@ -1,8 +1,8 @@
 name: "DLNA"
 guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
 imageUrl: ""
-version: 8
-targetAbi: "10.10.6.0"
+version: 9
+targetAbi: "10.10.7.0"
 framework: "net8.0"
 owner: "jellyfin"
 overview: "DLNA Service"
@@ -16,4 +16,6 @@ artifacts:
   - "Jellyfin.Plugin.Dlna.Playback.dll"
   - "Rssdp.dll"
 changelog: |-
-  - Revert collection expression (#132) @crobibero
+  - fix resolution for ts (#146) @tomty89
+  - Fix typo in client discovery interval help text (#149) @AnAnalogGuy
+  - Strip URL parameters (#137) @Vebryn
