@@ -150,7 +150,7 @@ public static class StreamingHelpers
 
                 mediaSource = string.IsNullOrEmpty(streamingRequest.MediaSourceId)
                     ? mediaSources[0]
-                    : mediaSources.Find(i => string.Equals(i.Id, streamingRequest.MediaSourceId, StringComparison.Ordinal));
+                    : mediaSources.First(i => string.Equals(i.Id, streamingRequest.MediaSourceId, StringComparison.Ordinal));
 
                 if (mediaSource is null && Guid.Parse(streamingRequest.MediaSourceId).Equals(streamingRequest.Id))
                 {
@@ -232,11 +232,18 @@ public static class StreamingHelpers
                 }
                 else
                 {
+                    var h264EquivalentBitrate = EncodingHelper.ScaleBitrate(
+                        state.OutputVideoBitrate.Value,
+                        state.ActualOutputVideoCodec,
+                        "h264");
+
                     var resolution = ResolutionNormalizer.Normalize(
                         state.VideoStream?.BitRate,
                         state.OutputVideoBitrate.Value,
+                        h264EquivalentBitrate,
                         state.VideoRequest.MaxWidth,
-                        state.VideoRequest.MaxHeight);
+                        state.VideoRequest.MaxHeight,
+                        state.TargetFramerate);
 
                     state.VideoRequest.MaxWidth = resolution.MaxWidth;
                     state.VideoRequest.MaxHeight = resolution.MaxHeight;
@@ -327,7 +334,33 @@ public static class StreamingHelpers
 
             responseHeaders.Append(
                 "contentFeatures.dlna.org",
-                ContentFeatureBuilder.BuildVideoHeader(profile, state.OutputContainer, videoCodec, audioCodec, state.OutputWidth, state.OutputHeight, state.TargetVideoBitDepth, state.OutputVideoBitrate, state.TargetTimestamp, isStaticallyStreamed, state.RunTimeTicks, state.TargetVideoProfile, state.TargetVideoRangeType, state.TargetVideoLevel, state.TargetFramerate, state.TargetPacketLength, state.TranscodeSeekInfo, state.IsTargetAnamorphic, state.IsTargetInterlaced, state.TargetRefFrames, state.TargetVideoStreamCount, state.TargetAudioStreamCount, state.TargetVideoCodecTag, state.IsTargetAVC).FirstOrDefault() ?? string.Empty);
+                ContentFeatureBuilder.BuildVideoHeader(
+                        profile,
+                        state.OutputContainer,
+                        videoCodec,
+                        audioCodec,
+                        state.OutputWidth,
+                        state.OutputHeight,
+                        state.TargetVideoBitDepth,
+                        state.OutputVideoBitrate,
+                        state.TargetTimestamp,
+                        isStaticallyStreamed,
+                        state.RunTimeTicks,
+                        state.TargetVideoProfile,
+                        state.TargetVideoRangeType,
+                        state.TargetVideoLevel,
+                        state.TargetFramerate,
+                        state.TargetPacketLength,
+                        state.TranscodeSeekInfo,
+                        state.IsTargetAnamorphic,
+                        state.IsTargetInterlaced,
+                        state.TargetRefFrames,
+                        state.TargetVideoStreamCount,
+                        state.TargetAudioStreamCount,
+                        state.TargetStreamCount,
+                        state.TargetVideoCodecTag,
+                        state.IsTargetAVC)
+                    .FirstOrDefault() ?? string.Empty);
         }
     }
 
@@ -569,6 +602,7 @@ public static class StreamingHelpers
                 state.TargetRefFrames,
                 state.TargetVideoStreamCount,
                 state.TargetAudioStreamCount,
+                state.TargetStreamCount,
                 state.TargetVideoCodecTag,
                 state.IsTargetAVC);
 

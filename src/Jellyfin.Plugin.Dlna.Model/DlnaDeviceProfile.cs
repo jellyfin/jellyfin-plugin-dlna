@@ -5,6 +5,7 @@ using System.Xml.Serialization;
 using Jellyfin.Data.Enums;
 using Jellyfin.Extensions;
 using MediaBrowser.Model.Dlna;
+using MediaBrowser.Model.Extensions;
 using MediaBrowser.Model.MediaInfo;
 
 namespace Jellyfin.Plugin.Dlna.Model;
@@ -109,7 +110,7 @@ public class DlnaDeviceProfile : DeviceProfile
     /// Gets or sets the maximum allowed height of embedded icons.
     /// </summary>
     public int? MaxIconHeight { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the content of the aggregationFlags element in the urn:schemas-sonycom:av namespace.
     /// </summary>
@@ -154,19 +155,19 @@ public class DlnaDeviceProfile : DeviceProfile
     /// Gets or sets the XmlRootAttributes.
     /// </summary>
     public XmlAttribute[] XmlRootAttributes { get; set; } = Array.Empty<XmlAttribute>();
-    
+
     /// <summary>
     /// Gets or sets the ResponseProfiles.
     /// </summary>
     public ResponseProfile[] ResponseProfiles { get; set; } = Array.Empty<ResponseProfile>();
-    
+
     /// <summary>
     /// The GetSupportedMediaTypes.
     /// </summary>
     /// <returns>The .</returns>
     public MediaType[] GetSupportedMediaTypes()
     {
-        return ContainerProfile.SplitValue(SupportedMediaTypes)
+        return ContainerHelper.Split(SupportedMediaTypes)
             .Select(m => Enum.TryParse<MediaType>(m, out var parsed) ? parsed : MediaType.Unknown)
             .Where(m => m != MediaType.Unknown)
             .ToArray();
@@ -185,7 +186,7 @@ public class DlnaDeviceProfile : DeviceProfile
         return TranscodingProfiles
             .Where(i => i.Type == DlnaProfileType.Audio)
             .Where(i => string.Equals(container, i.Container, StringComparison.OrdinalIgnoreCase))
-            .FirstOrDefault(i => i.GetAudioCodecs().Contains(audioCodec ?? string.Empty, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(i => ContainerHelper.ContainsContainer(i.AudioCodec, audioCodec));
     }
 
     /// <summary>
@@ -202,7 +203,7 @@ public class DlnaDeviceProfile : DeviceProfile
         return TranscodingProfiles
             .Where(i => i.Type == DlnaProfileType.Video)
             .Where(i => string.Equals(container, i.Container, StringComparison.OrdinalIgnoreCase))
-            .Where(i => i.GetAudioCodecs().Contains(audioCodec ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+            .Where(i => ContainerHelper.ContainsContainer(i.AudioCodec, audioCodec))
             .FirstOrDefault(i => string.Equals(videoCodec, i.VideoCodec, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -225,7 +226,7 @@ public class DlnaDeviceProfile : DeviceProfile
                 continue;
             }
 
-            if (!ContainerProfile.ContainsContainer(i.GetContainers(), container))
+            if (!ContainerHelper.ContainsContainer(i.Container, container))
             {
                 continue;
             }
@@ -273,7 +274,7 @@ public class DlnaDeviceProfile : DeviceProfile
                 continue;
             }
 
-            if (!ContainerProfile.ContainsContainer(i.GetContainers(), container))
+            if (!ContainerHelper.ContainsContainer(i.Container, container))
             {
                 continue;
             }
@@ -320,6 +321,7 @@ public class DlnaDeviceProfile : DeviceProfile
     /// <param name="refFrames">The ref frames.</param>
     /// <param name="numVideoStreams">The number of video streams.</param>
     /// <param name="numAudioStreams">The number of audio streams.</param>
+    /// <param name="numStreams">The number of streams.</param>
     /// <param name="videoCodecTag">The video Codec tag.</param>
     /// <param name="isAvc">True if Avc.</param>
     /// <returns>The <see cref="ResponseProfile"/>.</returns>
@@ -342,6 +344,7 @@ public class DlnaDeviceProfile : DeviceProfile
         int? refFrames,
         int? numVideoStreams,
         int? numAudioStreams,
+        int numStreams,
         string? videoCodecTag,
         bool? isAvc)
     {
@@ -352,7 +355,7 @@ public class DlnaDeviceProfile : DeviceProfile
                 continue;
             }
 
-            if (!ContainerProfile.ContainsContainer(i.GetContainers(), container))
+            if (!ContainerHelper.ContainsContainer(i.Container, container))
             {
                 continue;
             }
@@ -372,7 +375,26 @@ public class DlnaDeviceProfile : DeviceProfile
             var anyOff = false;
             foreach (ProfileCondition c in i.Conditions)
             {
-                if (!ConditionProcessor.IsVideoConditionSatisfied(GetModelProfileCondition(c), width, height, bitDepth, videoBitrate, videoProfile, videoRangeType, videoLevel, videoFramerate, packetLength, timestamp, isAnamorphic, isInterlaced, refFrames, numVideoStreams, numAudioStreams, videoCodecTag, isAvc))
+                if (!ConditionProcessor.IsVideoConditionSatisfied(
+                        GetModelProfileCondition(c),
+                        width,
+                        height,
+                        bitDepth,
+                        videoBitrate,
+                        videoProfile,
+                        videoRangeType,
+                        videoLevel,
+                        videoFramerate,
+                        packetLength,
+                        timestamp,
+                        isAnamorphic,
+                        isInterlaced,
+                        refFrames,
+                        numStreams,
+                        numVideoStreams,
+                        numAudioStreams,
+                        videoCodecTag,
+                        isAvc))
                 {
                     anyOff = true;
                     break;

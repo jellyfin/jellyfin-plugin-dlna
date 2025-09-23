@@ -6,9 +6,9 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
 using Jellyfin.Data.Events;
+using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Plugin.Dlna.Didl;
 using Jellyfin.Plugin.Dlna.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
@@ -571,6 +571,7 @@ public class PlayToController2 : ISessionController, IDisposable
                 streamInfo.TargetRefFrames,
                 streamInfo.TargetVideoStreamCount,
                 streamInfo.TargetAudioStreamCount,
+                streamInfo.GetStreamCount(),
                 streamInfo.TargetVideoCodecTag,
                 streamInfo.IsTargetAVC);
 

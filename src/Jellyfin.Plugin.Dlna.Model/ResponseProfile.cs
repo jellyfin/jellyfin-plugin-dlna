@@ -1,8 +1,8 @@
 #nullable disable
 
-using System;
 using System.Xml.Serialization;
 using MediaBrowser.Model.Dlna;
+using MediaBrowser.Model.Extensions;
 
 namespace Jellyfin.Plugin.Dlna.Model;
 
@@ -10,7 +10,7 @@ public class ResponseProfile
 {
     public ResponseProfile()
     {
-        Conditions = Array.Empty<ProfileCondition>();
+        Conditions = [];
     }
 
     [XmlAttribute("container")]
@@ -35,16 +35,16 @@ public class ResponseProfile
 
     public string[] GetContainers()
     {
-        return ContainerProfile.SplitValue(Container);
+        return ContainerHelper.Split(Container);
     }
 
     public string[] GetAudioCodecs()
     {
-        return ContainerProfile.SplitValue(AudioCodec);
+        return ContainerHelper.Split(AudioCodec);
     }
 
     public string[] GetVideoCodecs()
     {
-        return ContainerProfile.SplitValue(VideoCodec);
+        return ContainerHelper.Split(VideoCodec);
     }
 }

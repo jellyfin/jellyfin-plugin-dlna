@@ -140,6 +140,7 @@ public static class ContentFeatureBuilder
         int? refFrames,
         int? numVideoStreams,
         int? numAudioStreams,
+        int numStreams,
         string videoCodecTag,
         bool? isAvc)
     {
@@ -189,6 +190,7 @@ public static class ContentFeatureBuilder
             refFrames,
             numVideoStreams,
             numAudioStreams,
+            numStreams,
             videoCodecTag,
             isAvc);
 

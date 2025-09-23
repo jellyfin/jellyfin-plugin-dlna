@@ -6,8 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml;
-using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
+using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Plugin.Dlna.ContentDirectory;
 using Jellyfin.Plugin.Dlna.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
@@ -24,7 +24,6 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.Net;
 using Microsoft.Extensions.Logging;
-using DeviceProfile = MediaBrowser.Model.Dlna.DeviceProfile;
 using Episode = MediaBrowser.Controller.Entities.TV.Episode;
 using Genre = MediaBrowser.Controller.Entities.Genre;
 using MediaOptions = MediaBrowser.Model.Dlna.MediaOptions;
@@ -238,6 +237,7 @@ public class DidlBuilder
             streamInfo.TargetRefFrames,
             streamInfo.TargetVideoStreamCount,
             streamInfo.TargetAudioStreamCount,
+            streamInfo.GetStreamCount(),
             streamInfo.TargetVideoCodecTag,
             streamInfo.IsTargetAVC);
 
@@ -394,6 +394,7 @@ public class DidlBuilder
             streamInfo.TargetRefFrames,
             streamInfo.TargetVideoStreamCount,
             streamInfo.TargetAudioStreamCount,
+            streamInfo.GetStreamCount(),
             streamInfo.TargetVideoCodecTag,
             streamInfo.IsTargetAVC);
 

@@ -16,9 +16,7 @@ using Jellyfin.Plugin.Dlna.Server;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Controller;
-using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Model.Dlna;
-using MediaBrowser.Model.Drawing;
 using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Serialization;
 using Microsoft.AspNetCore.Http;
@@ -255,7 +253,7 @@ public class DlnaManager : IDlnaManager
                 var tempProfile = (DlnaDeviceProfile)_xmlSerializer.DeserializeFromFile(typeof(DlnaDeviceProfile), path);
                 var profile = ReserializeProfile(tempProfile);
 
-                profile.Id = path.ToLowerInvariant().GetMD5().ToString("N", CultureInfo.InvariantCulture);
+                profile.Id = path.ToLowerInvariant().GetMD5();
 
                 _profiles[path] = new Tuple<InternalProfileInfo, DlnaDeviceProfile>(GetInternalProfileInfo(_fileSystem.GetFileInfo(path), type), profile);
 
@@ -389,7 +387,7 @@ public class DlnaManager : IDlnaManager
     {
         profile = ReserializeProfile(profile);
 
-        ArgumentException.ThrowIfNullOrEmpty(profile.Id);
+        ArgumentNullException.ThrowIfNull(profile.Id);
 
         ArgumentException.ThrowIfNullOrEmpty(profile.Name);
 

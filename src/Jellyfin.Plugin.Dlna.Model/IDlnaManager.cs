@@ -2,8 +2,6 @@
 
 using System.Collections.Generic;
 using System.IO;
-using MediaBrowser.Controller.Drawing;
-using MediaBrowser.Model.Dlna;
 using Microsoft.AspNetCore.Http;
 
 namespace Jellyfin.Plugin.Dlna.Model;

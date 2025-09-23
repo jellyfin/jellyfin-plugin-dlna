@@ -81,11 +81,11 @@ public static class StreamInfoExtensions
     {
         var list = new List<NameValuePair>();
 
-        string audioCodecs = item.AudioCodecs.Length == 0 ?
+        string audioCodecs = item.AudioCodecs.Count == 0 ?
             string.Empty :
             string.Join(',', item.AudioCodecs);
 
-        string videoCodecs = item.VideoCodecs.Length == 0 ?
+        string videoCodecs = item.VideoCodecs.Count == 0 ?
             string.Empty :
             string.Join(',', item.VideoCodecs);
 
@@ -164,7 +164,7 @@ public static class StreamInfoExtensions
 
         list.Add(new NameValuePair("Tag", item.MediaSource?.ETag ?? string.Empty));
 
-        string subtitleCodecs = item.SubtitleCodecs.Length == 0 ?
+        string subtitleCodecs = item.SubtitleCodecs.Count == 0 ?
             string.Empty :
             string.Join(",", item.SubtitleCodecs);
 
@@ -204,5 +204,11 @@ public static class StreamInfoExtensions
         }
 
         return list;
+    }
+
+    public static int GetStreamCount(this StreamInfo streamInfo)
+    {
+        var streamCount = streamInfo.MediaSource?.MediaStreams.Count ?? 1;
+        return Math.Min(streamCount, streamInfo.IsDirectStream ? int.MaxValue : 1);
     }
 }

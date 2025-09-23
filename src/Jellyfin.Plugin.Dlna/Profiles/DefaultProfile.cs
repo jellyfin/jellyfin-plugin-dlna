@@ -1,7 +1,6 @@
 #pragma warning disable CS1591
 
 using System;
-using System.Globalization;
 using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Model.Dlna;
 
@@ -12,7 +11,7 @@ public class DefaultProfile : DlnaDeviceProfile
 {
     public DefaultProfile()
     {
-        Id = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture);
+        Id = Guid.NewGuid();
         Name = "Generic Device";
 
         ProtocolInfo = "http-get:*:video/mpeg:*,http-get:*:video/mp4:*,http-get:*:video/vnd.dlna.mpeg-tts:*,http-get:*:video/avi:*,http-get:*:video/x-matroska:*,http-get:*:video/x-ms-wmv:*,http-get:*:video/wtv:*,http-get:*:audio/mpeg:*,http-get:*:audio/mp3:*,http-get:*:audio/mp4:*,http-get:*:audio/x-ms-wma:*,http-get:*:audio/wav:*,http-get:*:audio/L16:*,http-get:*:image/jpeg:*,http-get:*:image/png:*,http-get:*:image/gif:*,http-get:*:image/tiff:*";

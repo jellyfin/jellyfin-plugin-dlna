@@ -8,8 +8,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Xml;
-using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
+using Jellyfin.Database.Implementations.Entities;
+using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Plugin.Dlna.Didl;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Service;
@@ -491,21 +492,21 @@ public class ControlHandler : BaseControlHandler
     {
         var folder = (Folder)item;
 
-        MediaType[] mediaTypes = Array.Empty<MediaType>();
+        MediaType[] mediaTypes = [];
         bool? isFolder = null;
 
         switch (search.SearchType)
         {
             case SearchType.Audio:
-                mediaTypes = new[] { MediaType.Audio };
+                mediaTypes = [MediaType.Audio];
                 isFolder = false;
                 break;
             case SearchType.Video:
-                mediaTypes = new[] { MediaType.Video };
+                mediaTypes = [MediaType.Video];
                 isFolder = false;
                 break;
             case SearchType.Image:
-                mediaTypes = new[] { MediaType.Photo };
+                mediaTypes = [MediaType.Photo];
                 isFolder = false;
                 break;
             case SearchType.Playlist:
@@ -522,7 +523,7 @@ public class ControlHandler : BaseControlHandler
             User = user,
             Recursive = true,
             IsMissing = false,
-            ExcludeItemTypes = new[] { BaseItemKind.Book },
+            ExcludeItemTypes = [BaseItemKind.Book],
             IsFolder = isFolder,
             MediaTypes = mediaTypes,
             DtoOptions = GetDtoOptions()
@@ -590,7 +591,7 @@ public class ControlHandler : BaseControlHandler
             Limit = limit,
             StartIndex = startIndex,
             IsVirtualItem = false,
-            ExcludeItemTypes = new[] { BaseItemKind.Book },
+            ExcludeItemTypes = [BaseItemKind.Book],
             IsPlaceHolder = false,
             DtoOptions = GetDtoOptions(),
             OrderBy = GetOrderBy(sort, folder.IsPreSorted)
@@ -615,7 +616,7 @@ public class ControlHandler : BaseControlHandler
         {
             StartIndex = startIndex,
             Limit = limit,
-            IncludeItemTypes = new[] { BaseItemKind.LiveTvChannel },
+            IncludeItemTypes = [BaseItemKind.LiveTvChannel],
             OrderBy = GetOrderBy(sort, false)
         };
 
@@ -843,11 +844,11 @@ public class ControlHandler : BaseControlHandler
         query.Recursive = true;
         query.Parent = parent;
 
-        query.OrderBy = new[]
-        {
+        query.OrderBy =
+        [
             (ItemSortBy.DatePlayed, SortOrder.Descending),
             (ItemSortBy.SortName, SortOrder.Ascending)
-        };
+        ];
 
         query.IsResumable = true;
         query.Limit ??= 10;
@@ -865,7 +866,7 @@ public class ControlHandler : BaseControlHandler
     private QueryResult<ServerItem> GetMovieCollections(InternalItemsQuery query)
     {
         query.Recursive = true;
-        query.IncludeItemTypes = new[] { BaseItemKind.BoxSet };
+        query.IncludeItemTypes = [BaseItemKind.BoxSet];
 
         var result = _libraryManager.GetItemsResult(query);
 
@@ -885,7 +886,7 @@ public class ControlHandler : BaseControlHandler
         query.Recursive = true;
         query.Parent = parent;
         query.IsFavorite = isFavorite;
-        query.IncludeItemTypes = new[] { itemType };
+        query.IncludeItemTypes = [itemType];
 
         var result = _libraryManager.GetItemsResult(query);
 
@@ -902,8 +903,8 @@ public class ControlHandler : BaseControlHandler
     private QueryResult<ServerItem> GetGenres(BaseItem parent, InternalItemsQuery query)
     {
         // Don't sort
-        query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
-        query.AncestorIds = new[] { parent.Id };
+        query.OrderBy = [];
+        query.AncestorIds = [parent.Id];
         var genresResult = _libraryManager.GetGenres(query);
 
         return ToResult(query.StartIndex, genresResult);
@@ -918,8 +919,8 @@ public class ControlHandler : BaseControlHandler
     private QueryResult<ServerItem> GetMusicGenres(BaseItem parent, InternalItemsQuery query)
     {
         // Don't sort
-        query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
-        query.AncestorIds = new[] { parent.Id };
+        query.OrderBy = [];
+        query.AncestorIds = [parent.Id];
         var genresResult = _libraryManager.GetMusicGenres(query);
 
         return ToResult(query.StartIndex, genresResult);
@@ -934,8 +935,8 @@ public class ControlHandler : BaseControlHandler
     private QueryResult<ServerItem> GetMusicAlbumArtists(BaseItem parent, InternalItemsQuery query)
     {
         // Don't sort
-        query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
-        query.AncestorIds = new[] { parent.Id };
+        query.OrderBy = [];
+        query.AncestorIds = [parent.Id];
         var artists = _libraryManager.GetAlbumArtists(query);
 
         return ToResult(query.StartIndex, artists);
@@ -950,8 +951,8 @@ public class ControlHandler : BaseControlHandler
     private QueryResult<ServerItem> GetMusicArtists(BaseItem parent, InternalItemsQuery query)
     {
         // Don't sort
-        query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
-        query.AncestorIds = new[] { parent.Id };
+        query.OrderBy = [];
+        query.AncestorIds = [parent.Id];
         var artists = _libraryManager.GetArtists(query);
         return ToResult(query.StartIndex, artists);
     }
@@ -965,8 +966,8 @@ public class ControlHandler : BaseControlHandler
     private QueryResult<ServerItem> GetFavoriteArtists(BaseItem parent, InternalItemsQuery query)
     {
         // Don't sort
-        query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
-        query.AncestorIds = new[] { parent.Id };
+        query.OrderBy = [];
+        query.AncestorIds = [parent.Id];
         query.IsFavorite = true;
         var artists = _libraryManager.GetArtists(query);
         return ToResult(query.StartIndex, artists);
@@ -980,7 +981,7 @@ public class ControlHandler : BaseControlHandler
     private QueryResult<ServerItem> GetMusicPlaylists(InternalItemsQuery query)
     {
         query.Parent = null;
-        query.IncludeItemTypes = new[] { BaseItemKind.Playlist };
+        query.IncludeItemTypes = [BaseItemKind.Playlist];
         query.Recursive = true;
 
         var result = _libraryManager.GetItemsResult(query);
@@ -996,7 +997,7 @@ public class ControlHandler : BaseControlHandler
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
     private QueryResult<ServerItem> GetNextUp(BaseItem parent, InternalItemsQuery query)
     {
-        query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
+        query.OrderBy = [];
 
         var result = _tvSeriesManager.GetNextUp(
             new NextUpQuery
@@ -1004,9 +1005,9 @@ public class ControlHandler : BaseControlHandler
                 Limit = query.Limit,
                 StartIndex = query.StartIndex,
                 // User cannot be null here as the caller has set it
-                UserId = query.User!.Id
+                User = query.User
             },
-            new[] { parent },
+            [parent],
             query.DtoOptions);
 
         return ToResult(query.StartIndex, result);
@@ -1021,15 +1022,15 @@ public class ControlHandler : BaseControlHandler
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
     private QueryResult<ServerItem> GetLatest(BaseItem parent, InternalItemsQuery query, BaseItemKind itemType)
     {
-        query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
+        query.OrderBy = [];
 
         var items = _userViewManager.GetLatestItems(
             new LatestItemsQuery
             {
                 // User cannot be null here as the caller has set it
-                UserId = query.User!.Id,
+                User = query.User,
                 Limit = query.Limit ?? 50,
-                IncludeItemTypes = new[] { itemType },
+                IncludeItemTypes = [itemType],
                 ParentId = parent?.Id ?? Guid.Empty,
                 GroupItems = true
             },
@@ -1052,8 +1053,8 @@ public class ControlHandler : BaseControlHandler
         var query = new InternalItemsQuery(user)
         {
             Recursive = true,
-            ArtistIds = new[] { item.Id },
-            IncludeItemTypes = new[] { BaseItemKind.MusicAlbum },
+            ArtistIds = [item.Id],
+            IncludeItemTypes = [BaseItemKind.MusicAlbum],
             Limit = limit,
             StartIndex = startIndex,
             DtoOptions = GetDtoOptions(),
@@ -1079,12 +1080,12 @@ public class ControlHandler : BaseControlHandler
         var query = new InternalItemsQuery(user)
         {
             Recursive = true,
-            GenreIds = new[] { item.Id },
-            IncludeItemTypes = new[]
-            {
+            GenreIds = [item.Id],
+            IncludeItemTypes =
+            [
                 BaseItemKind.Movie,
                 BaseItemKind.Series
-            },
+            ],
             Limit = limit,
             StartIndex = startIndex,
             DtoOptions = GetDtoOptions(),
@@ -1110,8 +1111,8 @@ public class ControlHandler : BaseControlHandler
         var query = new InternalItemsQuery(user)
         {
             Recursive = true,
-            GenreIds = new[] { item.Id },
-            IncludeItemTypes = new[] { BaseItemKind.MusicAlbum },
+            GenreIds = [item.Id],
+            IncludeItemTypes = [BaseItemKind.MusicAlbum],
             Limit = limit,
             StartIndex = startIndex,
             DtoOptions = GetDtoOptions(),
