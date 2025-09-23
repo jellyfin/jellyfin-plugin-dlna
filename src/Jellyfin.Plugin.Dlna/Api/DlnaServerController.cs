@@ -1,9 +1,9 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Mime;
 using System.Threading.Tasks;
+using Jellyfin.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Common.Api;
 using MediaBrowser.Model.Net;
@@ -21,6 +21,8 @@ namespace Jellyfin.Plugin.Dlna.Api;
 [Authorize(Policy = Policies.AnonymousLanAccessPolicy)]
 public class DlnaServerController : ControllerBase
 {
+    private static readonly string[] _relativePathUserAgents = ["Bigscreen"];
+
     private readonly IDlnaManager _dlnaManager;
     private readonly IContentDirectory _contentDirectory;
     private readonly IConnectionManager _connectionManager;
@@ -59,8 +61,21 @@ public class DlnaServerController : ControllerBase
     [Produces(MediaTypeNames.Text.Xml)]
     public ActionResult<string> GetDescriptionXml([FromRoute, Required] string serverId)
     {
-        var url = GetAbsoluteUri();
-        var serverAddress = url.Substring(0, url.IndexOf("/dlna/", StringComparison.OrdinalIgnoreCase));
+        var useRelativePath = false;
+        string? userAgent = Request.Headers.UserAgent;
+        if (userAgent is not null)
+        {
+            var firstIndexOfSlash = userAgent.IndexOf('/', StringComparison.OrdinalIgnoreCase);
+            if (firstIndexOfSlash > 0)
+            {
+                userAgent = userAgent[..firstIndexOfSlash];
+            }
+
+            useRelativePath = _relativePathUserAgents.Contains(userAgent, StringComparison.Ordinal);
+        }
+
+        var url = useRelativePath ? GetRelativePath() : GetAbsoluteUri();
+        var serverAddress = url[..url.IndexOf("/dlna/", StringComparison.OrdinalIgnoreCase)];
         var xml = _dlnaManager.GetServerDescriptionXml(Request.Headers, serverId, serverAddress);
         return Ok(xml);
     }
@@ -78,7 +93,6 @@ public class DlnaServerController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     [Produces(MediaTypeNames.Text.Xml)]
-    [SuppressMessage("Microsoft.Performance", "CA1801:ReviewUnusedParameters", MessageId = "serverId", Justification = "Required for DLNA")]
     public ActionResult<string> GetContentDirectory([FromRoute, Required] string serverId)
     {
         return Ok(_contentDirectory.GetServiceXml());
@@ -97,7 +111,6 @@ public class DlnaServerController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     [Produces(MediaTypeNames.Text.Xml)]
-    [SuppressMessage("Microsoft.Performance", "CA1801:ReviewUnusedParameters", MessageId = "serverId", Justification = "Required for DLNA")]
     public ActionResult<string> GetMediaReceiverRegistrar([FromRoute, Required] string serverId)
     {
         return Ok(_mediaReceiverRegistrar.GetServiceXml());
@@ -116,7 +129,6 @@ public class DlnaServerController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     [Produces(MediaTypeNames.Text.Xml)]
-    [SuppressMessage("Microsoft.Performance", "CA1801:ReviewUnusedParameters", MessageId = "serverId", Justification = "Required for DLNA")]
     public ActionResult<string> GetConnectionManager([FromRoute, Required] string serverId)
     {
         return Ok(_connectionManager.GetServiceXml());
@@ -179,8 +191,7 @@ public class DlnaServerController : ControllerBase
     /// <returns>Event subscription response.</returns>
     [HttpSubscribe("{serverId}/MediaReceiverRegistrar/Events")]
     [HttpUnsubscribe("{serverId}/MediaReceiverRegistrar/Events")]
-    [ApiExplorerSettings(IgnoreApi = true)] // Ignore in openapi docs
-    [SuppressMessage("Microsoft.Performance", "CA1801:ReviewUnusedParameters", MessageId = "serverId", Justification = "Required for DLNA")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     [Produces(MediaTypeNames.Text.Xml)]
@@ -198,8 +209,7 @@ public class DlnaServerController : ControllerBase
     /// <returns>Event subscription response.</returns>
     [HttpSubscribe("{serverId}/ContentDirectory/Events")]
     [HttpUnsubscribe("{serverId}/ContentDirectory/Events")]
-    [ApiExplorerSettings(IgnoreApi = true)] // Ignore in openapi docs
-    [SuppressMessage("Microsoft.Performance", "CA1801:ReviewUnusedParameters", MessageId = "serverId", Justification = "Required for DLNA")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     [Produces(MediaTypeNames.Text.Xml)]
@@ -217,8 +227,7 @@ public class DlnaServerController : ControllerBase
     /// <returns>Event subscription response.</returns>
     [HttpSubscribe("{serverId}/ConnectionManager/Events")]
     [HttpUnsubscribe("{serverId}/ConnectionManager/Events")]
-    [ApiExplorerSettings(IgnoreApi = true)] // Ignore in openapi docs
-    [SuppressMessage("Microsoft.Performance", "CA1801:ReviewUnusedParameters", MessageId = "serverId", Justification = "Required for DLNA")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     [Produces(MediaTypeNames.Text.Xml)]
@@ -237,7 +246,6 @@ public class DlnaServerController : ControllerBase
     /// <response code="503">DLNA is disabled.</response>
     /// <returns>Icon stream.</returns>
     [HttpGet("{serverId}/icons/{fileName}")]
-    [SuppressMessage("Microsoft.Performance", "CA1801:ReviewUnusedParameters", MessageId = "serverId", Justification = "Required for DLNA")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
@@ -277,6 +285,11 @@ public class DlnaServerController : ControllerBase
     private string GetAbsoluteUri()
     {
         return $"{Request.Scheme}://{Request.Host}{Request.PathBase}{Request.Path}";
+    }
+
+    private string GetRelativePath()
+    {
+        return $"{Request.PathBase}{Request.Path}";
     }
 
     private Task<ControlResponse> ProcessControlRequestInternalAsync(string id, Stream requestStream, IUpnpService service)

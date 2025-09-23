@@ -14,8 +14,8 @@ public static class ServiceActionListBuilder
     /// <returns>An <see cref="IEnumerable{ServiceAction}"/>.</returns>
     public static IEnumerable<ServiceAction> GetActions()
     {
-        return new[]
-        {
+        return
+        [
             GetIsValidated(),
             GetIsAuthorized(),
             GetRegisterDevice(),
@@ -23,7 +23,7 @@ public static class ServiceActionListBuilder
             GetGetAuthorizationGrantedUpdateID(),
             GetGetValidationRevokedUpdateID(),
             GetGetValidationSucceededUpdateID()
-        };
+        ];
     }
 
     /// <summary>
@@ -34,20 +34,20 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "IsValidated"
+            Name = "IsValidated",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "DeviceID",
+                    Direction = "in"
+                },
+                new Argument
+                {
+                    Name = "Result",
+                    Direction = "out"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "DeviceID",
-            Direction = "in"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "Result",
-            Direction = "out"
-        });
 
         return action;
     }
@@ -60,20 +60,20 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "IsAuthorized"
+            Name = "IsAuthorized",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "DeviceID",
+                    Direction = "in"
+                },
+                new Argument
+                {
+                    Name = "Result",
+                    Direction = "out"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "DeviceID",
-            Direction = "in"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "Result",
-            Direction = "out"
-        });
 
         return action;
     }
@@ -86,20 +86,20 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "RegisterDevice"
+            Name = "RegisterDevice",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "RegistrationReqMsg",
+                    Direction = "in"
+                },
+                new Argument
+                {
+                    Name = "RegistrationRespMsg",
+                    Direction = "out"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "RegistrationReqMsg",
-            Direction = "in"
-        });
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "RegistrationRespMsg",
-            Direction = "out"
-        });
 
         return action;
     }
@@ -112,14 +112,15 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "GetValidationSucceededUpdateID"
+            Name = "GetValidationSucceededUpdateID",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "ValidationSucceededUpdateID",
+                    Direction = "out"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "ValidationSucceededUpdateID",
-            Direction = "out"
-        });
 
         return action;
     }
@@ -132,14 +133,15 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "GetAuthorizationDeniedUpdateID"
+            Name = "GetAuthorizationDeniedUpdateID",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "AuthorizationDeniedUpdateID",
+                    Direction = "out"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "AuthorizationDeniedUpdateID",
-            Direction = "out"
-        });
 
         return action;
     }
@@ -152,14 +154,15 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "GetValidationRevokedUpdateID"
+            Name = "GetValidationRevokedUpdateID",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "ValidationRevokedUpdateID",
+                    Direction = "out"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "ValidationRevokedUpdateID",
-            Direction = "out"
-        });
 
         return action;
     }
@@ -172,14 +175,15 @@ public static class ServiceActionListBuilder
     {
         var action = new ServiceAction
         {
-            Name = "GetAuthorizationGrantedUpdateID"
+            Name = "GetAuthorizationGrantedUpdateID",
+            ArgumentList = [
+                new Argument
+                {
+                    Name = "AuthorizationGrantedUpdateID",
+                    Direction = "out"
+                }
+            ]
         };
-
-        action.ArgumentList.Add(new Argument
-        {
-            Name = "AuthorizationGrantedUpdateID",
-            Direction = "out"
-        });
 
         return action;
     }

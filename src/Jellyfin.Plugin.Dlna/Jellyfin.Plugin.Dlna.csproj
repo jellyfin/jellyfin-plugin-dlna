@@ -1,7 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <Nullable>enable</Nullable>
+        <AnalysisMode>AllEnabledByDefault</AnalysisMode>
     </PropertyGroup>
 
     <ItemGroup>
@@ -18,6 +21,8 @@
     <ItemGroup>
       <EmbeddedResource Include="Configuration\config.html" />
       <EmbeddedResource Include="Configuration\config.js" />
+      <EmbeddedResource Include="Images\*.jpg" />
+      <EmbeddedResource Include="Images\*.png" />
       <EmbeddedResource Include="Profiles\Xml\*.xml" />
     </ItemGroup>
 </Project>

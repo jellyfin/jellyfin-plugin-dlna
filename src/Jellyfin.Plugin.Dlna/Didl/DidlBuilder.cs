@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System;
 using System.Globalization;
 using System.IO;
@@ -39,6 +37,9 @@ using XmlAttribute = Jellyfin.Plugin.Dlna.Model.XmlAttribute;
 
 namespace Jellyfin.Plugin.Dlna.Didl;
 
+/// <summary>
+/// Defines the <see cref="DidlBuilder" />.
+/// </summary>
 public class DidlBuilder
 {
     private const string NsDidl = "urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/";
@@ -58,6 +59,20 @@ public class DidlBuilder
     private readonly IMediaEncoder _mediaEncoder;
     private readonly ILibraryManager _libraryManager;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DidlBuilder"/> class.
+    /// </summary>
+    /// <param name="profile">The <see cref="DlnaDeviceProfile"/>.</param>
+    /// <param name="user">The <see cref="User"/>.</param>
+    /// <param name="imageProcessor">Instance of the <see cref="IImageProcessor"/> interface.</param>
+    /// <param name="serverAddress">The server address.</param>
+    /// <param name="accessToken">The access token.</param>
+    /// <param name="userDataManager">Instance of the <see cref="IUserDataManager"/> interface.</param>
+    /// <param name="localization">Instance of the <see cref="ILocalizationManager"/> interface.</param>
+    /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
+    /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
+    /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
+    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
     public DidlBuilder(
         DlnaDeviceProfile profile,
         User? user,
@@ -84,11 +99,24 @@ public class DidlBuilder
         _libraryManager = libraryManager;
     }
 
+    /// <summary>
+    /// Gets the normalized DLNA media URL.
+    /// <param name="url">The URL to normalize.</param>
+    /// </summary>
     public static string NormalizeDlnaMediaUrl(string url)
     {
         return url + "&dlnaheaders=true";
     }
 
+    /// <summary>
+    /// Gets the item DIDL.
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <param name="user">The <see cref="User"/>.</param>
+    /// <param name="context">The <see cref="BaseItem"/> context.</param>
+    /// <param name="deviceId">The device id.</param>
+    /// <param name="filter">The <see cref="Filter"/>.</param>
+    /// <param name="streamInfo">The <see cref="StreamInfo" />.</param>
+    /// </summary>
     public string GetItemDidl(BaseItem item, User? user, BaseItem? context, string deviceId, Filter filter, StreamInfo streamInfo)
     {
         var settings = new XmlWriterSettings
@@ -125,6 +153,11 @@ public class DidlBuilder
         }
     }
 
+    /// <summary>
+    /// Writes XML attributes of a profile the item DIDL.
+    /// <param name="profile">The <see cref="DlnaDeviceProfile"/>.</param>
+    /// <param name="writer">The <see cref="XmlWriter"/>.</param>
+    /// </summary>
     public static void WriteXmlRootAttributes(DlnaDeviceProfile profile, XmlWriter writer)
     {
         foreach (var att in profile.XmlRootAttributes)
@@ -141,6 +174,17 @@ public class DidlBuilder
         }
     }
 
+    /// <summary>
+    /// Writes an XML item element.
+    /// <param name="writer">The <see cref="XmlWriter"/>.</param>
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <param name="user">The <see cref="User"/>.</param>
+    /// <param name="context">The <see cref="BaseItem"/> context.</param>
+    /// <param name="contextStubType">The <see cref="StubType"/> of the context.</param>
+    /// <param name="deviceId">The device id.</param>
+    /// <param name="filter">The <see cref="Filter"/>.</param>
+    /// <param name="streamInfo">The <see cref="StreamInfo" />.</param>
+    /// </summary>
     public void WriteItemElement(
         XmlWriter writer,
         BaseItem item,
@@ -213,12 +257,14 @@ public class DidlBuilder
 
         var targetWidth = streamInfo.TargetWidth;
         var targetHeight = streamInfo.TargetHeight;
+        var targetVideoCodec = streamInfo.TargetVideoCodec.FirstOrDefault();
+        var targetAudioCodec = streamInfo.TargetAudioCodec.FirstOrDefault();
 
         var contentFeatureList = ContentFeatureBuilder.BuildVideoHeader(
             _profile,
             streamInfo.Container,
-            streamInfo.TargetVideoCodec.FirstOrDefault(),
-            streamInfo.TargetAudioCodec.FirstOrDefault(),
+            targetVideoCodec,
+            targetAudioCodec,
             targetWidth,
             targetHeight,
             streamInfo.TargetVideoBitDepth,
@@ -398,7 +444,7 @@ public class DidlBuilder
             streamInfo.TargetVideoCodecTag,
             streamInfo.IsTargetAVC);
 
-        var filename = url.Substring(0, url.IndexOf('?', StringComparison.Ordinal));
+        var filename = url[..url.IndexOf('?', StringComparison.Ordinal)];
 
         var mimeType = mediaProfile is null || string.IsNullOrEmpty(mediaProfile.MimeType)
             ? MimeTypes.GetMimeType(filename)
@@ -477,13 +523,13 @@ public class DidlBuilder
 
             // inside a season use simple format (ex. '12 - Episode Name')
             var epNumberName = GetEpisodeIndexFullName(episode);
-            components = new[] { epNumberName, episode.Name };
+            components = [epNumberName, episode.Name];
         }
         else
         {
             // outside a season include series and season details (ex. 'TV Show - S05E11 - Episode Name')
             var epNumberName = GetEpisodeNumberDisplayName(episode);
-            components = new[] { episode.SeriesName, epNumberName, episode.Name };
+            components = [episode.SeriesName, epNumberName, episode.Name];
         }
 
         return string.Join(" - ", components.Where(NotNullOrWhiteSpace));
@@ -494,7 +540,7 @@ public class DidlBuilder
     /// </summary>
     /// <param name="episode">The episode.</param>
     /// <returns>For single episodes returns just the number. For double episodes - current and ending numbers.</returns>
-    private string GetEpisodeIndexFullName(Episode episode)
+    private static string GetEpisodeIndexFullName(Episode episode)
     {
         var name = string.Empty;
         if (episode.IndexNumber.HasValue)
@@ -510,11 +556,6 @@ public class DidlBuilder
         return name;
     }
 
-    /// <summary>
-    /// Gets episode number formatted as 'S##E##'.
-    /// </summary>
-    /// <param name="episode">The episode.</param>
-    /// <returns>Formatted episode number.</returns>
     private string GetEpisodeNumberDisplayName(Episode episode)
     {
         var name = string.Empty;
@@ -604,7 +645,7 @@ public class DidlBuilder
             targetSampleRate,
             targetAudioBitDepth);
 
-        var filename = url.Substring(0, url.IndexOf('?', StringComparison.Ordinal));
+        var filename = url[..url.IndexOf('?', StringComparison.Ordinal)];
 
         var mimeType = mediaProfile is null || string.IsNullOrEmpty(mediaProfile.MimeType)
             ? MimeTypes.GetMimeType(filename)
@@ -612,7 +653,7 @@ public class DidlBuilder
 
         var contentFeatures = ContentFeatureBuilder.BuildAudioHeader(
             _profile,
-            streamInfo.Container,
+            streamInfo.Container?.FirstOrDefault().ToString(),
             streamInfo.TargetAudioCodec.FirstOrDefault(),
             targetAudioBitrate,
             targetSampleRate,
@@ -635,13 +676,28 @@ public class DidlBuilder
         writer.WriteFullEndElement();
     }
 
+    /// <summary>
+    /// Gets a value indicating whether the id is a root id.
+    /// </summary>
+    /// <param name="id">The id.</param>
+    /// <returns><c>true</c> if the id is a root id; otherwise, <c>false</c>.</returns>
     public static bool IsIdRoot(string id)
         => string.IsNullOrWhiteSpace(id)
            || string.Equals(id, "0", StringComparison.OrdinalIgnoreCase)
            // Samsung sometimes uses 1 as root
            || string.Equals(id, "1", StringComparison.OrdinalIgnoreCase);
 
-    public void WriteFolderElement(XmlWriter writer, BaseItem folder, StubType? stubType, BaseItem context, int childCount, Filter filter, string? requestedId = null)
+    /// <summary>
+    /// Writes an XML folder element.
+    /// <param name="writer">The <see cref="XmlWriter"/>.</param>
+    /// <param name="folder">The <see cref="BaseItem"/>.</param>
+    /// <param name="stubType">The <see cref="StubType"/>.</param>
+    /// <param name="context">The <see cref="BaseItem"/> context.</param>
+    /// <param name="childCount">The child count.</param>
+    /// <param name="filter">The <see cref="Filter"/>.</param>
+    /// <param name="requestedId">The request id.</param>
+    /// </summary>
+    public void WriteFolderElement(XmlWriter writer, BaseItem folder, StubType? stubType, BaseItem? context, int childCount, Filter filter, string? requestedId = null)
     {
         writer.WriteStartElement(string.Empty, "container", NsDidl);
 
@@ -721,9 +777,6 @@ public class DidlBuilder
         }
     }
 
-    /// <summary>
-    /// Adds fields used by both items and folders.
-    /// </summary>
     private void AddCommonFields(BaseItem item, StubType? itemStubType, BaseItem? context, XmlWriter writer, Filter filter)
     {
         // Don't filter on dc:title because not all devices will include it in the filter
@@ -1124,7 +1177,7 @@ public class DidlBuilder
         return null;
     }
 
-    private BaseItem? GetFirstParentWithImageBelowUserRoot(BaseItem item)
+    private static BaseItem? GetFirstParentWithImageBelowUserRoot(BaseItem item)
     {
         if (item is null)
         {
@@ -1195,11 +1248,23 @@ public class DidlBuilder
         };
     }
 
+    /// <summary>
+    /// Gets the client id of an <see cref="BaseItem"/> based on the <see cref="StubType"/>.
+    /// </summary>
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <param name="stubType">Current <see cref="StubType"/>.</param>
+    /// <returns>The client id</returns>
     public static string GetClientId(BaseItem item, StubType? stubType)
     {
         return GetClientId(item.Id, stubType);
     }
 
+    /// <summary>
+    /// Gets the client id of an <see cref="Guid"/> based on the <see cref="StubType"/>.
+    /// </summary>
+    /// <param name="idValue">The <see cref="Guid"/>.</param>
+    /// <param name="stubType">Current <see cref="StubType"/>.</param>
+    /// <returns>The client id</returns>
     public static string GetClientId(Guid idValue, StubType? stubType)
     {
         var id = idValue.ToString("N", CultureInfo.InvariantCulture);
@@ -1246,13 +1311,13 @@ public class DidlBuilder
             }
         }
 
-        // just lie
+        // Just lie
         info.IsDirectStream = true;
 
         return (url, width, height);
     }
 
-    private class ImageDownloadInfo
+    private sealed class ImageDownloadInfo
     {
         internal Guid ItemId { get; set; }
 

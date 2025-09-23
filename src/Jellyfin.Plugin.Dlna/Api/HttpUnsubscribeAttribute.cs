@@ -9,7 +9,7 @@ namespace Jellyfin.Plugin.Dlna.Api;
 /// </summary>
 public sealed class HttpUnsubscribeAttribute : HttpMethodAttribute
 {
-    private static readonly IEnumerable<string> _supportedMethods = new[] { "UNSUBSCRIBE" };
+    private static readonly IEnumerable<string> _supportedMethods = ["UNSUBSCRIBE"];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="HttpUnsubscribeAttribute"/> class.

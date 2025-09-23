@@ -1,11 +1,12 @@
-#pragma warning disable CS1591
-
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.AspNetCore.Http;
 
 namespace Jellyfin.Plugin.Dlna.Model;
 
+/// <summary>
+/// Defines the <see cref="IDlnaManager" /> interface.
+/// </summary>
 public interface IDlnaManager
 {
     /// <summary>

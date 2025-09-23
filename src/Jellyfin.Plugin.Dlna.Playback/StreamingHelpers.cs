@@ -46,7 +46,7 @@ public static class StreamingHelpers
     /// <param name="deviceManager">Instance of the <see cref="IDeviceManager"/> interface.</param>
     /// <param name="transcodeManager">Initialized <see cref="ITranscodeManager"/>.</param>
     /// <param name="transcodingJobType">The <see cref="TranscodingJobType"/>.</param>
-    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>A <see cref="Task"/> containing the current <see cref="StreamState"/>.</returns>
     public static async Task<DlnaStreamState> GetStreamingState(
         StreamingRequestDto streamingRequest,
@@ -130,7 +130,7 @@ public static class StreamingHelpers
 
         var item = libraryManager.GetItemById(streamingRequest.Id);
 
-        state.IsInputVideo = item.MediaType == MediaType.Video;
+        state.IsInputVideo = item?.MediaType == MediaType.Video;
 
         MediaSourceInfo? mediaSource = null;
         if (string.IsNullOrWhiteSpace(streamingRequest.LiveStreamId))
@@ -252,8 +252,8 @@ public static class StreamingHelpers
         }
 
         var deviceProfileId = state.IsVideoRequest
-            ? (streamingRequest as DlnaVideoRequestDto).DeviceProfileId
-            : (streamingRequest as DlnaStreamingRequestDto).DeviceProfileId;
+            ? (streamingRequest as DlnaVideoRequestDto)?.DeviceProfileId
+            : (streamingRequest as DlnaStreamingRequestDto)?.DeviceProfileId;
         ApplyDeviceProfileSettings(state, dlnaManager, deviceManager, httpRequest, deviceProfileId, streamingRequest.Static);
 
         var ext = string.IsNullOrWhiteSpace(state.OutputContainer)
@@ -384,8 +384,8 @@ public static class StreamingHelpers
 
         var index = value.IndexOf('-');
         value = index == -1
-            ? value.Slice(npt.Length)
-            : value.Slice(npt.Length, index - npt.Length);
+            ? value[npt.Length..]
+            : value[npt.Length..index];
         if (!value.Contains(':'))
         {
             // Parses npt times in the format of '417.33'
@@ -464,7 +464,7 @@ public static class StreamingHelpers
         var ext = Path.GetExtension(state.RequestedUrl);
         if (!string.IsNullOrEmpty(ext))
         {
-            return ext;
+            return ext.AsSpan().LeftPart('?').ToString();
         }
 
         // Try to infer based on the desired video codec

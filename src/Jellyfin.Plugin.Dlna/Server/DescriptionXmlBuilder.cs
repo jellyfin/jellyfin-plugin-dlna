@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -11,6 +9,9 @@ using Jellyfin.Plugin.Dlna.Model;
 
 namespace Jellyfin.Plugin.Dlna.Server;
 
+/// <summary>
+/// Defines the <see cref="DescriptionXmlBuilder" />.
+/// </summary>
 public class DescriptionXmlBuilder
 {
     private readonly DlnaDeviceProfile _profile;
@@ -20,10 +21,17 @@ public class DescriptionXmlBuilder
     private readonly string _serverName;
     private readonly string _serverId;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DescriptionXmlBuilder"/> class.
+    /// </summary>
+    /// <param name="profile">The <see cref="DlnaDeviceProfile"/>.</param>
+    /// <param name="serverUdn">The server UDN.</param>
+    /// <param name="serverAddress">The address.</param>
+    /// <param name="serverName">The name.</param>
+    /// <param name="serverId">The id.</param>
     public DescriptionXmlBuilder(DlnaDeviceProfile profile, string serverUdn, string serverAddress, string serverName, string serverId)
     {
         ArgumentException.ThrowIfNullOrEmpty(serverUdn);
-        ArgumentException.ThrowIfNullOrEmpty(serverAddress);
 
         _profile = profile;
         _serverUdn = serverUdn;
@@ -32,6 +40,9 @@ public class DescriptionXmlBuilder
         _serverId = serverId;
     }
 
+    /// <summary>
+    /// Gets the description XML.
+    /// </summary>
     public string GetXml()
     {
         var builder = new StringBuilder();
@@ -255,9 +266,9 @@ public class DescriptionXmlBuilder
         return SecurityElement.Escape(url);
     }
 
-    private IEnumerable<DeviceIcon> GetIcons()
-        => new[]
-        {
+    private static IEnumerable<DeviceIcon> GetIcons()
+        =>
+        [
             new DeviceIcon
             {
                 MimeType = "image/png",
@@ -311,29 +322,27 @@ public class DescriptionXmlBuilder
                 Height = 48,
                 Url = "icons/logo48.jpg"
             }
-        };
+        ];
 
-    private IEnumerable<DeviceService> GetServices()
+    private List<DeviceService> GetServices()
     {
-        var list = new List<DeviceService>();
-
-        list.Add(new DeviceService
+        var list = new List<DeviceService>
         {
-            ServiceType = "urn:schemas-upnp-org:service:ContentDirectory:1",
-            ServiceId = "urn:upnp-org:serviceId:ContentDirectory",
-            ScpdUrl = "contentdirectory/contentdirectory.xml",
-            ControlUrl = "contentdirectory/control",
-            EventSubUrl = "contentdirectory/events"
-        });
-
-        list.Add(new DeviceService
-        {
-            ServiceType = "urn:schemas-upnp-org:service:ConnectionManager:1",
-            ServiceId = "urn:upnp-org:serviceId:ConnectionManager",
-            ScpdUrl = "connectionmanager/connectionmanager.xml",
-            ControlUrl = "connectionmanager/control",
-            EventSubUrl = "connectionmanager/events"
-        });
+            new() {
+                ServiceType = "urn:schemas-upnp-org:service:ContentDirectory:1",
+                ServiceId = "urn:upnp-org:serviceId:ContentDirectory",
+                ScpdUrl = "contentdirectory/contentdirectory.xml",
+                ControlUrl = "contentdirectory/control",
+                EventSubUrl = "contentdirectory/events"
+            },
+            new() {
+                ServiceType = "urn:schemas-upnp-org:service:ConnectionManager:1",
+                ServiceId = "urn:upnp-org:serviceId:ConnectionManager",
+                ScpdUrl = "connectionmanager/connectionmanager.xml",
+                ControlUrl = "connectionmanager/control",
+                EventSubUrl = "connectionmanager/events"
+            }
+        };
 
         if (_profile.EnableMSMediaReceiverRegistrar)
         {
@@ -350,6 +359,7 @@ public class DescriptionXmlBuilder
         return list;
     }
 
+    /// <inheritdoc />
     public override string ToString()
     {
         return GetXml();

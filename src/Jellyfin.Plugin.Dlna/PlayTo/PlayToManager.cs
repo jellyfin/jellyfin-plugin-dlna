@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System;
 using System.Globalization;
 using System.Linq;
@@ -21,11 +19,13 @@ using IDlnaManager = Jellyfin.Plugin.Dlna.Model.IDlnaManager;
 
 namespace Jellyfin.Plugin.Dlna.PlayTo;
 
+/// <summary>
+/// Defines the <see cref="PlayToManager" />.
+/// </summary>
 public sealed class PlayToManager : IDisposable
 {
     private readonly ILogger _logger;
     private readonly ISessionManager _sessionManager;
-
     private readonly ILibraryManager _libraryManager;
     private readonly IUserManager _userManager;
     private readonly IDlnaManager _dlnaManager;
@@ -34,16 +34,43 @@ public sealed class PlayToManager : IDisposable
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IUserDataManager _userDataManager;
     private readonly ILocalizationManager _localization;
-
     private readonly IDeviceDiscovery _deviceDiscovery;
     private readonly IMediaSourceManager _mediaSourceManager;
     private readonly IMediaEncoder _mediaEncoder;
-
-    private readonly SemaphoreSlim _sessionLock = new SemaphoreSlim(1, 1);
-    private readonly CancellationTokenSource _disposeCancellationTokenSource = new CancellationTokenSource();
+    private readonly SemaphoreSlim _sessionLock = new(1, 1);
+    private readonly CancellationTokenSource _disposeCancellationTokenSource = new();
     private bool _disposed;
 
-    public PlayToManager(ILogger logger, ISessionManager sessionManager, ILibraryManager libraryManager, IUserManager userManager, IDlnaManager dlnaManager, IServerApplicationHost appHost, IImageProcessor imageProcessor, IDeviceDiscovery deviceDiscovery, IHttpClientFactory httpClientFactory, IUserDataManager userDataManager, ILocalizationManager localization, IMediaSourceManager mediaSourceManager, IMediaEncoder mediaEncoder)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PlayToManager"/> class.
+    /// </summary>
+    /// <param name="logger">The <see cref="ILogger"/>.</param>
+    /// <param name="sessionManager">Instance of the <see cref="ISessionManager"/> interface.</param>
+    /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
+    /// <param name="dlnaManager">Instance of the <see cref="IDlnaManager"/> interface.</param>
+    /// <param name="appHost">Instance of the <see cref="IServerApplicationHost"/> interface.</param>
+    /// <param name="imageProcessor">Instance of the <see cref="IImageProcessor"/> interface.</param>
+    /// <param name="deviceDiscovery">Instance of the <see cref="IDeviceDiscovery"/> interface.</param>
+    /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
+    /// <param name="userDataManager">Instance of the <see cref="IUserDataManager"/> interface.</param>
+    /// <param name="localization">Instance of the <see cref="ILocalizationManager"/> interface.</param>
+    /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
+    /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
+    public PlayToManager(
+        ILogger logger,
+        ISessionManager sessionManager,
+        ILibraryManager libraryManager,
+        IUserManager userManager,
+        IDlnaManager dlnaManager,
+        IServerApplicationHost appHost,
+        IImageProcessor imageProcessor,
+        IDeviceDiscovery deviceDiscovery,
+        IHttpClientFactory httpClientFactory,
+        IUserDataManager userDataManager,
+        ILocalizationManager localization,
+        IMediaSourceManager mediaSourceManager,
+        IMediaEncoder mediaEncoder)
     {
         _logger = logger;
         _sessionManager = sessionManager;
@@ -60,6 +87,9 @@ public sealed class PlayToManager : IDisposable
         _mediaEncoder = mediaEncoder;
     }
 
+    /// <summary>
+    /// Starts device discovery.
+    /// </summary>
     public void Start()
     {
         _deviceDiscovery.DeviceDiscovered += OnDeviceDiscoveryDeviceDiscovered;
@@ -102,7 +132,7 @@ public sealed class PlayToManager : IDisposable
                 return;
             }
 
-            if (_sessionManager.Sessions.Any(i => usn.IndexOf(i.DeviceId, StringComparison.OrdinalIgnoreCase) != -1))
+            if (_sessionManager.Sessions.Any(i => usn.Contains(i.DeviceId, StringComparison.OrdinalIgnoreCase)))
             {
                 return;
             }
@@ -172,7 +202,7 @@ public sealed class PlayToManager : IDisposable
             .LogSessionActivity("DLNA", _appHost.ApplicationVersionString, uuid, null, uri.OriginalString, null)
             .ConfigureAwait(false);
 
-        var controller = sessionInfo.SessionControllers.OfType<PlayToController2>().FirstOrDefault();
+        var controller = sessionInfo.SessionControllers.OfType<PlayToController>().FirstOrDefault();
 
         if (controller is null)
         {
@@ -189,7 +219,7 @@ public sealed class PlayToManager : IDisposable
 
             string serverAddress = _appHost.GetSmartApiUrl(info.RemoteIPAddress);
 
-            controller = new PlayToController2(
+            controller = new PlayToController(
                 sessionInfo,
                 _sessionManager,
                 _libraryManager,
@@ -213,7 +243,7 @@ public sealed class PlayToManager : IDisposable
 
             _sessionManager.ReportCapabilities(sessionInfo.Id, new ClientCapabilities
             {
-                PlayableMediaTypes = profile.GetSupportedMediaTypes(),
+                PlayableMediaTypes = profile.FetchSupportedMediaTypes(),
 
                 SupportedCommands = new[]
                 {
@@ -231,7 +261,7 @@ public sealed class PlayToManager : IDisposable
                 SupportsMediaControl = true
             });
 
-            _logger.LogInformation("DLNA Session created for {0} - {1}", device.Properties.Name, device.Properties.ModelName);
+            _logger.LogInformation("DLNA Session created for {0} - {1} using profile {2}", device.Properties.Name, device.Properties.ModelName, profile.Name);
         }
     }
 

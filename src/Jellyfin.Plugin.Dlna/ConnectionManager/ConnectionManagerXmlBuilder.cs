@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System.Collections.Generic;
 using Jellyfin.Plugin.Dlna.Common;
 using Jellyfin.Plugin.Dlna.Service;
@@ -18,7 +16,7 @@ public static class ConnectionManagerXmlBuilder
     /// <returns>An XML description of this service.</returns>
     public static string GetXml()
     {
-        return new ServiceXmlBuilder().GetXml(ServiceActionListBuilder.GetActions(), GetStateVariables());
+        return ServiceXmlBuilder.GetXml(ServiceActionListBuilder.GetActions(), GetStateVariables());
     }
 
     /// <summary>
@@ -27,8 +25,8 @@ public static class ConnectionManagerXmlBuilder
     /// <returns>The <see cref="IEnumerable{StateVariable}"/>.</returns>
     private static IEnumerable<StateVariable> GetStateVariables()
     {
-        return new StateVariable[]
-        {
+        return
+        [
             new StateVariable
             {
                 Name = "SourceProtocolInfo",
@@ -56,14 +54,14 @@ public static class ConnectionManagerXmlBuilder
                 DataType = "string",
                 SendsEvents = false,
 
-                AllowedValues = new[]
-                {
+                AllowedValues =
+                [
                     "OK",
                     "ContentFormatMismatch",
                     "InsufficientBandwidth",
                     "UnreliableChannel",
                     "Unknown"
-                }
+                ]
             },
 
             new StateVariable
@@ -79,11 +77,11 @@ public static class ConnectionManagerXmlBuilder
                 DataType = "string",
                 SendsEvents = false,
 
-                AllowedValues = new[]
-                {
+                AllowedValues =
+                [
                     "Output",
                     "Input"
-                }
+                ]
             },
 
             new StateVariable
@@ -113,6 +111,6 @@ public static class ConnectionManagerXmlBuilder
                 DataType = "ui4",
                 SendsEvents = false
             }
-        };
+        ];
     }
 }

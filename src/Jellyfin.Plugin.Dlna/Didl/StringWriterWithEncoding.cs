@@ -1,57 +1,24 @@
-#pragma warning disable CS1591
-#pragma warning disable CA1305
-
-using System;
 using System.IO;
 using System.Text;
 
 namespace Jellyfin.Plugin.Dlna.Didl;
 
+/// <summary>
+/// Defines the <see cref="StringWriterWithEncoding" />.
+/// </summary>
 public class StringWriterWithEncoding : StringWriter
 {
     private readonly Encoding? _encoding;
 
-    public StringWriterWithEncoding()
-    {
-    }
-
-    public StringWriterWithEncoding(IFormatProvider formatProvider)
-        : base(formatProvider)
-    {
-    }
-
-    public StringWriterWithEncoding(StringBuilder sb)
-        : base(sb)
-    {
-    }
-
-    public StringWriterWithEncoding(StringBuilder sb, IFormatProvider formatProvider)
-        : base(sb, formatProvider)
-    {
-    }
-
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StringWriterWithEncoding"/> class.
+    /// </summary>
+    /// <param name="encoding">The <see cref="Encoding"/>.</param>
     public StringWriterWithEncoding(Encoding encoding)
     {
         _encoding = encoding;
     }
 
-    public StringWriterWithEncoding(IFormatProvider formatProvider, Encoding encoding)
-        : base(formatProvider)
-    {
-        _encoding = encoding;
-    }
-
-    public StringWriterWithEncoding(StringBuilder sb, Encoding encoding)
-        : base(sb)
-    {
-        _encoding = encoding;
-    }
-
-    public StringWriterWithEncoding(StringBuilder sb, IFormatProvider formatProvider, Encoding encoding)
-        : base(sb, formatProvider)
-    {
-        _encoding = encoding;
-    }
-
+    /// <inheritdoc />
     public override Encoding Encoding => _encoding ?? base.Encoding;
 }
