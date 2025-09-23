@@ -35,6 +35,9 @@ public class DlnaStreamState : StreamState
     /// </summary>
     public DlnaDeviceProfile? DeviceProfile { get; set; }
 
+    /// <summary>
+    /// Gets the target stream count.
+    /// </summary>
     public int TargetStreamCount
     {
         get

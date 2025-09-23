@@ -213,7 +213,7 @@ public static class MediaFormatProfileResolver
 
     private static MediaFormatProfile ValueOf(string value)
     {
-        return (MediaFormatProfile)Enum.Parse(typeof(MediaFormatProfile), value, true);
+        return Enum.Parse<MediaFormatProfile>(value, true);
     }
 
     private static MediaFormatProfile? ResolveVideoMP4Format(string? videoCodec, string? audioCodec, int? width, int? height)

@@ -198,7 +198,7 @@ public class ControlHandler : BaseControlHandler
 
         var newbookmark = int.Parse(sparams["PosSecond"], CultureInfo.InvariantCulture);
 
-        var userdata = _userDataManager.GetUserData(_user, item);
+        var userdata = _userDataManager.GetUserData(_user, item)!;
 
         userdata.PlaybackPositionTicks = TimeSpan.FromSeconds(newbookmark).Ticks;
 

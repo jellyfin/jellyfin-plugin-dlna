@@ -764,7 +764,7 @@ public class DidlBuilder
             return;
         }
 
-        var userdata = _userDataManager.GetUserData(user, item);
+        var userdata = _userDataManager.GetUserData(user, item)!;
         var playbackPositionTicks = (streamInfo is not null && streamInfo.StartPositionTicks > 0) ? streamInfo.StartPositionTicks : userdata.PlaybackPositionTicks;
 
         if (playbackPositionTicks > 0)
