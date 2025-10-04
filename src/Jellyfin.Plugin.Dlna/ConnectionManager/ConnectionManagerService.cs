@@ -23,7 +23,7 @@ public class ConnectionManagerService : BaseService, IConnectionManager
         IDlnaManager dlna,
         ILogger<ConnectionManagerService> logger,
         IHttpClientFactory httpClientFactory)
-        : base(logger, httpClientFactory)
+        : base(logger)
     {
         _dlna = dlna;
     }

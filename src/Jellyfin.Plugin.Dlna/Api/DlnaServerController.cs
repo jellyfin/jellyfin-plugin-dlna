@@ -2,7 +2,6 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Net.Mime;
-using System.Reflection.PortableExecutable;
 using System.Threading.Tasks;
 using Jellyfin.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
@@ -329,9 +328,11 @@ public class DlnaServerController : ControllerBase
 
     private void SetResponse(EventSubscriptionResponse eventSubscriptionResponse)
     {
-        Response.Headers["Server"] = _dlnaManager.GetServerName();
-        Response.Headers.Append("SID", eventSubscriptionResponse.Headers["SID"]);
-        Response.Headers["Timeout"] = Request.Headers["Timeout"];
+        Response.Headers.Server = _dlnaManager.GetServerName();
         Response.ContentLength = 0;
+        foreach (var header in eventSubscriptionResponse.Headers)
+        {
+            Response.Headers[header.Key] = header.Value;
+        }
     }
 }
