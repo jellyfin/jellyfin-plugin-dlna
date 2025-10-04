@@ -8,6 +8,5 @@
       <PackageReference Include="Jellyfin.Common" Version="10.*-*" />
       <PackageReference Include="Jellyfin.Controller" Version="10.*-*" />
       <PackageReference Include="Jellyfin.Extensions" Version="10.*-*" />
-      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
     </ItemGroup>
 </Project>

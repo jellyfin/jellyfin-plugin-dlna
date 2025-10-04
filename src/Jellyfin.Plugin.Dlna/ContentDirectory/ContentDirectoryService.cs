@@ -1,9 +1,19 @@
 using System;
+using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using Jellyfin.Data;
+using Jellyfin.Database.Implementations.Entities;
+using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Service;
+using MediaBrowser.Controller.Drawing;
+using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.MediaEncoding;
+using MediaBrowser.Controller.TV;
+using MediaBrowser.Model.Dlna;
+using MediaBrowser.Model.Globalization;
 using Microsoft.Extensions.Logging;
-using IDlnaManager = Jellyfin.Plugin.Dlna.Model.IDlnaManager;
 
 namespace Jellyfin.Plugin.Dlna.ContentDirectory;
 
