@@ -164,6 +164,7 @@ public static class ContentFeatureBuilder
     /// <param name="refFrames">The reference frames.</param>
     /// <param name="numVideoStreams">The number of video streams.</param>
     /// <param name="numAudioStreams">The number of audio streams.</param>
+    /// <param name="numStreams">The number of streams.</param>
     /// <param name="videoCodecTag">The video codec tag.</param>
     /// <param name="isAvc">Value indicating wether the stream is AVC.</param>
     public static IEnumerable<string> BuildVideoHeader(
@@ -189,6 +190,7 @@ public static class ContentFeatureBuilder
         int? refFrames,
         int? numVideoStreams,
         int? numAudioStreams,
+        int numStreams,
         string? videoCodecTag,
         bool? isAvc)
     {
@@ -238,6 +240,7 @@ public static class ContentFeatureBuilder
             refFrames,
             numVideoStreams,
             numAudioStreams,
+            numStreams,
             videoCodecTag,
             isAvc);
 

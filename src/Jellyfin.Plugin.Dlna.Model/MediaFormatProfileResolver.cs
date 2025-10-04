@@ -44,8 +44,7 @@ public static class MediaFormatProfileResolver
             return [MediaFormatProfile.MATROSKA];
         }
 
-        if (string.Equals(container, "mpeg2ps", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(container, "ts", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(container, "mpeg2ps", StringComparison.OrdinalIgnoreCase))
         {
             return [MediaFormatProfile.MPEG_PS_NTSC, MediaFormatProfile.MPEG_PS_PAL];
         }
@@ -57,7 +56,8 @@ public static class MediaFormatProfileResolver
 
         if (string.Equals(container, "mpeg2ts", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(container, "mpegts", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(container, "m2ts", StringComparison.OrdinalIgnoreCase))
+            string.Equals(container, "m2ts", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(container, "ts", StringComparison.OrdinalIgnoreCase))
         {
             return ResolveVideoMPEG2TSFormat(videoCodec, audioCodec, width, height, timestampType);
         }
@@ -213,7 +213,7 @@ public static class MediaFormatProfileResolver
 
     private static MediaFormatProfile ValueOf(string value)
     {
-        return (MediaFormatProfile)Enum.Parse(typeof(MediaFormatProfile), value, true);
+        return Enum.Parse<MediaFormatProfile>(value, true);
     }
 
     private static MediaFormatProfile? ResolveVideoMP4Format(string? videoCodec, string? audioCodec, int? width, int? height)

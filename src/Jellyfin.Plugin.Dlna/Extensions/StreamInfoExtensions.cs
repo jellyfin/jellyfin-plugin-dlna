@@ -215,4 +215,15 @@ public static class StreamInfoExtensions
 
         return list;
     }
+
+    /// <summary>
+    /// Get the stream count for the stream info.
+    /// </summary>
+    /// <param name="streamInfo"></param>
+    /// <returns></returns>
+    public static int GetStreamCount(this StreamInfo streamInfo)
+    {
+        var streamCount = streamInfo.MediaSource?.MediaStreams.Count ?? 1;
+        return Math.Min(streamCount, streamInfo.IsDirectStream ? int.MaxValue : 1);
+    }
 }

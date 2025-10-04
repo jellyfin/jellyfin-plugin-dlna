@@ -4,8 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml;
-using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
+using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Plugin.Dlna.ContentDirectory;
 using Jellyfin.Plugin.Dlna.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
@@ -283,6 +283,7 @@ public class DidlBuilder
             streamInfo.TargetRefFrames,
             streamInfo.TargetVideoStreamCount,
             streamInfo.TargetAudioStreamCount,
+            streamInfo.GetStreamCount(),
             streamInfo.TargetVideoCodecTag,
             streamInfo.IsTargetAVC);
 
@@ -439,6 +440,7 @@ public class DidlBuilder
             streamInfo.TargetRefFrames,
             streamInfo.TargetVideoStreamCount,
             streamInfo.TargetAudioStreamCount,
+            streamInfo.GetStreamCount(),
             streamInfo.TargetVideoCodecTag,
             streamInfo.IsTargetAVC);
 
@@ -762,7 +764,7 @@ public class DidlBuilder
             return;
         }
 
-        var userdata = _userDataManager.GetUserData(user, item);
+        var userdata = _userDataManager.GetUserData(user, item)!;
         var playbackPositionTicks = (streamInfo is not null && streamInfo.StartPositionTicks > 0) ? streamInfo.StartPositionTicks : userdata.PlaybackPositionTicks;
 
         if (playbackPositionTicks > 0)
