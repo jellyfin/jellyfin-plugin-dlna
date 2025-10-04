@@ -8,29 +8,7 @@ namespace Jellyfin.Plugin.Dlna;
 public class EventSubscriptionResponse
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="EventSubscriptionResponse"/> class.
-    /// </summary>
-    /// <param name="content">The content.</param>
-    /// <param name="contentType">The content type.</param>
-    public EventSubscriptionResponse(string content, string contentType)
-    {
-        Content = content;
-        ContentType = contentType;
-        Headers = [];
-    }
-
-    /// <summary>
-    /// Gets or sets the content.
-    /// </summary>
-    public string Content { get; set; }
-
-    /// <summary>
-    /// Gets or sets the content type.
-    /// </summary>
-    public string ContentType { get; set; }
-
-    /// <summary>
     /// Gets the headers dictionary.
     /// </summary>
-    public Dictionary<string, string> Headers { get; }
+    public Dictionary<string, string> Headers { get; } = [];
 }

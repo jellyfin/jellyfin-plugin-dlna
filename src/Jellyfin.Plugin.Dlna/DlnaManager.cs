@@ -204,6 +204,15 @@ public class DlnaManager : IDlnaManager
         return profile;
     }
 
+    /// <summary>
+    /// Returns the server name
+    /// </summary>
+    /// <returns>string</returns>
+    public string GetServerName()
+    {
+        return _appHost.FriendlyName;
+    }
+
     private bool IsMatch(IHeaderDictionary headers, DeviceIdentification profileInfo)
     {
         return profileInfo.Headers.Any(i => IsMatch(headers, i));

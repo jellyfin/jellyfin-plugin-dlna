@@ -1,4 +1,3 @@
-using System.Net.Http;
 using Jellyfin.Plugin.Dlna.Eventing;
 using Microsoft.Extensions.Logging;
 
@@ -13,17 +12,13 @@ public class BaseService : IDlnaEventManager
     /// Initializes a new instance of the <see cref="BaseControlHandler"/> class.
     /// </summary>
     /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
-    /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
-    protected BaseService(ILogger<BaseService> logger, IHttpClientFactory httpClientFactory)
+    protected BaseService(ILogger<BaseService> logger)
     {
         Logger = logger;
-        EventManager = new DlnaEventManager(logger, httpClientFactory);
+        EventManager = new DlnaEventManager(logger);
     }
 
-    /// <summary>
-    /// Gets the <see cref="IDlnaEventManager"/> instance.
-    /// </summary>
-    protected IDlnaEventManager EventManager { get; }
+    private DlnaEventManager EventManager { get; }
 
     /// <summary>
     /// Gets the <see cref="ILogger"/> instance.

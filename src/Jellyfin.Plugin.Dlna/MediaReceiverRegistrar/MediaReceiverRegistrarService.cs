@@ -18,7 +18,7 @@ public class MediaReceiverRegistrarService : BaseService, IMediaReceiverRegistra
     public MediaReceiverRegistrarService(
         ILogger<MediaReceiverRegistrarService> logger,
         IHttpClientFactory httpClientFactory)
-        : base(logger, httpClientFactory)
+        : base(logger)
     {
     }
 
