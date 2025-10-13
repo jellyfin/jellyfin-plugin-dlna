@@ -202,7 +202,7 @@ public sealed class PlayToManager : IDisposable
             .LogSessionActivity("DLNA", _appHost.ApplicationVersionString, uuid, null, uri.OriginalString, null)
             .ConfigureAwait(false);
 
-        var controller = sessionInfo.SessionControllers.OfType<PlayToController>().FirstOrDefault();
+        var controller = sessionInfo.SessionControllers.OfType<PlayToSession>().FirstOrDefault();
 
         if (controller is null)
         {
@@ -219,7 +219,7 @@ public sealed class PlayToManager : IDisposable
 
             string serverAddress = _appHost.GetSmartApiUrl(info.RemoteIPAddress);
 
-            controller = new PlayToController(
+            controller = new PlayToSession(
                 sessionInfo,
                 _sessionManager,
                 _libraryManager,
