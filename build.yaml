@@ -1,7 +1,7 @@
 name: "DLNA"
 guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
 imageUrl: ""
-version: 8
+version: 9
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "jellyfin"
@@ -16,4 +16,8 @@ artifacts:
   - "Jellyfin.Plugin.Dlna.Playback.dll"
   - "Rssdp.dll"
 changelog: |-
-  - Revert collection expression (#132) @crobibero
+  - 10.11 support (#163) @crobibero
+  - add emby-button class to the help button (#155) @Krafting
+  - fix resolution for ts (#146) @tomty89
+  - Fix typo in client discovery interval help text (#149) @AnAnalogGuy
+  - Strip URL parameters (#137) @Vebryn
