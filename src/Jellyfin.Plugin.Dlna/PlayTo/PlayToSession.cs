@@ -4,9 +4,9 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
 using Jellyfin.Data.Events;
+using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Plugin.Dlna.Didl;
 using Jellyfin.Plugin.Dlna.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
@@ -30,9 +30,10 @@ using UpnpDeviceInfo = Jellyfin.Plugin.Dlna.Model.UpnpDeviceInfo;
 namespace Jellyfin.Plugin.Dlna.PlayTo;
 
 /// <summary>
-/// Defines the <see cref="PlayToController" />.
+/// Defines the <see cref="PlayToSession" />.
+/// This used to be PlayToController but that gets automatically registered.
 /// </summary>
-public class PlayToController : ISessionController, IDisposable
+public class PlayToSession : ISessionController, IDisposable
 {
     private readonly SessionInfo _session;
     private readonly ISessionManager _sessionManager;
@@ -54,7 +55,7 @@ public class PlayToController : ISessionController, IDisposable
     private bool _disposed;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="PlayToController"/> class.
+    /// Initializes a new instance of the <see cref="PlayToSession"/> class.
     /// </summary>
     /// <param name="session">The <see cref="SessionInfo"/>.</param>
     /// <param name="sessionManager">Instance of the <see cref="ISessionManager"/> interface.</param>
@@ -71,7 +72,7 @@ public class PlayToController : ISessionController, IDisposable
     /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
     /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
     /// <param name="device">The <see cref="Device"/>.</param>
-    public PlayToController(
+    public PlayToSession(
         SessionInfo session,
         ISessionManager sessionManager,
         ILibraryManager libraryManager,
@@ -604,6 +605,7 @@ public class PlayToController : ISessionController, IDisposable
                 streamInfo.TargetRefFrames,
                 streamInfo.TargetVideoStreamCount,
                 streamInfo.TargetAudioStreamCount,
+                streamInfo.GetStreamCount(),
                 streamInfo.TargetVideoCodecTag,
                 streamInfo.IsTargetAVC);
 

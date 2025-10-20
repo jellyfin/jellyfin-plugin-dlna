@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Jellyfin.Data.Entities;
-using Jellyfin.Data.Enums;
-using Jellyfin.Extensions;
+using Jellyfin.Data;
+using Jellyfin.Database.Implementations.Entities;
+using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Service;
 using MediaBrowser.Controller.Drawing;
@@ -14,7 +14,6 @@ using MediaBrowser.Controller.TV;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Globalization;
 using Microsoft.Extensions.Logging;
-using IDlnaManager = Jellyfin.Plugin.Dlna.Model.IDlnaManager;
 
 namespace Jellyfin.Plugin.Dlna.ContentDirectory;
 
@@ -62,7 +61,7 @@ public class ContentDirectoryService : BaseService, IContentDirectory
         IUserViewManager userViewManager,
         IMediaEncoder mediaEncoder,
         ITVSeriesManager tvSeriesManager)
-        : base(logger, httpClient)
+        : base(logger)
     {
         _dlna = dlna;
         _userDataManager = userDataManager;

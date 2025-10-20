@@ -6,8 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Xml;
-using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
+using Jellyfin.Database.Implementations.Entities;
+using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Plugin.Dlna.Didl;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Service;
@@ -197,7 +198,7 @@ public class ControlHandler : BaseControlHandler
 
         var newbookmark = int.Parse(sparams["PosSecond"], CultureInfo.InvariantCulture);
 
-        var userdata = _userDataManager.GetUserData(_user, item);
+        var userdata = _userDataManager.GetUserData(_user, item)!;
 
         userdata.PlaybackPositionTicks = TimeSpan.FromSeconds(newbookmark).Ticks;
 
@@ -896,7 +897,7 @@ public class ControlHandler : BaseControlHandler
     private QueryResult<ServerItem> GetGenres(BaseItem parent, InternalItemsQuery query)
     {
         // Don't sort
-        query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
+        query.OrderBy = [];
         query.AncestorIds = [parent.Id];
         var genresResult = _libraryManager.GetGenres(query);
 
@@ -912,7 +913,7 @@ public class ControlHandler : BaseControlHandler
     private QueryResult<ServerItem> GetMusicGenres(BaseItem parent, InternalItemsQuery query)
     {
         // Don't sort
-        query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
+        query.OrderBy = [];
         query.AncestorIds = [parent.Id];
         var genresResult = _libraryManager.GetMusicGenres(query);
 
@@ -928,7 +929,7 @@ public class ControlHandler : BaseControlHandler
     private QueryResult<ServerItem> GetMusicAlbumArtists(BaseItem parent, InternalItemsQuery query)
     {
         // Don't sort
-        query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
+        query.OrderBy = [];
         query.AncestorIds = [parent.Id];
         var artists = _libraryManager.GetAlbumArtists(query);
 
@@ -944,7 +945,7 @@ public class ControlHandler : BaseControlHandler
     private QueryResult<ServerItem> GetMusicArtists(BaseItem parent, InternalItemsQuery query)
     {
         // Don't sort
-        query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
+        query.OrderBy = [];
         query.AncestorIds = [parent.Id];
         var artists = _libraryManager.GetArtists(query);
         return ToResult(query.StartIndex, artists);
@@ -959,7 +960,7 @@ public class ControlHandler : BaseControlHandler
     private QueryResult<ServerItem> GetFavoriteArtists(BaseItem parent, InternalItemsQuery query)
     {
         // Don't sort
-        query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
+        query.OrderBy = [];
         query.AncestorIds = [parent.Id];
         query.IsFavorite = true;
         var artists = _libraryManager.GetArtists(query);
@@ -990,7 +991,7 @@ public class ControlHandler : BaseControlHandler
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
     private QueryResult<ServerItem> GetNextUp(BaseItem parent, InternalItemsQuery query)
     {
-        query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
+        query.OrderBy = [];
 
         var result = _tvSeriesManager.GetNextUp(
             new NextUpQuery
@@ -1015,7 +1016,7 @@ public class ControlHandler : BaseControlHandler
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
     private QueryResult<ServerItem> GetLatest(BaseItem parent, InternalItemsQuery query, BaseItemKind itemType)
     {
-        query.OrderBy = Array.Empty<(ItemSortBy, SortOrder)>();
+        query.OrderBy = [];
 
         int limit;
 
