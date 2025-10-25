@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Net.Mime;
 using System.Threading.Tasks;
+using System.Web;
 using Jellyfin.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Common.Api;
@@ -328,11 +329,11 @@ public class DlnaServerController : ControllerBase
 
     private void SetResponse(EventSubscriptionResponse eventSubscriptionResponse)
     {
-        Response.Headers.Server = _dlnaManager.GetServerName();
+        Response.Headers.Server = HttpUtility.UrlEncode(_dlnaManager.GetServerName());
         Response.ContentLength = 0;
         foreach (var header in eventSubscriptionResponse.Headers)
         {
-            Response.Headers[header.Key] = header.Value;
+            Response.Headers[header.Key] = HttpUtility.UrlEncode(header.Value);
         }
     }
 }
