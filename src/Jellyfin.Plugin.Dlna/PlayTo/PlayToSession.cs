@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Jellyfin.Data.Enums;
 using Jellyfin.Data.Events;
 using Jellyfin.Database.Implementations.Entities;
+using Jellyfin.Extensions;
 using Jellyfin.Plugin.Dlna.Didl;
 using Jellyfin.Plugin.Dlna.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
@@ -383,7 +384,7 @@ public class PlayToSession : ISessionController, IDisposable
     {
         _logger.LogDebug("{0} - Received PlayRequest: {1}", _session.DeviceName, command.PlayCommand);
 
-        var user = command.ControllingUserId.Equals(default)
+        var user = command.ControllingUserId.IsEmpty()
             ? null :
             _userManager.GetUserById(command.ControllingUserId);
 
@@ -394,6 +395,13 @@ public class PlayToSession : ISessionController, IDisposable
         }
 
         var startIndex = command.StartIndex ?? 0;
+
+        if (startIndex > items.Count)
+        {
+            _logger.LogDebug("{DeviceName} - Play command resulted in no items", _session.DeviceName);
+            return Task.CompletedTask;
+        }
+
         int len = items.Count - startIndex;
         if (startIndex > 0)
         {
@@ -428,7 +436,7 @@ public class PlayToSession : ISessionController, IDisposable
             _playlist.AddRange(playlist);
         }
 
-        if (!command.ControllingUserId.Equals(default))
+        if (!command.ControllingUserId.IsEmpty())
         {
             _sessionManager.LogSessionActivity(
                 _session.Client,
@@ -482,7 +490,7 @@ public class PlayToSession : ISessionController, IDisposable
 
             if (info.Item is not null && !EnableClientSideSeek(info))
             {
-                var user = _session.UserId.Equals(default)
+                var user = _session.UserId.IsEmpty()
                     ? null
                     : _userManager.GetUserById(_session.UserId);
                 var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, info.AudioStreamIndex, info.SubtitleStreamIndex);
@@ -790,7 +798,7 @@ public class PlayToSession : ISessionController, IDisposable
             {
                 var newPosition = GetProgressPositionTicks(info) ?? 0;
 
-                var user = _session.UserId.Equals(default)
+                var user = _session.UserId.IsEmpty()
                     ? null
                     : _userManager.GetUserById(_session.UserId);
                 var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, newIndex, info.SubtitleStreamIndex);
@@ -821,7 +829,7 @@ public class PlayToSession : ISessionController, IDisposable
             {
                 var newPosition = GetProgressPositionTicks(info) ?? 0;
 
-                var user = _session.UserId.Equals(default)
+                var user = _session.UserId.IsEmpty()
                     ? null
                     : _userManager.GetUserById(_session.UserId);
                 var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, info.AudioStreamIndex, newIndex);
@@ -970,7 +978,7 @@ public class PlayToSession : ISessionController, IDisposable
                 ItemId = GetItemId(url)
             };
 
-            if (request.ItemId.Equals(default))
+            if (request.ItemId.IsEmpty())
             {
                 return request;
             }
