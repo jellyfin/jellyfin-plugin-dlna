@@ -329,7 +329,7 @@ public class DlnaServerController : ControllerBase
 
     private void SetResponse(EventSubscriptionResponse eventSubscriptionResponse)
     {
-        Response.Headers.Server = _dlnaManager.GetServerName();
+        Response.Headers.Server = HttpUtility.UrlEncode(_dlnaManager.GetServerName());
         Response.ContentLength = 0;
         foreach (var header in eventSubscriptionResponse.Headers)
         {
