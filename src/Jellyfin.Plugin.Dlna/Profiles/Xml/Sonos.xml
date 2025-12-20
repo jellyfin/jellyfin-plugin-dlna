@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<Profile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>Sonos</Name>
+
+  <Identification>
+    <Manufacturer>Sonos, Inc.</Manufacturer>
+  </Identification>
+
+  <MusicStreamingTranscodingBitrate>355000</MusicStreamingTranscodingBitrate>
+
+  <DirectPlayProfiles>
+    <DirectPlayProfile type="Audio" container="mp3"/>
+    <DirectPlayProfile type="Audio" container="mp4"/>
+    <DirectPlayProfile type="Audio" container="m4a"/>
+    <DirectPlayProfile type="Audio" container="wma"/>
+    <DirectPlayProfile type="Audio" container="aac"/>
+    <DirectPlayProfile type="Audio" container="he-aac"/>
+    <DirectPlayProfile type="Audio" container="ogg"/>
+    <DirectPlayProfile type="Audio" container="flac"/>
+    <DirectPlayProfile type="Audio" container="alac"/>
+    <DirectPlayProfile type="Audio" container="aiff"/>
+    <DirectPlayProfile type="Audio" container="wav"/>
+  </DirectPlayProfiles>
+
+  <CodecProfiles>
+    <CodecProfile type="Audio" container="mp3">
+      <Conditions>
+        <ProfileCondition condition="LessThanEqual" property="AudioSampleRate" value="48000" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioChannels" value="2" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioBitrate" value="320000" isRequired="true" />
+      </Conditions>
+      <ApplyConditions />
+    </CodecProfile>
+    <CodecProfile type="Audio" container="mp4">
+      <Conditions>
+        <ProfileCondition condition="LessThanEqual" property="AudioSampleRate" value="48000" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioChannels" value="2" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioBitrate" value="320000" isRequired="true" />
+      </Conditions>
+      <ApplyConditions />
+    </CodecProfile>
+    <CodecProfile type="Audio" container="m4a">
+      <Conditions>
+        <ProfileCondition condition="LessThanEqual" property="AudioSampleRate" value="48000" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioChannels" value="2" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioBitrate" value="320000" isRequired="true" />
+      </Conditions>
+      <ApplyConditions />
+    </CodecProfile>
+    <CodecProfile type="Audio" container="wma">
+      <Conditions>
+        <ProfileCondition condition="LessThanEqual" property="AudioSampleRate" value="48000" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioChannels" value="2" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioBitrate" value="355000" isRequired="true" />
+      </Conditions>
+      <ApplyConditions />
+    </CodecProfile>
+    <CodecProfile type="Audio" container="aac">
+      <Conditions>
+        <ProfileCondition condition="LessThanEqual" property="AudioSampleRate" value="48000" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioChannels" value="2" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioBitrate" value="320000" isRequired="true" />
+      </Conditions>
+      <ApplyConditions />
+    </CodecProfile>
+    <CodecProfile type="Audio" container="he-aac">
+      <Conditions>
+        <ProfileCondition condition="LessThanEqual" property="AudioSampleRate" value="48000" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioChannels" value="2" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioBitrate" value="320000" isRequired="true" />
+      </Conditions>
+      <ApplyConditions />
+    </CodecProfile>
+    <CodecProfile type="Audio" container="ogg">
+      <Conditions>
+        <ProfileCondition condition="LessThanEqual" property="AudioSampleRate" value="48000" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioChannels" value="2" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioBitrate" value="320000" isRequired="true" />
+      </Conditions>
+      <ApplyConditions />
+    </CodecProfile>
+    <CodecProfile type="Audio" container="flac">
+      <Conditions>
+        <ProfileCondition condition="LessThanEqual" property="AudioSampleRate" value="48000" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioChannels" value="2" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioBitDepth" value="24" isRequired="true" />
+      </Conditions>
+      <ApplyConditions />
+    </CodecProfile>
+    <CodecProfile type="Audio" container="alac">
+      <Conditions>
+        <ProfileCondition condition="LessThanEqual" property="AudioSampleRate" value="48000" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioChannels" value="2" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioBitDepth" value="24" isRequired="true" />
+      </Conditions>
+      <ApplyConditions />
+    </CodecProfile>
+    <CodecProfile type="Audio" container="aiff">
+      <Conditions>
+        <ProfileCondition condition="LessThanEqual" property="AudioSampleRate" value="48000" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioChannels" value="2" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioBitDepth" value="16" isRequired="true" />
+      </Conditions>
+      <ApplyConditions />
+    </CodecProfile>
+    <CodecProfile type="Audio" container="wav">
+      <Conditions>
+        <ProfileCondition condition="LessThanEqual" property="AudioSampleRate" value="48000" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioChannels" value="2" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="AudioBitDepth" value="16" isRequired="true" />
+      </Conditions>
+      <ApplyConditions />
+    </CodecProfile>
+  </CodecProfiles>
+
+  <TranscodingProfiles>
+    <TranscodingProfile type="Audio" container="flac" audioCodec="flac" context="Streaming"/>
+  </TranscodingProfiles>
+
+</Profile>
