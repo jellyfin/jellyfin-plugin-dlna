@@ -242,6 +242,8 @@ public class DidlBuilder
 
     private void AddVideoResource(XmlWriter writer, BaseItem video, string deviceId, Filter filter, StreamInfo? streamInfo = null)
     {
+        var forceSubtitleSafeMode = false;
+
         if (streamInfo is null)
         {
             var sources = _mediaSourceManager.GetStaticMediaSources(video, true, _user);
@@ -254,7 +256,8 @@ public class DidlBuilder
                 MaxBitrate = _profile.MaxStreamingBitrate
             };
 
-            if (NeedsSubtitleSafeRemux(mediaOptions.MediaSources))
+            forceSubtitleSafeMode = NeedsSubtitleSafeRemux(mediaOptions.MediaSources);
+            if (forceSubtitleSafeMode)
             {
                 // Samsung DLNA clients can reject MP4 resources with embedded subtitle tracks.
                 // Force a remux path to keep subtitle delivery external.
@@ -266,6 +269,10 @@ public class DidlBuilder
 
             streamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalVideoStream(mediaOptions)
                 ?? throw new InvalidOperationException("No optimal video stream found");
+        }
+        else
+        {
+            forceSubtitleSafeMode = NeedsSubtitleSafeMode(streamInfo.MediaSource);
         }
 
         var targetWidth = streamInfo.TargetWidth;
@@ -315,7 +322,7 @@ public class DidlBuilder
 
             var subtitleAdded = AddSubtitleElement(writer, subtitle);
 
-            if (subtitleAdded && _profile.EnableSingleSubtitleLimit)
+            if (subtitleAdded && (_profile.EnableSingleSubtitleLimit || forceSubtitleSafeMode))
             {
                 break;
             }
@@ -326,18 +333,23 @@ public class DidlBuilder
     {
         foreach (var source in sources)
         {
-            if (!IsMp4Container(source.Container))
-            {
-                continue;
-            }
-
-            if (source.MediaStreams.Any(stream => stream.Type == MediaStreamType.Subtitle && !stream.IsExternal))
+            if (NeedsSubtitleSafeMode(source))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private static bool NeedsSubtitleSafeMode(MediaSourceInfo? source)
+    {
+        if (source is null || !IsMp4Container(source.Container))
+        {
+            return false;
+        }
+
+        return source.MediaStreams.Any(stream => stream.Type == MediaStreamType.Subtitle && !stream.IsExternal);
     }
 
     private static bool IsMp4Container(string? container)
