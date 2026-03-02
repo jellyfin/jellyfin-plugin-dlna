@@ -17,6 +17,7 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Playlists;
+using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Drawing;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
@@ -244,15 +245,27 @@ public class DidlBuilder
         if (streamInfo is null)
         {
             var sources = _mediaSourceManager.GetStaticMediaSources(video, true, _user);
-
-            streamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalVideoStream(new MediaOptions
+            var mediaOptions = new MediaOptions
             {
                 ItemId = video.Id,
                 MediaSources = sources.ToArray(),
                 Profile = _profile,
                 DeviceId = deviceId,
                 MaxBitrate = _profile.MaxStreamingBitrate
-            }) ?? throw new InvalidOperationException("No optimal video stream found");
+            };
+
+            if (NeedsSubtitleSafeRemux(mediaOptions.MediaSources))
+            {
+                // Samsung DLNA clients can reject MP4 resources with embedded subtitle tracks.
+                // Force a remux path to keep subtitle delivery external.
+                mediaOptions.EnableDirectPlay = false;
+                mediaOptions.EnableDirectStream = true;
+                mediaOptions.AllowVideoStreamCopy = true;
+                mediaOptions.AllowAudioStreamCopy = true;
+            }
+
+            streamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalVideoStream(mediaOptions)
+                ?? throw new InvalidOperationException("No optimal video stream found");
         }
 
         var targetWidth = streamInfo.TargetWidth;
@@ -307,6 +320,45 @@ public class DidlBuilder
                 break;
             }
         }
+    }
+
+    private static bool NeedsSubtitleSafeRemux(MediaSourceInfo[] sources)
+    {
+        foreach (var source in sources)
+        {
+            if (!IsMp4Container(source.Container))
+            {
+                continue;
+            }
+
+            if (source.MediaStreams.Any(stream => stream.Type == MediaStreamType.Subtitle && !stream.IsExternal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsMp4Container(string? container)
+    {
+        if (string.IsNullOrWhiteSpace(container))
+        {
+            return false;
+        }
+
+        var parts = container.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var part in parts)
+        {
+            if (string.Equals(part, "mp4", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(part, "m4v", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(part, "mov", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private bool AddSubtitleElement(XmlWriter writer, SubtitleStreamInfo info)
