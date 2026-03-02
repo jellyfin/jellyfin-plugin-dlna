@@ -17,7 +17,6 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Playlists;
-using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Drawing;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
@@ -32,8 +31,6 @@ using Season = MediaBrowser.Controller.Entities.TV.Season;
 using Series = MediaBrowser.Controller.Entities.TV.Series;
 using StreamBuilder = MediaBrowser.Model.Dlna.StreamBuilder;
 using StreamInfo = MediaBrowser.Model.Dlna.StreamInfo;
-using SubtitleDeliveryMethod = MediaBrowser.Model.Dlna.SubtitleDeliveryMethod;
-using SubtitleStreamInfo = MediaBrowser.Model.Dlna.SubtitleStreamInfo;
 using XmlAttribute = Jellyfin.Plugin.Dlna.Model.XmlAttribute;
 
 namespace Jellyfin.Plugin.Dlna.Didl;
@@ -242,37 +239,17 @@ public class DidlBuilder
 
     private void AddVideoResource(XmlWriter writer, BaseItem video, string deviceId, Filter filter, StreamInfo? streamInfo = null)
     {
-        var forceSubtitleSafeMode = false;
-
         if (streamInfo is null)
         {
             var sources = _mediaSourceManager.GetStaticMediaSources(video, true, _user);
-            var mediaOptions = new MediaOptions
+            streamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalVideoStream(new MediaOptions
             {
                 ItemId = video.Id,
                 MediaSources = sources.ToArray(),
                 Profile = _profile,
                 DeviceId = deviceId,
                 MaxBitrate = _profile.MaxStreamingBitrate
-            };
-
-            forceSubtitleSafeMode = NeedsSubtitleSafeRemux(mediaOptions.MediaSources);
-            if (forceSubtitleSafeMode)
-            {
-                // Samsung DLNA clients can reject MP4 resources with embedded subtitle tracks.
-                // Force a remux path to keep subtitle delivery external.
-                mediaOptions.EnableDirectPlay = false;
-                mediaOptions.EnableDirectStream = true;
-                mediaOptions.AllowVideoStreamCopy = true;
-                mediaOptions.AllowAudioStreamCopy = true;
-            }
-
-            streamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalVideoStream(mediaOptions)
-                ?? throw new InvalidOperationException("No optimal video stream found");
-        }
-        else
-        {
-            forceSubtitleSafeMode = NeedsSubtitleSafeMode(streamInfo.MediaSource);
+            }) ?? throw new InvalidOperationException("No optimal video stream found");
         }
 
         var targetWidth = streamInfo.TargetWidth;
@@ -311,115 +288,8 @@ public class DidlBuilder
             AddVideoResource(writer, filter, contentFeature, streamInfo);
         }
 
-        var subtitleProfiles = streamInfo.GetSubtitleProfiles(_mediaEncoder, false, _serverAddress, _accessToken);
-
-        foreach (var subtitle in subtitleProfiles)
-        {
-            if (subtitle.DeliveryMethod != SubtitleDeliveryMethod.External)
-            {
-                continue;
-            }
-
-            var subtitleAdded = AddSubtitleElement(writer, subtitle);
-
-            if (subtitleAdded && (_profile.EnableSingleSubtitleLimit || forceSubtitleSafeMode))
-            {
-                break;
-            }
-        }
-    }
-
-    private static bool NeedsSubtitleSafeRemux(MediaSourceInfo[] sources)
-    {
-        foreach (var source in sources)
-        {
-            if (NeedsSubtitleSafeMode(source))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool NeedsSubtitleSafeMode(MediaSourceInfo? source)
-    {
-        if (source is null || !IsMp4Container(source.Container))
-        {
-            return false;
-        }
-
-        return source.MediaStreams.Any(stream => stream.Type == MediaStreamType.Subtitle && !stream.IsExternal);
-    }
-
-    private static bool IsMp4Container(string? container)
-    {
-        if (string.IsNullOrWhiteSpace(container))
-        {
-            return false;
-        }
-
-        var parts = container.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        foreach (var part in parts)
-        {
-            if (string.Equals(part, "mp4", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(part, "m4v", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(part, "mov", StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private bool AddSubtitleElement(XmlWriter writer, SubtitleStreamInfo info)
-    {
-        var subtitleProfile = _profile.SubtitleProfiles
-            .FirstOrDefault(i => string.Equals(info.Format, i.Format, StringComparison.OrdinalIgnoreCase)
-                                 && i.Method == SubtitleDeliveryMethod.External);
-
-        if (subtitleProfile is null)
-        {
-            return false;
-        }
-
-        var subtitleMode = subtitleProfile.DidlMode;
-
-        if (string.Equals(subtitleMode, "CaptionInfoEx", StringComparison.OrdinalIgnoreCase))
-        {
-            // <sec:CaptionInfoEx sec:type="srt">http://192.168.1.3:9999/video.srt</sec:CaptionInfoEx>
-            // <sec:CaptionInfo sec:type="srt">http://192.168.1.3:9999/video.srt</sec:CaptionInfo>
-
-            writer.WriteStartElement("sec", "CaptionInfoEx", null);
-            writer.WriteAttributeString("sec", "type", null, info.Format.ToLowerInvariant());
-
-            writer.WriteString(info.Url);
-            writer.WriteFullEndElement();
-        }
-        else if (string.Equals(subtitleMode, "smi", StringComparison.OrdinalIgnoreCase))
-        {
-            writer.WriteStartElement(string.Empty, "res", NsDidl);
-
-            writer.WriteAttributeString("protocolInfo", "http-get:*:smi/caption:*");
-
-            writer.WriteString(info.Url);
-            writer.WriteFullEndElement();
-        }
-        else
-        {
-            writer.WriteStartElement(string.Empty, "res", NsDidl);
-            var protocolInfo = string.Format(
-                CultureInfo.InvariantCulture,
-                "http-get:*:text/{0}:*",
-                info.Format.ToLowerInvariant());
-            writer.WriteAttributeString("protocolInfo", protocolInfo);
-
-            writer.WriteString(info.Url);
-            writer.WriteFullEndElement();
-        }
-
-        return true;
+        // Do not advertise subtitle resources in DIDL.
+        // This avoids Samsung DLNA clients rejecting otherwise playable items.
     }
 
     private void AddVideoResource(XmlWriter writer, Filter filter, string contentFeatures, StreamInfo streamInfo)
