@@ -275,7 +275,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
                 CacheLifetime = TimeSpan.FromSeconds(1800), // How long SSDP clients can cache this info.
                 Location = uri.Uri, // Must point to the URL that serves your devices UPnP description document.
                 Address = intf.Address,
-                PrefixLength = NetworkUtils.MaskToCidr(intf.Subnet.Prefix),
+                PrefixLength = (byte)intf.Subnet.PrefixLength,
                 FriendlyName = "Jellyfin",
                 Manufacturer = "Jellyfin",
                 ModelName = "Jellyfin Server",
