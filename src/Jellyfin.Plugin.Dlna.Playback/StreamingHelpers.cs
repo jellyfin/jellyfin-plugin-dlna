@@ -359,7 +359,8 @@ public static class StreamingHelpers
                         state.TargetAudioStreamCount,
                         state.TargetStreamCount,
                         state.TargetVideoCodecTag,
-                        state.IsTargetAVC)
+                        state.IsTargetAVC,
+                        state.VideoStream?.Rotation)
                     .FirstOrDefault() ?? string.Empty);
         }
     }
@@ -604,7 +605,8 @@ public static class StreamingHelpers
                 state.TargetAudioStreamCount,
                 state.TargetStreamCount,
                 state.TargetVideoCodecTag,
-                state.IsTargetAVC);
+                state.IsTargetAVC,
+                state.VideoStream?.Rotation);
 
         if (mediaProfile is not null)
         {

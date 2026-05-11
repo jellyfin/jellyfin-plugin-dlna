@@ -334,6 +334,7 @@ public class DlnaDeviceProfile : DeviceProfile
     /// <param name="numStreams">The number of streams.</param>
     /// <param name="videoCodecTag">The video Codec tag.</param>
     /// <param name="isAvc">True if Avc.</param>
+    /// <param name="videoRotation">The video rotation angle, usually 0 or +-90/180.</param>
     /// <returns>The <see cref="ResponseProfile"/>.</returns>
     public ResponseProfile? GetVideoMediaProfile(
         string? container,
@@ -356,7 +357,8 @@ public class DlnaDeviceProfile : DeviceProfile
         int? numAudioStreams,
         int numStreams,
         string? videoCodecTag,
-        bool? isAvc)
+        bool? isAvc,
+        int? videoRotation)
     {
         foreach (var i in ResponseProfiles)
         {
@@ -404,7 +406,8 @@ public class DlnaDeviceProfile : DeviceProfile
                         numVideoStreams,
                         numAudioStreams,
                         videoCodecTag,
-                        isAvc))
+                        isAvc,
+                        videoRotation))
                 {
                     anyOff = true;
                     break;

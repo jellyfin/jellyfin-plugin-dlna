@@ -285,7 +285,8 @@ public class DidlBuilder
             streamInfo.TargetAudioStreamCount,
             streamInfo.GetStreamCount(),
             streamInfo.TargetVideoCodecTag,
-            streamInfo.IsTargetAVC);
+            streamInfo.IsTargetAVC,
+            streamInfo.TargetVideoStream?.Rotation);
 
         foreach (var contentFeature in contentFeatureList)
         {
@@ -442,7 +443,8 @@ public class DidlBuilder
             streamInfo.TargetAudioStreamCount,
             streamInfo.GetStreamCount(),
             streamInfo.TargetVideoCodecTag,
-            streamInfo.IsTargetAVC);
+            streamInfo.IsTargetAVC,
+            streamInfo.TargetVideoStream?.Rotation);
 
         var filename = url[..url.IndexOf('?', StringComparison.Ordinal)];
 

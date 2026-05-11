@@ -167,6 +167,7 @@ public static class ContentFeatureBuilder
     /// <param name="numStreams">The number of streams.</param>
     /// <param name="videoCodecTag">The video codec tag.</param>
     /// <param name="isAvc">Value indicating wether the stream is AVC.</param>
+    /// <param name="videoRotation">The video rotation angle, usually 0 or +-90/180.</param>
     public static IEnumerable<string> BuildVideoHeader(
         DlnaDeviceProfile profile,
         string? container,
@@ -192,7 +193,8 @@ public static class ContentFeatureBuilder
         int? numAudioStreams,
         int numStreams,
         string? videoCodecTag,
-        bool? isAvc)
+        bool? isAvc,
+        int? videoRotation)
     {
         // first bit means Time based seek supported, second byte range seek supported (not sure about the order now), so 01 = only byte seek, 10 = time based, 11 = both, 00 = none
         var orgOp = ";DLNA.ORG_OP=" + DlnaMaps.GetOrgOpValue(runtimeTicks > 0, isDirectStream, transcodeSeekInfo);
@@ -242,7 +244,8 @@ public static class ContentFeatureBuilder
             numAudioStreams,
             numStreams,
             videoCodecTag,
-            isAvc);
+            isAvc,
+            videoRotation);
 
         var orgPnValues = new List<string>();
 
