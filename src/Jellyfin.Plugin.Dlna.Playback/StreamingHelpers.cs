@@ -207,7 +207,7 @@ public static class StreamingHelpers
             state.OutputVideoCodec = state.Request.VideoCodec;
             state.OutputVideoBitrate = encodingHelper.GetVideoBitrateParamValue(state.VideoRequest, state.VideoStream, state.OutputVideoCodec);
 
-            encodingHelper.TryStreamCopy(state);
+            encodingHelper.TryStreamCopy(state, encodingOptions);
 
             if (!EncodingHelper.IsCopyCodec(state.OutputVideoCodec) && state.OutputVideoBitrate.HasValue)
             {
@@ -359,7 +359,8 @@ public static class StreamingHelpers
                         state.TargetAudioStreamCount,
                         state.TargetStreamCount,
                         state.TargetVideoCodecTag,
-                        state.IsTargetAVC)
+                        state.IsTargetAVC,
+                        state.VideoStream?.Rotation)
                     .FirstOrDefault() ?? string.Empty);
         }
     }
@@ -604,7 +605,8 @@ public static class StreamingHelpers
                 state.TargetAudioStreamCount,
                 state.TargetStreamCount,
                 state.TargetVideoCodecTag,
-                state.IsTargetAVC);
+                state.IsTargetAVC,
+                state.VideoStream?.Rotation);
 
         if (mediaProfile is not null)
         {

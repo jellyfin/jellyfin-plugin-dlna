@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <Nullable>disable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Jellyfin.Common" Version="10.*-*" />
-      <PackageReference Include="Jellyfin.Controller" Version="10.*-*" />
-      <PackageReference Include="Jellyfin.Extensions" Version="10.*-*" />
+      <PackageReference Include="Jellyfin.Common" Version="12.*-*" />
+      <PackageReference Include="Jellyfin.Controller" Version="12.*-*" />
+      <PackageReference Include="Jellyfin.Extensions" Version="12.*-*" />
     </ItemGroup>
 </Project>

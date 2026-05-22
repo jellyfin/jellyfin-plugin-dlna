@@ -615,7 +615,8 @@ public class PlayToSession : ISessionController, IDisposable
                 streamInfo.TargetAudioStreamCount,
                 streamInfo.GetStreamCount(),
                 streamInfo.TargetVideoCodecTag,
-                streamInfo.IsTargetAVC);
+                streamInfo.IsTargetAVC,
+                streamInfo.TargetVideoStream?.Rotation);
 
             return list.FirstOrDefault();
         }
