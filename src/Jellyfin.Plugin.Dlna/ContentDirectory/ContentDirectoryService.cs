@@ -152,7 +152,7 @@ public class ContentDirectoryService : BaseService, IContentDirectory
             }
         }
 
-        foreach (var user in _userManager.Users)
+        foreach (var user in _userManager.GetUsers())
         {
             if (user.HasPermission(PermissionKind.IsAdministrator))
             {
@@ -160,6 +160,6 @@ public class ContentDirectoryService : BaseService, IContentDirectory
             }
         }
 
-        return _userManager.Users.FirstOrDefault();
+        return _userManager.GetUsers().FirstOrDefault();
     }
 }
