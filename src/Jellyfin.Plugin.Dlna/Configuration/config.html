@@ -53,19 +53,24 @@
 
                         <div class="selectContainer">
                             <select is="emby-select" id="dlnaSelectUser" label="Default User:"></select>
+                            <div class="fieldDescription">
+                                Select the Jellyfin user whose library access and subtitle preferences are used for DLNA playback.
+                                A default user is required for live TV subtitle burn-in.
+                            </div>
                         </div>
 
                         <div class="inputContainer">
                             <div class="checkboxContainer">
                                 <label>
                                     <input type="checkbox" is="emby-checkbox" id="dlnaSubtitleBurnIn" />
-                                    <span>Burn in subtitles for DLNA playback</span>
+                                    <span>Burn in subtitles for DLNA live TV</span>
                                 </label>
                             </div>
                             <div class="fieldDescription">
-                                Burns subtitles into the video stream using the default user's subtitle language and mode.
-                                Requires transcoding and may increase CPU or GPU usage.
-                                When disabled, Jellyfin does not send DLNA subtitle tracks (burned-in or external).
+                                Burns subtitles into live TV streams using the default user's subtitle language and mode.
+                                Requires a default user to be selected above. Requires transcoding and may increase CPU or GPU usage.
+                                Does not apply to movies or other on-demand content.
+                                When disabled, Jellyfin does not send DLNA subtitle tracks for live TV (burned-in or external).
                                 Some live TV broadcasts may still show subtitles decoded by the TV from the stream.
                             </div>
                         </div>

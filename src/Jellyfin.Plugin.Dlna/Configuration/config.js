@@ -33,6 +33,14 @@ const DlnaConfigurationPage = {
         page.querySelector('#dlnaSelectUser').value = selectedId;
     },
     save: function(page) {
+        const subtitleBurnIn = page.querySelector('#dlnaSubtitleBurnIn').checked;
+        const selectedUser = page.querySelector('#dlnaSelectUser').value;
+
+        if (subtitleBurnIn && !selectedUser) {
+            Dashboard.alert('Select a default user before enabling live TV subtitle burn-in.');
+            return Promise.resolve();
+        }
+
         Dashboard.showLoadingMsg();
         return new Promise((_) => {
             ApiClient.getPluginConfiguration(this.pluginUniqueId)
@@ -42,10 +50,9 @@ const DlnaConfigurationPage = {
                     config.BlastAliveMessages = page.querySelector('#dlnaBlastAlive').checked;
                     config.AliveMessageIntervalSeconds = parseInt(page.querySelector('#dlnaAliveInterval').value) || this.defaultAliveInterval;
                     config.SendOnlyMatchedHost = page.querySelector('#dlnaMatchedHost').checked;
-                    
-                    let selectedUser = page.querySelector('#dlnaSelectUser').value;
+
                     config.DefaultUserId = selectedUser.length > 0 ? selectedUser : null;
-                    config.EnableSubtitleBurnIn = page.querySelector('#dlnaSubtitleBurnIn').checked;
+                    config.EnableSubtitleBurnIn = subtitleBurnIn;
 
                     ApiClient.updatePluginConfiguration(DlnaConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });

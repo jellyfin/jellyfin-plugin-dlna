@@ -6,7 +6,7 @@ namespace Jellyfin.Plugin.Dlna.Model;
 public static class DlnaPluginConfigurationAccessor
 {
     /// <summary>
-    /// Gets or sets a value indicating whether to burn in subtitles for DLNA playback.
+    /// Gets or sets a value indicating whether to burn in subtitles for DLNA live TV playback.
     /// </summary>
     public static bool EnableSubtitleBurnIn { get; set; }
 }

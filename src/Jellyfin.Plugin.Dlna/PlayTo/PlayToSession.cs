@@ -654,6 +654,9 @@ public class PlayToSession : ISessionController, IDisposable
         int? audioStreamIndex,
         int? subtitleStreamIndex)
     {
+        var mediaSource = mediaSources.FirstOrDefault(s => string.Equals(s.Id, mediaSourceId, StringComparison.OrdinalIgnoreCase))
+            ?? mediaSources.FirstOrDefault(s => s.IsInfiniteStream)
+            ?? mediaSources.FirstOrDefault();
         var streamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalVideoStream(new MediaOptions
         {
             ItemId = item.Id,
@@ -663,11 +666,13 @@ public class PlayToSession : ISessionController, IDisposable
             MaxBitrate = profile.MaxStreamingBitrate,
             MediaSourceId = mediaSourceId,
             AudioStreamIndex = audioStreamIndex,
-            SubtitleStreamIndex = DlnaPluginConfigurationAccessor.EnableSubtitleBurnIn ? subtitleStreamIndex : null,
+            SubtitleStreamIndex = mediaSource?.IsInfiniteStream == true && DlnaPluginConfigurationAccessor.EnableSubtitleBurnIn
+                ? subtitleStreamIndex
+                : null,
             EnableDirectStream = false
         });
 
-        DlnaStreamRequestAdjustments.ApplyBrowseSubtitlePreferences(streamInfo);
+        DlnaStreamRequestAdjustments.ApplyBrowseSubtitlePreferences(streamInfo, mediaSource);
 
         return new PlaylistItem
         {

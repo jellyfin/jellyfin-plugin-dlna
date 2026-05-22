@@ -246,16 +246,19 @@ public class DidlBuilder
         {
             var sources = _mediaSourceManager.GetStaticMediaSources(video, true, _user);
 
+            var mediaSources = sources.ToArray();
+            var browseMediaSource = mediaSources.FirstOrDefault(s => s.IsInfiniteStream) ?? mediaSources.FirstOrDefault();
+
             streamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalVideoStream(new MediaOptions
             {
                 ItemId = video.Id,
-                MediaSources = sources.ToArray(),
+                MediaSources = mediaSources,
                 Profile = _profile,
                 DeviceId = deviceId,
                 MaxBitrate = _profile.MaxStreamingBitrate
             }) ?? throw new InvalidOperationException("No optimal video stream found");
 
-            DlnaStreamRequestAdjustments.ApplyBrowseSubtitlePreferences(streamInfo);
+            DlnaStreamRequestAdjustments.ApplyBrowseSubtitlePreferences(streamInfo, browseMediaSource);
         }
 
         var targetWidth = streamInfo.TargetWidth;

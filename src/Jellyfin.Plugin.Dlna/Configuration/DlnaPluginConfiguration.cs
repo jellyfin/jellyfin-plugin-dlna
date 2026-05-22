@@ -40,8 +40,8 @@ public class DlnaPluginConfiguration : BasePluginConfiguration
     public Guid? DefaultUserId { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether to burn in subtitles for DLNA playback
-    /// (including live TV) using the default user's subtitle preferences.
+    /// Gets or sets a value indicating whether to burn in subtitles for DLNA live TV playback
+    /// using the default user's subtitle preferences.
     /// </summary>
     public bool EnableSubtitleBurnIn { get; set; } = false;
 }
