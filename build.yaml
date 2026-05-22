@@ -1,8 +1,8 @@
 name: "DLNA"
 guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
 imageUrl: ""
-version: 10
-targetAbi: "10.11.0.0"
+version: 11
+targetAbi: "10.11.9.0"
 framework: "net9.0"
 owner: "jellyfin"
 overview: "DLNA Service"
@@ -16,5 +16,4 @@ artifacts:
   - "Jellyfin.Plugin.Dlna.Playback.dll"
   - "Rssdp.dll"
 changelog: |-
-  - Encode header values (#174) @crobibero
-  - Avoid invalid PlayCommand start index (#175) @crobibero
+  - Fix IUserManager.Users -> GetUsers() for Jellyfin 10.11.9 (#209) @crobibero
