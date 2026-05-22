@@ -5,6 +5,7 @@ using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.Dlna.Playback.Extensions;
+using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Streaming;
 using Microsoft.AspNetCore.Http;
@@ -66,6 +67,7 @@ public static class FileStreamResponseHelpers
     /// <param name="isHeadRequest">Whether the current request is a HTTP HEAD request so only the headers get returned.</param>
     /// <param name="httpContext">The current http context.</param>
     /// <param name="transcodeManager">The <see cref="ITranscodeManager"/> singleton.</param>
+    /// <param name="mediaSourceManager">The <see cref="IMediaSourceManager"/> singleton.</param>
     /// <param name="ffmpegCommandLineArguments">The command line arguments to start ffmpeg.</param>
     /// <param name="transcodingJobType">The <see cref="TranscodingJobType"/>.</param>
     /// <param name="cancellationTokenSource">The <see cref="CancellationTokenSource"/>.</param>
@@ -75,6 +77,7 @@ public static class FileStreamResponseHelpers
         bool isHeadRequest,
         HttpContext httpContext,
         ITranscodeManager transcodeManager,
+        IMediaSourceManager mediaSourceManager,
         string ffmpegCommandLineArguments,
         TranscodingJobType transcodingJobType,
         CancellationTokenSource cancellationTokenSource)
@@ -85,17 +88,11 @@ public static class FileStreamResponseHelpers
         httpContext.Response.Headers[HeaderNames.AcceptRanges] = "none";
 
         var contentType = state.GetMimeType(outputPath);
-
-        // Headers only
-        if (isHeadRequest)
-        {
-            httpContext.Response.Headers[HeaderNames.ContentType] = contentType;
-            return new OkResult();
-        }
+        var isLiveTv = state.MediaSource.IsInfiniteStream;
 
         using var transcodingLock = await transcodeManager.LockAsync(outputPath, cancellationTokenSource.Token).ConfigureAwait(false);
 
-        TranscodingJob? job;
+        TranscodingJob? job = null;
         if (!File.Exists(outputPath))
         {
             job = await transcodeManager.StartFfMpeg(
@@ -105,14 +102,55 @@ public static class FileStreamResponseHelpers
                 httpContext.User.GetUserId(),
                 transcodingJobType,
                 cancellationTokenSource).ConfigureAwait(false);
+
+            if (isLiveTv)
+            {
+                job.IsLiveOutput = true;
+                job.StopKillTimer();
+            }
         }
         else
         {
-            job = transcodeManager.OnTranscodeBeginRequest(outputPath, TranscodingJobType.Progressive);
-            state.Dispose();
+            // HEAD already started the job; do not bump ActiveRequestCount again for live TV.
+            if (!isLiveTv)
+            {
+                job = transcodeManager.OnTranscodeBeginRequest(outputPath, TranscodingJobType.Progressive);
+            }
+            else
+            {
+                job = transcodeManager.GetTranscodingJob(outputPath, TranscodingJobType.Progressive);
+            }
+
+            job?.StopKillTimer();
         }
 
-        var stream = new ProgressiveFileStream(outputPath, job, transcodeManager);
-        return new FileStreamResult(stream, contentType);
+        // Many DLNA clients send HEAD before GET; start transcoding on HEAD so the first GET has data ready.
+        if (isHeadRequest)
+        {
+            httpContext.Response.Headers[HeaderNames.ContentType] = contentType;
+            return new OkResult();
+        }
+
+        if (isLiveTv && job is not null)
+        {
+            var bytesAtOpen = job.BytesDownloaded;
+            DlnaLiveStreamTeardown.RegisterClientDisconnect(
+                httpContext,
+                job,
+                transcodeManager,
+                mediaSourceManager,
+                state.MediaSource.LiveStreamId,
+                bytesAtOpen);
+
+            var stream = new DlnaLiveProgressiveFileStream(
+                outputPath,
+                job,
+                transcodeManager,
+                mediaSourceManager,
+                state.MediaSource.LiveStreamId);
+            return new FileStreamResult(stream, contentType);
+        }
+
+        return new FileStreamResult(new ProgressiveFileStream(outputPath, job, transcodeManager), contentType);
     }
 }

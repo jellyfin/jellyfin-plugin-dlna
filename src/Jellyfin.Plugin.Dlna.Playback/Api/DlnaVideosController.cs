@@ -325,6 +325,7 @@ public class DlnaVideosController : ControllerBase
             isHeadRequest,
             HttpContext,
             _transcodingJobHelper,
+            _mediaSourceManager,
             ffmpegCommandLineArguments,
             _transcodingJobType,
             cancellationTokenSource).ConfigureAwait(false);
