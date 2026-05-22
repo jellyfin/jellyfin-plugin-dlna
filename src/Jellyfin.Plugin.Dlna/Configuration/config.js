@@ -10,6 +10,7 @@ const DlnaConfigurationPage = {
                 page.querySelector('#dlnaBlastAlive').checked = config.BlastAliveMessages;
                 page.querySelector('#dlnaAliveInterval').value = parseInt(config.AliveMessageIntervalSeconds) || this.defaultAliveInterval;
                 page.querySelector('#dlnaMatchedHost').checked = config.SendOnlyMatchedHost;
+                page.querySelector('#dlnaSubtitleBurnIn').checked = config.EnableSubtitleBurnIn === true;
 
                 ApiClient.getUsers()
                     .then(function(users){
@@ -44,6 +45,7 @@ const DlnaConfigurationPage = {
                     
                     let selectedUser = page.querySelector('#dlnaSelectUser').value;
                     config.DefaultUserId = selectedUser.length > 0 ? selectedUser : null;
+                    config.EnableSubtitleBurnIn = page.querySelector('#dlnaSubtitleBurnIn').checked;
 
                     ApiClient.updatePluginConfiguration(DlnaConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
                 });

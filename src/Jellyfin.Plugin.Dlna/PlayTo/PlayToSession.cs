@@ -11,6 +11,7 @@ using Jellyfin.Extensions;
 using Jellyfin.Plugin.Dlna.Didl;
 using Jellyfin.Plugin.Dlna.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
+using Jellyfin.Plugin.Dlna.Playback;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
@@ -626,22 +627,7 @@ public class PlayToSession : ISessionController, IDisposable
     private PlaylistItem GetPlaylistItem(BaseItem item, MediaSourceInfo[] mediaSources, DlnaDeviceProfile profile, string deviceId, string? mediaSourceId, int? audioStreamIndex, int? subtitleStreamIndex)
         => item.MediaType switch
         {
-            MediaType.Video => new PlaylistItem
-            {
-                StreamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalVideoStream(new MediaOptions
-                {
-                    ItemId = item.Id,
-                    MediaSources = mediaSources,
-                    Profile = profile,
-                    DeviceId = deviceId,
-                    MaxBitrate = profile.MaxStreamingBitrate,
-                    MediaSourceId = mediaSourceId,
-                    AudioStreamIndex = audioStreamIndex,
-                    SubtitleStreamIndex = subtitleStreamIndex,
-                    EnableDirectStream = false
-                }),
-                Profile = profile
-            },
+            MediaType.Video => CreateVideoPlaylistItem(item, mediaSources, profile, deviceId, mediaSourceId, audioStreamIndex, subtitleStreamIndex),
             MediaType.Audio => new PlaylistItem
             {
                 StreamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalAudioStream(new MediaOptions
@@ -658,6 +644,37 @@ public class PlayToSession : ISessionController, IDisposable
             MediaType.Photo => PlaylistItemFactory.Create((Photo)item, profile),
             _ => throw new ArgumentException("Unrecognized item type.")
         };
+
+    private PlaylistItem CreateVideoPlaylistItem(
+        BaseItem item,
+        MediaSourceInfo[] mediaSources,
+        DlnaDeviceProfile profile,
+        string deviceId,
+        string? mediaSourceId,
+        int? audioStreamIndex,
+        int? subtitleStreamIndex)
+    {
+        var streamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalVideoStream(new MediaOptions
+        {
+            ItemId = item.Id,
+            MediaSources = mediaSources,
+            Profile = profile,
+            DeviceId = deviceId,
+            MaxBitrate = profile.MaxStreamingBitrate,
+            MediaSourceId = mediaSourceId,
+            AudioStreamIndex = audioStreamIndex,
+            SubtitleStreamIndex = DlnaPluginConfigurationAccessor.EnableSubtitleBurnIn ? subtitleStreamIndex : null,
+            EnableDirectStream = false
+        });
+
+        DlnaStreamRequestAdjustments.ApplyBrowseSubtitlePreferences(streamInfo);
+
+        return new PlaylistItem
+        {
+            StreamInfo = streamInfo,
+            Profile = profile
+        };
+    }
 
     /// <summary>
     /// Plays the items.
