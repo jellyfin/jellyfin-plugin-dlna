@@ -184,6 +184,7 @@ public class DidlBuilder
     /// <param name="deviceId">The device id.</param>
     /// <param name="filter">The <see cref="Filter"/>.</param>
     /// <param name="streamInfo">The <see cref="StreamInfo" />.</param>
+    /// <param name="contextIdSuffix">The parent virtual-folder ID suffix.</param>
     /// </summary>
     public void WriteItemElement(
         XmlWriter writer,
@@ -193,7 +194,8 @@ public class DidlBuilder
         StubType? contextStubType,
         string deviceId,
         Filter filter,
-        StreamInfo? streamInfo = null)
+        StreamInfo? streamInfo = null,
+        string? contextIdSuffix = null)
     {
         var clientId = GetClientId(item, null);
 
@@ -204,7 +206,7 @@ public class DidlBuilder
 
         if (context is not null)
         {
-            writer.WriteAttributeString("parentID", GetClientId(context, contextStubType));
+            writer.WriteAttributeString("parentID", GetClientId(context, contextStubType, contextIdSuffix));
         }
         else
         {
@@ -463,8 +465,13 @@ public class DidlBuilder
         writer.WriteFullEndElement();
     }
 
-    private string GetDisplayName(BaseItem item, StubType? itemStubType, BaseItem? context)
+    private string GetDisplayName(BaseItem item, StubType? itemStubType, BaseItem? context, string? virtualFolderName = null)
     {
+        if (!string.IsNullOrEmpty(virtualFolderName))
+        {
+            return virtualFolderName;
+        }
+
         if (itemStubType.HasValue)
         {
             switch (itemStubType.Value)
@@ -696,8 +703,12 @@ public class DidlBuilder
     /// <param name="childCount">The child count.</param>
     /// <param name="filter">The <see cref="Filter"/>.</param>
     /// <param name="requestedId">The request id.</param>
+    /// <param name="virtualFolderName">The displayed virtual-folder name.</param>
+    /// <param name="idSuffix">The suffix encoded in this folder's object ID.</param>
+    /// <param name="contextStubType">The parent virtual-folder type.</param>
+    /// <param name="contextIdSuffix">The parent virtual-folder ID suffix.</param>
     /// </summary>
-    public void WriteFolderElement(XmlWriter writer, BaseItem folder, StubType? stubType, BaseItem? context, int childCount, Filter filter, string? requestedId = null)
+    public void WriteFolderElement(XmlWriter writer, BaseItem folder, StubType? stubType, BaseItem? context, int childCount, Filter filter, string? requestedId = null, string? virtualFolderName = null, string? idSuffix = null, StubType? contextStubType = null, string? contextIdSuffix = null)
     {
         writer.WriteStartElement(string.Empty, "container", NsDidl);
 
@@ -705,7 +716,7 @@ public class DidlBuilder
         writer.WriteAttributeString("searchable", "1");
         writer.WriteAttributeString("childCount", childCount.ToString(CultureInfo.InvariantCulture));
 
-        var clientId = GetClientId(folder, stubType);
+        var clientId = GetClientId(folder, stubType, idSuffix);
 
         if (string.Equals(requestedId, "0", StringComparison.Ordinal))
         {
@@ -718,7 +729,7 @@ public class DidlBuilder
 
             if (context is not null)
             {
-                writer.WriteAttributeString("parentID", GetClientId(context, null));
+                writer.WriteAttributeString("parentID", GetClientId(context, contextStubType, contextIdSuffix));
             }
             else
             {
@@ -734,7 +745,7 @@ public class DidlBuilder
             }
         }
 
-        AddGeneralProperties(folder, stubType, context, writer, filter);
+        AddGeneralProperties(folder, stubType, context, writer, filter, virtualFolderName);
 
         AddCover(folder, stubType, writer);
 
@@ -777,13 +788,13 @@ public class DidlBuilder
         }
     }
 
-    private void AddCommonFields(BaseItem item, StubType? itemStubType, BaseItem? context, XmlWriter writer, Filter filter)
+    private void AddCommonFields(BaseItem item, StubType? itemStubType, BaseItem? context, XmlWriter writer, Filter filter, string? virtualFolderName = null)
     {
         // Don't filter on dc:title because not all devices will include it in the filter
         // MediaMonkey for example won't display content without a title
         // if (filter.Contains("dc:title"))
         {
-            AddValue(writer, "dc", "title", GetDisplayName(item, itemStubType, context), NsDc);
+            AddValue(writer, "dc", "title", GetDisplayName(item, itemStubType, context, virtualFolderName), NsDc);
         }
 
         WriteObjectClass(writer, item, itemStubType);
@@ -959,9 +970,9 @@ public class DidlBuilder
         }
     }
 
-    private void AddGeneralProperties(BaseItem item, StubType? itemStubType, BaseItem? context, XmlWriter writer, Filter filter)
+    private void AddGeneralProperties(BaseItem item, StubType? itemStubType, BaseItem? context, XmlWriter writer, Filter filter, string? virtualFolderName = null)
     {
-        AddCommonFields(item, itemStubType, context, writer, filter);
+        AddCommonFields(item, itemStubType, context, writer, filter, virtualFolderName);
 
         var hasAlbumArtists = item as IHasAlbumArtist;
 
@@ -1253,10 +1264,11 @@ public class DidlBuilder
     /// </summary>
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="stubType">Current <see cref="StubType"/>.</param>
+    /// <param name="idSuffix">The optional virtual-folder ID suffix.</param>
     /// <returns>The client id</returns>
-    public static string GetClientId(BaseItem item, StubType? stubType)
+    public static string GetClientId(BaseItem item, StubType? stubType, string? idSuffix = null)
     {
-        return GetClientId(item.Id, stubType);
+        return GetClientId(item.Id, stubType, idSuffix);
     }
 
     /// <summary>
@@ -1264,14 +1276,17 @@ public class DidlBuilder
     /// </summary>
     /// <param name="idValue">The <see cref="Guid"/>.</param>
     /// <param name="stubType">Current <see cref="StubType"/>.</param>
+    /// <param name="idSuffix">The optional virtual-folder ID suffix.</param>
     /// <returns>The client id</returns>
-    public static string GetClientId(Guid idValue, StubType? stubType)
+    public static string GetClientId(Guid idValue, StubType? stubType, string? idSuffix = null)
     {
         var id = idValue.ToString("N", CultureInfo.InvariantCulture);
 
         if (stubType.HasValue)
         {
-            id = stubType.Value.ToString().ToLowerInvariant() + "_" + id;
+            id = stubType.Value.ToString().ToLowerInvariant()
+                + (string.IsNullOrEmpty(idSuffix) ? string.Empty : "-" + idSuffix.ToLowerInvariant())
+                + "_" + id;
         }
 
         return id;

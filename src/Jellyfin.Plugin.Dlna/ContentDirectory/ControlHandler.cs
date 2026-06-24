@@ -344,9 +344,16 @@ public class ControlHandler : BaseControlHandler
 
                 if (item.IsDisplayedAsFolder || serverItem.StubType.HasValue)
                 {
-                    var childrenResult = GetUserItems(item, serverItem.StubType, _user, sortCriteria, start, requestedCount);
+                    var childrenResult = GetUserItems(
+    item,
+    serverItem.StubType,
+    serverItem.IdSuffix,
+    _user,
+    sortCriteria,
+    start,
+    requestedCount);
 
-                    _didlBuilder.WriteFolderElement(writer, item, serverItem.StubType, null, childrenResult.TotalRecordCount, filter, id);
+                    _didlBuilder.WriteFolderElement(writer, item, serverItem.StubType, GetAlphabetParentStub(serverItem.StubType) is null ? null : item, childrenResult.TotalRecordCount, filter, id, serverItem.VirtualFolderName, serverItem.IdSuffix, GetAlphabetParentStub(serverItem.StubType));
                 }
                 else
                 {
@@ -357,7 +364,14 @@ public class ControlHandler : BaseControlHandler
             }
             else
             {
-                var childrenResult = GetUserItems(item, serverItem.StubType, _user, sortCriteria, start, requestedCount);
+                var childrenResult = GetUserItems(
+    item,
+    serverItem.StubType,
+    serverItem.IdSuffix,
+    _user,
+    sortCriteria,
+    start,
+    requestedCount);
                 totalCount = childrenResult.TotalRecordCount;
 
                 provided = childrenResult.Items.Count;
@@ -369,14 +383,21 @@ public class ControlHandler : BaseControlHandler
 
                     if (childItem.IsDisplayedAsFolder || displayStubType.HasValue)
                     {
-                        var childCount = GetUserItems(childItem, displayStubType, _user, sortCriteria, null, null)
+                        var childCount = GetUserItems(
+    childItem,
+    displayStubType,
+    i.IdSuffix,
+    _user,
+    sortCriteria,
+    null,
+    null)
                             .TotalRecordCount;
 
-                        _didlBuilder.WriteFolderElement(writer, childItem, displayStubType, item, childCount, filter);
+                        _didlBuilder.WriteFolderElement(writer, childItem, displayStubType, item, childCount, filter, null, i.VirtualFolderName, i.IdSuffix, serverItem.StubType, serverItem.IdSuffix);
                     }
                     else
                     {
-                        _didlBuilder.WriteItemElement(writer, childItem, _user, item, serverItem.StubType, deviceId, filter);
+                        _didlBuilder.WriteItemElement(writer, childItem, _user, item, serverItem.StubType, deviceId, filter, null, serverItem.IdSuffix);
                     }
                 }
             }
@@ -547,12 +568,20 @@ public class ControlHandler : BaseControlHandler
     /// </summary>
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="stubType">The <see cref="StubType"/>.</param>
+    /// <param name="idSuffix">The virtual folder ID suffix.</param>
     /// <param name="user">The <see cref="User"/>.</param>
     /// <param name="sort">The <see cref="SortCriteria"/>.</param>
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetUserItems(BaseItem item, StubType? stubType, User? user, SortCriteria sort, int? startIndex, int? limit)
+    private QueryResult<ServerItem> GetUserItems(
+    BaseItem item,
+    StubType? stubType,
+    string? idSuffix,
+    User? user,
+    SortCriteria sort,
+    int? startIndex,
+    int? limit)
     {
         if (user is not null)
         {
@@ -573,9 +602,9 @@ public class ControlHandler : BaseControlHandler
                     case CollectionType.music:
                         return GetMusicFolders(item, user, stubType, sort, startIndex, limit);
                     case CollectionType.movies:
-                        return GetMovieFolders(item, user, stubType, sort, startIndex, limit);
+                        return GetMovieFolders(item, user, stubType, idSuffix, sort, startIndex, limit);
                     case CollectionType.tvshows:
-                        return GetTvFolders(item, user, stubType, sort, startIndex, limit);
+                        return GetTvFolders(item, user, stubType, idSuffix, sort, startIndex, limit);
                     case CollectionType.folders:
                         return GetFolders(user, startIndex, limit);
                     case CollectionType.livetv:
@@ -701,11 +730,19 @@ public class ControlHandler : BaseControlHandler
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="user">The <see cref="User"/>.</param>
     /// <param name="stubType">The <see cref="StubType"/>.</param>
+    /// <param name="idSuffix">The alphabetical bucket encoded in the object ID.</param>
     /// <param name="sort">The <see cref="SortCriteria"/>.</param>
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetMovieFolders(BaseItem item, User user, StubType? stubType, SortCriteria sort, int? startIndex, int? limit)
+    private QueryResult<ServerItem> GetMovieFolders(
+        BaseItem item,
+        User user,
+        StubType? stubType,
+        string? idSuffix,
+        SortCriteria sort,
+        int? startIndex,
+        int? limit)
     {
         var query = new InternalItemsQuery(user)
         {
@@ -721,7 +758,9 @@ public class ControlHandler : BaseControlHandler
             case StubType.Latest:
                 return GetLatest(item, query, BaseItemKind.Movie);
             case StubType.Movies:
-                return GetChildrenOfItem(item, query, BaseItemKind.Movie);
+                return GetAlphabetFolders(item, StubType.MovieLetter, startIndex, limit);
+            case StubType.MovieLetter:
+                return GetChildrenByLetter(item, query, BaseItemKind.Movie, idSuffix);
             case StubType.Collections:
                 return GetMovieCollections(query);
             case StubType.Favorites:
@@ -778,11 +817,19 @@ public class ControlHandler : BaseControlHandler
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="user">The <see cref="User"/>.</param>
     /// <param name="stubType">The <see cref="StubType"/>.</param>
+    /// <param name="idSuffix">The alphabetical bucket encoded in the object ID.</param>
     /// <param name="sort">The <see cref="SortCriteria"/>.</param>
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetTvFolders(BaseItem item, User user, StubType? stubType, SortCriteria sort, int? startIndex, int? limit)
+    private QueryResult<ServerItem> GetTvFolders(
+        BaseItem item,
+        User user,
+        StubType? stubType,
+        string? idSuffix,
+        SortCriteria sort,
+        int? startIndex,
+        int? limit)
     {
         var query = new InternalItemsQuery(user)
         {
@@ -800,7 +847,9 @@ public class ControlHandler : BaseControlHandler
             case StubType.Latest:
                 return GetLatest(item, query, BaseItemKind.Episode);
             case StubType.Series:
-                return GetChildrenOfItem(item, query, BaseItemKind.Series);
+                return GetAlphabetFolders(item, StubType.SeriesLetter, startIndex, limit);
+            case StubType.SeriesLetter:
+                return GetChildrenByLetter(item, query, BaseItemKind.Series, idSuffix);
             case StubType.FavoriteSeries:
                 return GetChildrenOfItem(item, query, BaseItemKind.Series, true);
             case StubType.FavoriteEpisodes:
@@ -868,13 +917,61 @@ public class ControlHandler : BaseControlHandler
     }
 
     /// <summary>
-    /// Returns the children that meet the criteria.
+    /// Returns the alphabetical virtual folders.
     /// </summary>
-    /// <param name="parent">The <see cref="BaseItem"/>.</param>
-    /// <param name="query">The <see cref="InternalItemsQuery"/>.</param>
-    /// <param name="itemType">The item type.</param>
-    /// <param name="isFavorite">A value indicating whether to only fetch favorite items.</param>
-    /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
+    /// <param name="parent">The parent library item.</param>
+    /// <param name="stubType">The virtual folder type.</param>
+    /// <param name="startIndex">The start index.</param>
+    /// <param name="limit">The maximum number to return.</param>
+    /// <returns>The alphabetical virtual folders.</returns>
+    private static QueryResult<ServerItem> GetAlphabetFolders(BaseItem parent, StubType stubType, int? startIndex, int? limit)
+    {
+        var buckets = new[] { "#" }
+            .Concat(Enumerable.Range('A', 26).Select(value => ((char)value).ToString()))
+            .Select(bucket => new ServerItem(parent, stubType, bucket, EncodeAlphabetBucket(bucket)))
+            .ToArray();
+
+        var items = GetTrimmedServerItemsArray(buckets, startIndex, limit);
+        return new QueryResult<ServerItem>(startIndex, buckets.Length, items);
+    }
+
+    private QueryResult<ServerItem> GetChildrenByLetter(BaseItem parent, InternalItemsQuery query, BaseItemKind itemType, string? encodedBucket)
+    {
+        var bucket = DecodeAlphabetBucket(encodedBucket);
+        if (bucket is null)
+        {
+            return new QueryResult<ServerItem>(query.StartIndex, 0, Array.Empty<ServerItem>());
+        }
+
+        if (bucket == "#")
+        {
+            query.NameLessThan = "A";
+        }
+        else
+        {
+            query.NameStartsWithOrGreater = bucket;
+            query.NameLessThan = bucket == "Z" ? "[" : ((char)(bucket[0] + 1)).ToString();
+        }
+
+        return GetChildrenOfItem(parent, query, itemType);
+    }
+
+    private static string EncodeAlphabetBucket(string bucket) => bucket == "#" ? "0-9" : bucket;
+
+    private static string? DecodeAlphabetBucket(string? encodedBucket)
+        => string.Equals(encodedBucket, "0-9", StringComparison.OrdinalIgnoreCase) ? "#" : encodedBucket?.ToUpperInvariant();
+
+    private static string? GetVirtualFolderName(StubType? stubType, string? idSuffix)
+        => stubType is StubType.MovieLetter or StubType.SeriesLetter ? DecodeAlphabetBucket(idSuffix) : null;
+
+    private static StubType? GetAlphabetParentStub(StubType? stubType)
+        => stubType switch
+        {
+            StubType.MovieLetter => StubType.Movies,
+            StubType.SeriesLetter => StubType.Series,
+            _ => null
+        };
+
     private QueryResult<ServerItem> GetChildrenOfItem(BaseItem parent, InternalItemsQuery query, BaseItemKind itemType, bool isFavorite = false)
     {
         query.Recursive = true;
@@ -1224,6 +1321,7 @@ public class ControlHandler : BaseControlHandler
     private ServerItem ParseItemId(string id)
     {
         StubType? stubType = null;
+        string? idSuffix = null;
 
         // After using PlayTo, MediaMonkey sends a request to the server trying to get item info
         const string ParamsSrch = "Params=";
@@ -1237,10 +1335,22 @@ public class ControlHandler : BaseControlHandler
         }
 
         var dividerIndex = id.IndexOf('_', StringComparison.Ordinal);
-        if (dividerIndex != -1 && Enum.TryParse<StubType>(id.AsSpan(0, dividerIndex), true, out var parsedStubType))
+        if (dividerIndex != -1)
         {
-            id = id[(dividerIndex + 1)..];
-            stubType = parsedStubType;
+            var virtualId = id.AsSpan(0, dividerIndex);
+            var suffixIndex = virtualId.IndexOf('-');
+            var stubName = suffixIndex == -1 ? virtualId : virtualId[..suffixIndex];
+
+            if (Enum.TryParse<StubType>(stubName, true, out var parsedStubType))
+            {
+                if (suffixIndex != -1)
+                {
+                    idSuffix = virtualId[(suffixIndex + 1)..].ToString();
+                }
+
+                id = id[(dividerIndex + 1)..];
+                stubType = parsedStubType;
+            }
         }
 
         if (Guid.TryParse(id, out var itemId))
@@ -1248,7 +1358,7 @@ public class ControlHandler : BaseControlHandler
             var item = _libraryManager.GetItemById(itemId);
             if (item is not null)
             {
-                return new ServerItem(item, stubType);
+                return new ServerItem(item, stubType, GetVirtualFolderName(stubType, idSuffix), idSuffix);
             }
         }
 
