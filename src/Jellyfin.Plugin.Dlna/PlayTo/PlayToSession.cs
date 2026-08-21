@@ -640,7 +640,7 @@ public class PlayToSession : ISessionController, IDisposable
                     AudioStreamIndex = audioStreamIndex,
                     SubtitleStreamIndex = subtitleStreamIndex,
                     EnableDirectStream = false
-                }),
+                }) ?? throw new InvalidOperationException("No optimal video stream found"),
                 Profile = profile
             },
             MediaType.Audio => new PlaylistItem
@@ -653,7 +653,7 @@ public class PlayToSession : ISessionController, IDisposable
                     DeviceId = deviceId,
                     MaxBitrate = profile.MaxStreamingBitrate,
                     MediaSourceId = mediaSourceId
-                }),
+                }) ?? throw new InvalidOperationException("No optimal audio stream found"),
                 Profile = profile
             },
             MediaType.Photo => PlaylistItemFactory.Create((Photo)item, profile),

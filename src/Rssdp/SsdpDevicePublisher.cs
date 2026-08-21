@@ -15,7 +15,13 @@ namespace Rssdp.Infrastructure
     /// </summary>
     public class SsdpDevicePublisher : DisposableManagedObjectBase, ISsdpDevicePublisher
     {
-        private ISsdpCommunicationsServer _CommsServer;
+        private ISsdpCommunicationsServer? _CommsServer;
+
+        /// <summary>
+        /// The communications server, which is only available until this instance is disposed.
+        /// </summary>
+        private ISsdpCommunicationsServer CommsServer
+            => _CommsServer ?? throw new ObjectDisposedException(nameof(SsdpDevicePublisher));
         private string _OSName;
         private string _OSVersion;
         private bool _sendOnlyMatchedHost;
@@ -25,9 +31,15 @@ namespace Rssdp.Infrastructure
         private IList<SsdpRootDevice> _Devices;
         private IReadOnlyList<SsdpRootDevice> _ReadOnlyDevices;
 
-        private Timer _RebroadcastAliveNotificationsTimer;
+        private Timer? _RebroadcastAliveNotificationsTimer;
 
-        private IDictionary<string, SearchRequest> _RecentSearchRequests;
+        private IDictionary<string, SearchRequest>? _RecentSearchRequests;
+
+        /// <summary>
+        /// The recent search request cache, which is only available until this instance is disposed.
+        /// </summary>
+        private IDictionary<string, SearchRequest> RecentSearchRequests
+            => _RecentSearchRequests ?? throw new ObjectDisposedException(nameof(SsdpDevicePublisher));
 
         private Random _Random;
 
@@ -51,12 +63,12 @@ namespace Rssdp.Infrastructure
             _Random = new Random();
 
             _CommsServer = communicationsServer;
-            _CommsServer.RequestReceived += CommsServer_RequestReceived;
+            CommsServer.RequestReceived += CommsServer_RequestReceived;
             _OSName = osName;
             _OSVersion = osVersion;
             _sendOnlyMatchedHost = sendOnlyMatchedHost;
 
-            _CommsServer.BeginListeningForMulticast();
+            CommsServer.BeginListeningForMulticast();
 
             // Send alive notification once on creation
             SendAllAliveNotifications(null);
@@ -199,8 +211,8 @@ namespace Rssdp.Infrastructure
         }
 
         private void ProcessSearchRequest(
-            string mx,
-            string searchTarget,
+            string? mx,
+            string? searchTarget,
             IPEndPoint remoteEndPoint,
             IPAddress receivedOnlocalIPAddress,
             CancellationToken cancellationToken)
@@ -245,7 +257,7 @@ namespace Rssdp.Infrastructure
             Task.Delay(_Random.Next(16, maxWaitInterval * 1000), cancellationToken).ContinueWith((parentTask) =>
             {
                 // Copying devices to local array here to avoid threading issues/enumerator exceptions.
-                IEnumerable<SsdpDevice> devices = null;
+                IEnumerable<SsdpDevice>? devices = null;
                 lock (_Devices)
                 {
                     if (string.Compare(SsdpConstants.SsdpDiscoverAllSTHeader, searchTarget, StringComparison.OrdinalIgnoreCase) == 0)
@@ -341,7 +353,7 @@ namespace Rssdp.Infrastructure
 
             try
             {
-                await _CommsServer.SendMessage(
+                await CommsServer.SendMessage(
                         Encoding.UTF8.GetBytes(message),
                         endPoint,
                         receivedOnlocalIPAddress,
@@ -360,13 +372,13 @@ namespace Rssdp.Infrastructure
             var isDuplicateRequest = false;
 
             var newRequest = new SearchRequest() { EndPoint = endPoint, SearchTarget = searchTarget, Received = DateTime.UtcNow };
-            lock (_RecentSearchRequests)
+            lock (RecentSearchRequests)
             {
-                if (_RecentSearchRequests.TryGetValue(newRequest.Key, out var lastRequest))
+                if (RecentSearchRequests.TryGetValue(newRequest.Key, out var lastRequest))
                 {
                     if (lastRequest.IsOld())
                     {
-                        _RecentSearchRequests[newRequest.Key] = newRequest;
+                        RecentSearchRequests[newRequest.Key] = newRequest;
                     }
                     else
                     {
@@ -375,8 +387,8 @@ namespace Rssdp.Infrastructure
                 }
                 else
                 {
-                    _RecentSearchRequests.Add(newRequest.Key, newRequest);
-                    if (_RecentSearchRequests.Count > 10)
+                    RecentSearchRequests.Add(newRequest.Key, newRequest);
+                    if (RecentSearchRequests.Count > 10)
                     {
                         CleanUpRecentSearchRequestsAsync();
                     }
@@ -388,16 +400,16 @@ namespace Rssdp.Infrastructure
 
         private void CleanUpRecentSearchRequestsAsync()
         {
-            lock (_RecentSearchRequests)
+            lock (RecentSearchRequests)
             {
-                foreach (var requestKey in (from r in _RecentSearchRequests where r.Value.IsOld() select r.Key).ToArray())
+                foreach (var requestKey in (from r in RecentSearchRequests where r.Value.IsOld() select r.Key).ToArray())
                 {
-                    _RecentSearchRequests.Remove(requestKey);
+                    RecentSearchRequests.Remove(requestKey);
                 }
             }
         }
 
-        private void SendAllAliveNotifications(object state)
+        private void SendAllAliveNotifications(object? state)
         {
             try
             {
@@ -474,7 +486,7 @@ namespace Rssdp.Infrastructure
 
             var message = BuildMessage(header, values);
 
-            _CommsServer.SendMulticastMessage(message, _sendOnlyMatchedHost ? rootDevice.Address : null, cancellationToken);
+            CommsServer.SendMulticastMessage(message, _sendOnlyMatchedHost ? rootDevice.Address : null, cancellationToken);
 
             // WriteTrace(String.Format("Sent alive notification"), device);
         }
@@ -521,7 +533,7 @@ namespace Rssdp.Infrastructure
 
             var sendCount = IsDisposed ? 1 : 3;
             WriteTrace(string.Format(CultureInfo.InvariantCulture, "Sent byebye notification"), device);
-            return _CommsServer.SendMulticastMessage(message, sendCount, _sendOnlyMatchedHost ? device.ToRootDevice().Address : null, cancellationToken);
+            return CommsServer.SendMulticastMessage(message, sendCount, _sendOnlyMatchedHost ? device.ToRootDevice().Address : null, cancellationToken);
         }
 
         private void DisposeRebroadcastTimer()
@@ -547,9 +559,9 @@ namespace Rssdp.Infrastructure
             return TimeSpan.Zero;
         }
 
-        private string GetFirstHeaderValue(System.Net.Http.Headers.HttpRequestHeaders httpRequestHeaders, string headerName)
+        private string? GetFirstHeaderValue(System.Net.Http.Headers.HttpRequestHeaders httpRequestHeaders, string headerName)
         {
-            string retVal = null;
+            string? retVal = null;
             if (httpRequestHeaders.TryGetValues(headerName, out var values) && values is not null)
             {
                 retVal = values.FirstOrDefault();
@@ -558,7 +570,7 @@ namespace Rssdp.Infrastructure
             return retVal;
         }
 
-        public Action<string> LogFunction { get; set; }
+        public Action<string>? LogFunction { get; set; }
 
         private void WriteTrace(string text)
         {
@@ -579,7 +591,7 @@ namespace Rssdp.Infrastructure
             }
         }
 
-        private void CommsServer_RequestReceived(object sender, RequestReceivedEventArgs e)
+        private void CommsServer_RequestReceived(object? sender, RequestReceivedEventArgs e)
         {
             if (this.IsDisposed)
             {
@@ -601,11 +613,11 @@ namespace Rssdp.Infrastructure
 
         private class SearchRequest
         {
-            public IPEndPoint EndPoint { get; set; }
+            public required IPEndPoint EndPoint { get; set; }
 
             public DateTime Received { get; set; }
 
-            public string SearchTarget { get; set; }
+            public required string SearchTarget { get; set; }
 
             public string Key
             {

@@ -1,5 +1,3 @@
-#nullable disable
-
 namespace Jellyfin.Plugin.Dlna.Model;
 
 /// <summary>
@@ -11,13 +9,13 @@ public class DeviceProfileInfo
     /// Gets or sets the identifier.
     /// </summary>
     /// <value>The identifier.</value>
-    public string Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the name.
     /// </summary>
     /// <value>The name.</value>
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the type.

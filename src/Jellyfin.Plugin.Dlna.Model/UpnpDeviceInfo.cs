@@ -1,5 +1,3 @@
-#nullable disable
-
 #pragma warning disable CA2227
 
 using System;
@@ -16,17 +14,17 @@ public class UpnpDeviceInfo
     /// <summary>
     /// Gets or sets the location.
     /// </summary>
-    public Uri Location { get; set; }
+    public Uri? Location { get; set; }
 
     /// <summary>
     /// Gets or sets the headers.
     /// </summary>
-    public Dictionary<string, string> Headers { get; set; }
+    public required Dictionary<string, string> Headers { get; set; }
 
     /// <summary>
     /// Gets or sets local IP address.
     /// </summary>
-    public IPAddress LocalIPAddress { get; set; }
+    public IPAddress? LocalIPAddress { get; set; }
 
     /// <summary>
     /// Gets or sets the local port.
@@ -36,5 +34,5 @@ public class UpnpDeviceInfo
     /// <summary>
     /// Gets or sets the remote IP address.
     /// </summary>
-    public IPAddress RemoteIPAddress { get; set; }
+    public IPAddress? RemoteIPAddress { get; set; }
 }

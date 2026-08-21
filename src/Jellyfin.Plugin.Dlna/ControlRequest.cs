@@ -1,5 +1,3 @@
-#nullable disable
-
 using System.IO;
 using Microsoft.AspNetCore.Http;
 
@@ -27,15 +25,15 @@ public class ControlRequest
     /// <summary>
     /// Gets or sets the <see cref="Stream"/>.
     /// </summary>
-    public Stream InputXml { get; set; }
+    public required Stream InputXml { get; set; }
 
     /// <summary>
     /// Gets or sets the target server UUID.
     /// </summary>
-    public string TargetServerUuId { get; set; }
+    public required string TargetServerUuId { get; set; }
 
     /// <summary>
     /// Gets or sets the request URL.
     /// </summary>
-    public string RequestedUrl { get; set; }
+    public required string RequestedUrl { get; set; }
 }

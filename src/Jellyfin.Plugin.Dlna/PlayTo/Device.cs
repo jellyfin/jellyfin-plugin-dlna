@@ -1031,12 +1031,12 @@ public class Device : IDisposable
 
         return new UBaseObject
         {
-            Id = container.GetAttributeValue(UPnpNamespaces.Id),
-            ParentId = container.GetAttributeValue(UPnpNamespaces.ParentId),
-            Title = container.GetValue(UPnpNamespaces.Title),
-            IconUrl = container.GetValue(UPnpNamespaces.Artwork),
+            Id = container.GetAttributeValue(UPnpNamespaces.Id) ?? string.Empty,
+            ParentId = container.GetAttributeValue(UPnpNamespaces.ParentId) ?? string.Empty,
+            Title = container.GetValue(UPnpNamespaces.Title) ?? string.Empty,
+            IconUrl = container.GetValue(UPnpNamespaces.Artwork) ?? string.Empty,
             SecondText = string.Empty,
-            Url = url,
+            Url = url ?? string.Empty,
             ProtocolInfo = GetProtocolInfo(container),
             MetaData = container.ToString()
         };

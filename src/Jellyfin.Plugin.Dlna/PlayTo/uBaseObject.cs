@@ -1,5 +1,3 @@
-#nullable disable
-
 using System;
 using System.Collections.Generic;
 
@@ -13,52 +11,52 @@ public class UBaseObject
     /// <summary>
     /// Gets or sets the id.
     /// </summary>
-    public string Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the parent id.
     /// </summary>
-    public string ParentId { get; set; }
+    public string ParentId { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the title.
     /// </summary>
-    public string Title { get; set; }
+    public string Title { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the second text.
     /// </summary>
-    public string SecondText { get; set; }
+    public string SecondText { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the icon URL.
     /// </summary>
-    public string IconUrl { get; set; }
+    public string IconUrl { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the meta data.
     /// </summary>
-    public string MetaData { get; set; }
+    public string MetaData { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the URL.
     /// </summary>
-    public string Url { get; set; }
+    public string Url { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the protocol info.
     /// </summary>
-    public IReadOnlyList<string> ProtocolInfo { get; set; }
+    public IReadOnlyList<string> ProtocolInfo { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the UPnP class.
     /// </summary>
-    public string UpnpClass { get; set; }
+    public string UpnpClass { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets the media type.
     /// </summary>
-    public string MediaType
+    public string? MediaType
     {
         get
         {
