@@ -244,7 +244,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
 
         // Only get bind addresses in LAN
         // IPv6 is currently unsupported
-        var validInterfaces =  _networkManager.GetInternalBindAddresses()
+        var validInterfaces = _networkManager.GetInternalBindAddresses()
             .Where(x => x.Address is not null)
             .Where(x => x.AddressFamily != AddressFamily.InterNetworkV6)
             .Where(x => x.AddressFamily == AddressFamily.InterNetwork)

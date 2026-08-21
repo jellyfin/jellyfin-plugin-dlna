@@ -12,7 +12,7 @@ namespace Rssdp
     /// </remarks>
     public class SsdpRootDevice : SsdpDevice
     {
-        private Uri _UrlBase;
+        private Uri? _UrlBase;
 
         /// <summary>
         /// Default constructor.
@@ -37,12 +37,12 @@ namespace Rssdp
         /// <summary>
         /// Gets or sets the URL used to retrieve the description document for this device/tree. Required.
         /// </summary>
-        public Uri Location { get; set; }
+        public required Uri Location { get; set; }
 
         /// <summary>
         /// Gets or sets the Address used to check if the received message from same interface with this device/tree. Required.
         /// </summary>
-        public IPAddress Address { get; set; }
+        public required IPAddress Address { get; set; }
 
         /// <summary>
         /// Gets or sets the prefix length used to check if the received message from same interface with this device/tree. Required.

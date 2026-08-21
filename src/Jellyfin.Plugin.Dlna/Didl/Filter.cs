@@ -17,6 +17,7 @@ public class Filter
         : this("*")
     {
     }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Filter"/> class.
     /// </summary>

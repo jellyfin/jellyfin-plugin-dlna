@@ -668,6 +668,7 @@ public static class StreamingHelpers
                     {
                         streamingRequest.DeviceProfileId = val;
                     }
+
                     break;
                 case 1:
                     request.DeviceId = val;

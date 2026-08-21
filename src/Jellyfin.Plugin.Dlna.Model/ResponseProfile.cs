@@ -1,5 +1,4 @@
 #pragma warning disable CA1819 // Properties should not return arrays
-#nullable disable
 
 using System.Xml.Serialization;
 using MediaBrowser.Model.Dlna;
@@ -24,19 +23,19 @@ public class ResponseProfile
     /// Gets or sets the container.
     /// </summary>
     [XmlAttribute("container")]
-    public string Container { get; set; }
+    public string Container { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the audio codec.
     /// </summary>
     [XmlAttribute("audioCodec")]
-    public string AudioCodec { get; set; }
+    public string AudioCodec { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the video codec.
     /// </summary>
     [XmlAttribute("videoCodec")]
-    public string VideoCodec { get; set; }
+    public string VideoCodec { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the type.
@@ -48,13 +47,13 @@ public class ResponseProfile
     /// Gets or sets the orgPn.
     /// </summary>
     [XmlAttribute("orgPn")]
-    public string OrgPn { get; set; }
+    public string OrgPn { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the MIME type.
     /// </summary>
     [XmlAttribute("mimeType")]
-    public string MimeType { get; set; }
+    public string MimeType { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the conditions.
@@ -64,18 +63,21 @@ public class ResponseProfile
     /// <summary>
     /// Gets the containers.
     /// </summary>
+    /// <returns>The containers.</returns>
     public string[] GetContainers()
         => ContainerHelper.Split(Container);
 
     /// <summary>
     /// Gets the audio codecs.
     /// </summary>
+    /// <returns>The audio codecs.</returns>
     public string[] GetAudioCodecs()
         => ContainerHelper.Split(AudioCodec);
 
     /// <summary>
     /// Gets the video codecs.
     /// </summary>
+    /// <returns>The video codecs.</returns>
     public string[] GetVideoCodecs()
         => ContainerHelper.Split(VideoCodec);
 }

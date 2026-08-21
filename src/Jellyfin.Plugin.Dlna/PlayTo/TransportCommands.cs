@@ -30,6 +30,7 @@ public class TransportCommands
     /// Creates <see cref="TransportCommands"/> based on the input <see cref="XDocument"/>.
     /// </summary>
     /// <param name="document">The <see cref="XDocument"/>.</param>
+    /// <returns>The <see cref="TransportCommands"/>.</returns>
     public static TransportCommands Create(XDocument document)
     {
         var actionList = document.Descendants(UPnpNamespaces.Svc + "actionList");
@@ -104,6 +105,7 @@ public class TransportCommands
     /// </summary>
     /// <param name="action">The <see cref="ServiceAction"/>.</param>
     /// <param name="xmlNamespace">The XML namespace.</param>
+    /// <returns>The POST payload.</returns>
     public string BuildPost(ServiceAction action, string xmlNamespace)
     {
         var stateString = string.Empty;
@@ -135,6 +137,7 @@ public class TransportCommands
     /// <param name="xmlNamespace">The XML namespace.</param>
     /// <param name="value">The value.</param>
     /// <param name="commandParameter">The command parameter.</param>
+    /// <returns>The POST payload.</returns>
     public string BuildPost(ServiceAction action, string xmlNamespace, object value, string commandParameter = "")
     {
         var stateString = string.Empty;
@@ -166,6 +169,7 @@ public class TransportCommands
     /// <param name="xmlNamespace">The XML namespace.</param>
     /// <param name="value">The value.</param>
     /// <param name="argumentValueDictionary">The argument values.</param>
+    /// <returns>The POST payload.</returns>
     public string BuildPost(ServiceAction action, string xmlNamespace, object value, Dictionary<string, string> argumentValueDictionary)
     {
         var stateString = string.Empty;

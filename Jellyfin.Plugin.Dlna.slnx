@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/Jellyfin.Plugin.Dlna/Jellyfin.Plugin.Dlna.csproj" />
+  <Project Path="src/Jellyfin.Plugin.Dlna.Model/Jellyfin.Plugin.Dlna.Model.csproj" />
+  <Project Path="src/Jellyfin.Plugin.Dlna.Playback/Jellyfin.Plugin.Dlna.Playback.csproj" />
+  <Project Path="src/Rssdp/Rssdp.csproj" />
+</Solution>

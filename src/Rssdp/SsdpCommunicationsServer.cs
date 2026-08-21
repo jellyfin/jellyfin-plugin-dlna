@@ -33,10 +33,10 @@ namespace Rssdp.Infrastructure
          */
 
         private object _BroadcastListenSocketSynchroniser = new();
-        private List<Socket> _MulticastListenSockets;
+        private List<Socket>? _MulticastListenSockets;
 
         private object _SendSocketSynchroniser = new();
-        private List<Socket> _sendSockets;
+        private List<Socket>? _sendSockets;
 
         private HttpRequestParser _RequestParser;
         private HttpResponseParser _ResponseParser;
@@ -51,12 +51,12 @@ namespace Rssdp.Infrastructure
         /// <summary>
         /// Raised when a HTTPU request message is received by a socket (unicast or multicast).
         /// </summary>
-        public event EventHandler<RequestReceivedEventArgs> RequestReceived;
+        public event EventHandler<RequestReceivedEventArgs>? RequestReceived;
 
         /// <summary>
         /// Raised when an HTTPU response message is received by a socket (unicast or multicast).
         /// </summary>
-        public event EventHandler<ResponseReceivedEventArgs> ResponseReceived;
+        public event EventHandler<ResponseReceivedEventArgs>? ResponseReceived;
 
         /// <summary>
         /// Minimum constructor.
@@ -190,42 +190,42 @@ namespace Rssdp.Infrastructure
             }
             catch (Exception ex)
             {
-                var localIP = ((IPEndPoint)socket.LocalEndPoint).Address;
-                _logger.LogError(ex, "Error sending socket message from {0} to {1}", localIP.ToString(), destination.ToString());
+                var localIP = (socket.LocalEndPoint as IPEndPoint)?.Address;
+                _logger.LogError(ex, "Error sending socket message from {0} to {1}", localIP?.ToString(), destination.ToString());
             }
         }
 
         private List<Socket> GetSendSockets(IPAddress fromlocalIPAddress, IPEndPoint destination)
         {
-            EnsureSendSocketCreated();
+            var sendSockets = EnsureSendSocketCreated();
 
             lock (_SendSocketSynchroniser)
             {
-                var sockets = _sendSockets.Where(s => s.AddressFamily == fromlocalIPAddress.AddressFamily);
+                var sockets = sendSockets.Where(s => s.AddressFamily == fromlocalIPAddress.AddressFamily);
 
                 // Send from the Any socket and the socket with the matching address
                 if (fromlocalIPAddress.AddressFamily == AddressFamily.InterNetwork)
                 {
-                    sockets = sockets.Where(s => ((IPEndPoint)s.LocalEndPoint).Address.Equals(IPAddress.Any)
-                        || ((IPEndPoint)s.LocalEndPoint).Address.Equals(fromlocalIPAddress));
+                    sockets = sockets.Where(s => s.LocalEndPoint is IPEndPoint endPoint
+                        && (endPoint.Address.Equals(IPAddress.Any) || endPoint.Address.Equals(fromlocalIPAddress)));
 
                     // If sending to the loopback address, filter the socket list as well
                     if (destination.Address.Equals(IPAddress.Loopback))
                     {
-                        sockets = sockets.Where(s => ((IPEndPoint)s.LocalEndPoint).Address.Equals(IPAddress.Any)
-                            || ((IPEndPoint)s.LocalEndPoint).Address.Equals(IPAddress.Loopback));
+                        sockets = sockets.Where(s => s.LocalEndPoint is IPEndPoint endPoint
+                            && (endPoint.Address.Equals(IPAddress.Any) || endPoint.Address.Equals(IPAddress.Loopback)));
                     }
                 }
                 else if (fromlocalIPAddress.AddressFamily == AddressFamily.InterNetworkV6)
                 {
-                    sockets = sockets.Where(s => ((IPEndPoint)s.LocalEndPoint).Address.Equals(IPAddress.IPv6Any)
-                        || ((IPEndPoint)s.LocalEndPoint).Address.Equals(fromlocalIPAddress));
+                    sockets = sockets.Where(s => s.LocalEndPoint is IPEndPoint endPoint
+                        && (endPoint.Address.Equals(IPAddress.IPv6Any) || endPoint.Address.Equals(fromlocalIPAddress)));
 
                     // If sending to the loopback address, filter the socket list as well
                     if (destination.Address.Equals(IPAddress.IPv6Loopback))
                     {
-                        sockets = sockets.Where(s => ((IPEndPoint)s.LocalEndPoint).Address.Equals(IPAddress.IPv6Any)
-                            || ((IPEndPoint)s.LocalEndPoint).Address.Equals(IPAddress.IPv6Loopback));
+                        sockets = sockets.Where(s => s.LocalEndPoint is IPEndPoint endPoint
+                            && (endPoint.Address.Equals(IPAddress.IPv6Any) || endPoint.Address.Equals(IPAddress.IPv6Loopback)));
                     }
                 }
 
@@ -246,7 +246,7 @@ namespace Rssdp.Infrastructure
             return iplist;
         }
 
-        public Task SendMulticastMessage(string message, IPAddress fromLocalIPAddress, CancellationToken cancellationToken)
+        public Task SendMulticastMessage(string message, IPAddress? fromLocalIPAddress, CancellationToken cancellationToken)
         {
             return SendMulticastMessage(message, SsdpConstants.UdpResendCount, fromLocalIPAddress, cancellationToken);
         }
@@ -254,7 +254,7 @@ namespace Rssdp.Infrastructure
         /// <summary>
         /// Sends a message to the SSDP multicast address and port.
         /// </summary>
-        public async Task SendMulticastMessage(string message, int sendCount, IPAddress fromLocalIPAddress, CancellationToken cancellationToken)
+        public async Task SendMulticastMessage(string message, int sendCount, IPAddress? fromLocalIPAddress, CancellationToken cancellationToken)
         {
             if (message is null)
             {
@@ -301,7 +301,7 @@ namespace Rssdp.Infrastructure
 
                     foreach (var socket in sockets)
                     {
-                        var socketAddress = ((IPEndPoint)socket.LocalEndPoint).Address;
+                        var socketAddress = (socket.LocalEndPoint as IPEndPoint)?.Address;
                         _logger.LogInformation("{0} disposing sendSocket from {1}", GetType().Name, socketAddress);
                         socket.Dispose();
                     }
@@ -336,14 +336,14 @@ namespace Rssdp.Infrastructure
             }
         }
 
-        private Task SendMessageIfSocketNotDisposed(byte[] messageData, IPEndPoint destination, IPAddress fromlocalIPAddress, CancellationToken cancellationToken)
+        private Task SendMessageIfSocketNotDisposed(byte[] messageData, IPEndPoint destination, IPAddress? fromlocalIPAddress, CancellationToken cancellationToken)
         {
             var sockets = _sendSockets;
             if (sockets is not null)
             {
                 sockets = sockets.ToList();
 
-                var tasks = sockets.Where(s => fromlocalIPAddress is null || fromlocalIPAddress.Equals(((IPEndPoint)s.LocalEndPoint).Address))
+                var tasks = sockets.Where(s => fromlocalIPAddress is null || (s.LocalEndPoint is IPEndPoint endPoint && fromlocalIPAddress.Equals(endPoint.Address)))
                     .Select(s => SendFromSocket(s, messageData, destination, cancellationToken));
                 return Task.WhenAll(tasks);
             }
@@ -429,14 +429,17 @@ namespace Rssdp.Infrastructure
             }
         }
 
-        private void EnsureSendSocketCreated()
+        private List<Socket> EnsureSendSocketCreated()
         {
-            if (_sendSockets is null)
+            var sendSockets = _sendSockets;
+            if (sendSockets is not null)
             {
-                lock (_SendSocketSynchroniser)
-                {
-                    _sendSockets ??= CreateSendSockets();
-                }
+                return sendSockets;
+            }
+
+            lock (_SendSocketSynchroniser)
+            {
+                return _sendSockets ??= CreateSendSockets();
             }
         }
 
@@ -449,7 +452,7 @@ namespace Rssdp.Infrastructure
             _logger.LogDebug("Received data from {From} on {Port} at {Address}:\n{Data}", endPoint.Address, endPoint.Port, receivedOnLocalIPAddress, data);
             if (data.StartsWith("HTTP/", StringComparison.OrdinalIgnoreCase))
             {
-                HttpResponseMessage responseMessage = null;
+                HttpResponseMessage? responseMessage = null;
                 try
                 {
                     responseMessage = _ResponseParser.Parse(data);
@@ -466,7 +469,7 @@ namespace Rssdp.Infrastructure
             }
             else
             {
-                HttpRequestMessage requestMessage = null;
+                HttpRequestMessage? requestMessage = null;
                 try
                 {
                     requestMessage = _RequestParser.Parse(data);
@@ -488,7 +491,7 @@ namespace Rssdp.Infrastructure
             // SSDP specification says only * is currently used but other uri's might
             // be implemented in the future and should be ignored unless understood.
             // Section 4.2 - http://tools.ietf.org/html/draft-cai-ssdp-v1-03#page-11
-            if (data.RequestUri.ToString() != "*")
+            if (data.RequestUri?.ToString() != "*")
             {
                 return;
             }

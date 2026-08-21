@@ -1,5 +1,3 @@
-#nullable disable
-
 #pragma warning disable CA1711
 
 using System.Xml.Serialization;
@@ -15,11 +13,11 @@ public class XmlAttribute
     /// Gets or sets the name of the attribute.
     /// </summary>
     [XmlAttribute("name")]
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the value of the attribute.
     /// </summary>
     [XmlAttribute("value")]
-    public string Value { get; set; }
+    public string Value { get; set; } = string.Empty;
 }

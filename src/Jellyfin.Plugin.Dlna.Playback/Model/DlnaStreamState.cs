@@ -1,8 +1,8 @@
+using System;
 using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Streaming;
-using System;
 
 namespace Jellyfin.Plugin.Dlna.Playback.Model;
 

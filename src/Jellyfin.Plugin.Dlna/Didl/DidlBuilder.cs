@@ -101,8 +101,9 @@ public class DidlBuilder
 
     /// <summary>
     /// Gets the normalized DLNA media URL.
-    /// <param name="url">The URL to normalize.</param>
     /// </summary>
+    /// <param name="url">The URL to normalize.</param>
+    /// <returns>The normalized URL.</returns>
     public static string NormalizeDlnaMediaUrl(string url)
     {
         return url + "&dlnaheaders=true";
@@ -110,13 +111,14 @@ public class DidlBuilder
 
     /// <summary>
     /// Gets the item DIDL.
+    /// </summary>
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="user">The <see cref="User"/>.</param>
     /// <param name="context">The <see cref="BaseItem"/> context.</param>
     /// <param name="deviceId">The device id.</param>
     /// <param name="filter">The <see cref="Filter"/>.</param>
     /// <param name="streamInfo">The <see cref="StreamInfo" />.</param>
-    /// </summary>
+    /// <returns>The item DIDL.</returns>
     public string GetItemDidl(BaseItem item, User? user, BaseItem? context, string deviceId, Filter filter, StreamInfo streamInfo)
     {
         var settings = new XmlWriterSettings
@@ -155,9 +157,9 @@ public class DidlBuilder
 
     /// <summary>
     /// Writes XML attributes of a profile the item DIDL.
+    /// </summary>
     /// <param name="profile">The <see cref="DlnaDeviceProfile"/>.</param>
     /// <param name="writer">The <see cref="XmlWriter"/>.</param>
-    /// </summary>
     public static void WriteXmlRootAttributes(DlnaDeviceProfile profile, XmlWriter writer)
     {
         foreach (var att in profile.XmlRootAttributes)
@@ -176,6 +178,7 @@ public class DidlBuilder
 
     /// <summary>
     /// Writes an XML item element.
+    /// </summary>
     /// <param name="writer">The <see cref="XmlWriter"/>.</param>
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="user">The <see cref="User"/>.</param>
@@ -184,7 +187,6 @@ public class DidlBuilder
     /// <param name="deviceId">The device id.</param>
     /// <param name="filter">The <see cref="Filter"/>.</param>
     /// <param name="streamInfo">The <see cref="StreamInfo" />.</param>
-    /// </summary>
     public void WriteItemElement(
         XmlWriter writer,
         BaseItem item,
@@ -257,8 +259,8 @@ public class DidlBuilder
 
         var targetWidth = streamInfo.TargetWidth;
         var targetHeight = streamInfo.TargetHeight;
-        var targetVideoCodec = streamInfo.TargetVideoCodec.FirstOrDefault();
-        var targetAudioCodec = streamInfo.TargetAudioCodec.FirstOrDefault();
+        var targetVideoCodec = streamInfo.TargetVideoCodec.Count == 0 ? null : streamInfo.TargetVideoCodec[0];
+        var targetAudioCodec = streamInfo.TargetAudioCodec.Count == 0 ? null : streamInfo.TargetAudioCodec[0];
 
         var contentFeatureList = ContentFeatureBuilder.BuildVideoHeader(
             _profile,
@@ -424,8 +426,8 @@ public class DidlBuilder
 
         var mediaProfile = _profile.GetVideoMediaProfile(
             streamInfo.Container,
-            streamInfo.TargetAudioCodec.FirstOrDefault(),
-            streamInfo.TargetVideoCodec.FirstOrDefault(),
+            streamInfo.TargetAudioCodec.Count == 0 ? null : streamInfo.TargetAudioCodec[0],
+            streamInfo.TargetVideoCodec.Count == 0 ? null : streamInfo.TargetVideoCodec[0],
             streamInfo.TargetAudioBitrate,
             targetWidth,
             targetHeight,
@@ -639,9 +641,11 @@ public class DidlBuilder
             writer.WriteAttributeString("bitrate", targetAudioBitrate.Value.ToString(CultureInfo.InvariantCulture));
         }
 
+        var targetAudioCodec = streamInfo.TargetAudioCodec.Count == 0 ? null : streamInfo.TargetAudioCodec[0];
+
         var mediaProfile = _profile.GetAudioMediaProfile(
             streamInfo.Container,
-            streamInfo.TargetAudioCodec.FirstOrDefault(),
+            targetAudioCodec,
             targetChannels,
             targetAudioBitrate,
             targetSampleRate,
@@ -656,7 +660,7 @@ public class DidlBuilder
         var contentFeatures = ContentFeatureBuilder.BuildAudioHeader(
             _profile,
             streamInfo.Container?.FirstOrDefault().ToString(),
-            streamInfo.TargetAudioCodec.FirstOrDefault(),
+            targetAudioCodec,
             targetAudioBitrate,
             targetSampleRate,
             targetChannels,
@@ -691,6 +695,7 @@ public class DidlBuilder
 
     /// <summary>
     /// Writes an XML folder element.
+    /// </summary>
     /// <param name="writer">The <see cref="XmlWriter"/>.</param>
     /// <param name="folder">The <see cref="BaseItem"/>.</param>
     /// <param name="stubType">The <see cref="StubType"/>.</param>
@@ -698,7 +703,6 @@ public class DidlBuilder
     /// <param name="childCount">The child count.</param>
     /// <param name="filter">The <see cref="Filter"/>.</param>
     /// <param name="requestedId">The request id.</param>
-    /// </summary>
     public void WriteFolderElement(XmlWriter writer, BaseItem folder, StubType? stubType, BaseItem? context, int childCount, Filter filter, string? requestedId = null)
     {
         writer.WriteStartElement(string.Empty, "container", NsDidl);
@@ -1255,7 +1259,7 @@ public class DidlBuilder
     /// </summary>
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="stubType">Current <see cref="StubType"/>.</param>
-    /// <returns>The client id</returns>
+    /// <returns>The client id.</returns>
     public static string GetClientId(BaseItem item, StubType? stubType)
     {
         return GetClientId(item.Id, stubType);
@@ -1266,7 +1270,7 @@ public class DidlBuilder
     /// </summary>
     /// <param name="idValue">The <see cref="Guid"/>.</param>
     /// <param name="stubType">Current <see cref="StubType"/>.</param>
-    /// <returns>The client id</returns>
+    /// <returns>The client id.</returns>
     public static string GetClientId(Guid idValue, StubType? stubType)
     {
         var id = idValue.ToString("N", CultureInfo.InvariantCulture);

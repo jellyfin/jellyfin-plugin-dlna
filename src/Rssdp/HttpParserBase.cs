@@ -127,7 +127,7 @@ namespace Rssdp.Infrastructure
         {
             // Blank line separates headers from content, so read headers until we find blank line.
             int lineIndex = 1;
-            string line = null, nextLine = null;
+            string? line = null, nextLine = null;
             while (lineIndex + 1 < lines.Length && !String.IsNullOrEmpty((line = lines[lineIndex++])))
             {
                 // If the following line starts with space or tab (or any whitespace), it is really part of this header but split for human readability.

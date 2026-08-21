@@ -5,7 +5,7 @@ namespace Rssdp
     /// </summary>
     public class SsdpEmbeddedDevice : SsdpDevice
     {
-        private SsdpRootDevice _RootDevice;
+        private SsdpRootDevice? _RootDevice;
 
         /// <summary>
         /// Default constructor.
@@ -17,7 +17,7 @@ namespace Rssdp
         /// <summary>
         /// Returns the <see cref="SsdpRootDevice"/> that is this device's first ancestor. If this device is itself an <see cref="SsdpRootDevice"/>, then returns a reference to itself.
         /// </summary>
-        public SsdpRootDevice RootDevice
+        public SsdpRootDevice? RootDevice
         {
             get
             {

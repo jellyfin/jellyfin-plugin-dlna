@@ -27,7 +27,7 @@ public class DlnaPluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Gets or sets the frequency at which ssdp alive notifications are transmitted.
     /// </summary>
-    public int AliveMessageIntervalSeconds { get; set; }  = 180;
+    public int AliveMessageIntervalSeconds { get; set; } = 180;
 
     /// <summary>
     /// Gets or sets a value indicating whether to send only matched host.

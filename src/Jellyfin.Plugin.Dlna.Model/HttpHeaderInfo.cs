@@ -1,5 +1,3 @@
-#nullable disable
-
 using System.Xml.Serialization;
 
 namespace Jellyfin.Plugin.Dlna.Model;
@@ -10,19 +8,19 @@ namespace Jellyfin.Plugin.Dlna.Model;
 public class HttpHeaderInfo
 {
     /// <summary>
-    /// The name.
+    /// Gets or sets the name.
     /// </summary>
     [XmlAttribute("name")]
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// The value.
+    /// Gets or sets the value.
     /// </summary>
     [XmlAttribute("value")]
-    public string Value { get; set; }
+    public string Value { get; set; } = string.Empty;
 
     /// <summary>
-    /// The <see cref="HeaderMatchType"/>.
+    /// Gets or sets the <see cref="HeaderMatchType"/>.
     /// </summary>
     [XmlAttribute("match")]
     public HeaderMatchType Match { get; set; }

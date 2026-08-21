@@ -16,7 +16,7 @@ namespace Rssdp
     /// <seealso cref="SsdpEmbeddedDevice"/>
     public abstract class SsdpDevice
     {
-        private string _Udn;
+        private string _Udn = string.Empty;
         private string _DeviceType;
         private string _DeviceTypeNamespace;
         private int _DeviceVersion;
@@ -28,14 +28,14 @@ namespace Rssdp
         /// </summary>
         /// <seealso cref="AddDevice"/>
         /// <seealso cref="DeviceAdded"/>
-        public event EventHandler<DeviceEventArgs> DeviceAdded;
+        public event EventHandler<DeviceEventArgs>? DeviceAdded;
 
         /// <summary>
         /// Raised when a child device is removed.
         /// </summary>
         /// <seealso cref="RemoveDevice"/>
         /// <seealso cref="DeviceRemoved"/>
-        public event EventHandler<DeviceEventArgs> DeviceRemoved;
+        public event EventHandler<DeviceEventArgs>? DeviceRemoved;
 
         /// <summary>
         /// Derived type constructor, allows constructing a device with no parent. Should only be used from derived types that are or inherit from <see cref="SsdpRootDevice"/>.
@@ -60,7 +60,7 @@ namespace Rssdp
                 rootDevice = ((SsdpEmbeddedDevice)device).RootDevice;
             }
 
-            return rootDevice;
+            return rootDevice ?? throw new InvalidOperationException("The device is not attached to a root device.");
         }
 
         /// <summary>
@@ -83,7 +83,7 @@ namespace Rssdp
             }
         }
 
-        public string DeviceClass { get; set; }
+        public string DeviceClass { get; set; } = string.Empty;
 
         /// <summary>
         /// Sets or returns the namespace for the <see cref="DeviceType"/> of this device. Optional, but defaults to UPnP schema so should be changed if <see cref="DeviceType"/> is not a UPnP device type.
@@ -153,7 +153,7 @@ namespace Rssdp
         /// <para>For UPnP 1.0 this can be any unique string. For UPnP 1.1 this should be a 128 bit number formatted in a specific way, preferably generated using the time and MAC based algorithm. See section 1.1.4 of http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf for details.</para>
         /// <para>Technically this library implements UPnP 1.0, so any value is allowed, but we advise using UPnP 1.1 compatible values for good behaviour and forward compatibility with future versions.</para>
         /// </remarks>
-        public string Uuid { get; set; }
+        public string Uuid { get; set; } = string.Empty;
 
         /// <summary>
         /// Returns (or sets*) a unique device name for this device. Optional, not recommended to be explicitly set.
@@ -185,33 +185,33 @@ namespace Rssdp
         /// Sets or returns a friendly/display name for this device on the network. Something the user can identify the device/instance by, i.e Lounge Main Light. Required.
         /// </summary>
         /// <remarks><para>A short description for the end user. </para></remarks>
-        public string FriendlyName { get; set; }
+        public string FriendlyName { get; set; } = string.Empty;
 
         /// <summary>
         /// Sets or returns the name of the manufacturer of this device. Required.
         /// </summary>
-        public string Manufacturer { get; set; }
+        public string Manufacturer { get; set; } = string.Empty;
 
         /// <summary>
         /// Sets or returns a URL to the manufacturers web site. Optional.
         /// </summary>
-        public Uri ManufacturerUrl { get; set; }
+        public Uri? ManufacturerUrl { get; set; }
 
         /// <summary>
         /// Sets or returns a description of this device model. Recommended.
         /// </summary>
         /// <remarks><para>A long description for the end user.</para></remarks>
-        public string ModelDescription { get; set; }
+        public string ModelDescription { get; set; } = string.Empty;
 
         /// <summary>
         /// Sets or returns the name of this model. Required.
         /// </summary>
-        public string ModelName { get; set; }
+        public string ModelName { get; set; } = string.Empty;
 
         /// <summary>
         /// Sets or returns the number of this model. Recommended.
         /// </summary>
-        public string ModelNumber { get; set; }
+        public string ModelNumber { get; set; } = string.Empty;
 
         /// <summary>
         /// Sets or returns a URL to a web page with details of this device model. Optional.
@@ -219,12 +219,12 @@ namespace Rssdp
         /// <remarks>
         /// <para>Optional. May be relative to base URL.</para>
         /// </remarks>
-        public Uri ModelUrl { get; set; }
+        public Uri? ModelUrl { get; set; }
 
         /// <summary>
         /// Sets or returns the serial number for this device. Recommended.
         /// </summary>
-        public string SerialNumber { get; set; }
+        public string SerialNumber { get; set; } = string.Empty;
 
         /// <summary>
         /// Sets or returns the universal product code of the device, if any. Optional.
@@ -232,7 +232,7 @@ namespace Rssdp
         /// <remarks>
         /// <para>If not blank, must be exactly 12 numeric digits.</para>
         /// </remarks>
-        public string Upc { get; set; }
+        public string Upc { get; set; } = string.Empty;
 
         /// <summary>
         /// Sets or returns the URL to a web page that can be used to configure/manager/use the device. Recommended.
@@ -240,7 +240,7 @@ namespace Rssdp
         /// <remarks>
         /// <para>May be relative to base URL. </para>
         /// </remarks>
-        public Uri PresentationUrl { get; set; }
+        public Uri? PresentationUrl { get; set; }
 
         /// <summary>
         /// Returns a read-only enumerable set of <see cref="SsdpDevice"/> objects representing children of this device. Child devices are optional.

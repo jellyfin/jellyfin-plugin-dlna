@@ -193,7 +193,6 @@ public static class StreamInfoExtensions
             {
                 list.Add(new NameValuePair("MinSegments", item.MinSegments.Value.ToString(CultureInfo.InvariantCulture)));
             }
-
         }
 
         foreach (var pair in item.StreamOptions)
@@ -218,8 +217,8 @@ public static class StreamInfoExtensions
     /// <summary>
     /// Get the stream count for the stream info.
     /// </summary>
-    /// <param name="streamInfo"></param>
-    /// <returns></returns>
+    /// <param name="streamInfo">The <see cref="StreamInfo"/>.</param>
+    /// <returns>The stream count.</returns>
     public static int GetStreamCount(this StreamInfo streamInfo)
     {
         var streamCount = streamInfo.MediaSource?.MediaStreams.Count ?? 1;

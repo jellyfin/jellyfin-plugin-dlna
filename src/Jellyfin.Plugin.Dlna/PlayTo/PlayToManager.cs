@@ -187,6 +187,12 @@ public sealed class PlayToManager : IDisposable
     private async Task AddDevice(UpnpDeviceInfo info, CancellationToken cancellationToken)
     {
         var uri = info.Location;
+        if (uri is null)
+        {
+            _logger.LogError("Ignoring device as it reported no description location.");
+            return;
+        }
+
         _logger.LogDebug("Attempting to create PlayToController from location {0}", uri);
 
         if (info.Headers.TryGetValue("USN", out string? uuid))

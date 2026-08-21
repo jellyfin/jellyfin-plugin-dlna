@@ -24,7 +24,7 @@ public partial class DlnaHttpClient
     private readonly IHttpClientFactory _httpClientFactory;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Device"/> class.
+    /// Initializes a new instance of the <see cref="DlnaHttpClient"/> class.
     /// </summary>
     /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
     /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>

@@ -14,11 +14,6 @@ namespace Jellyfin.Plugin.Dlna;
 public class DlnaPlugin : BasePlugin<DlnaPluginConfiguration>, IHasWebPages
 {
     /// <summary>
-    /// The <see cref="DlnaPlugin"/> instance.
-    /// </summary>
-    public static DlnaPlugin Instance { get; private set; } = null!;
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="DlnaPlugin"/> class.
     /// </summary>
     /// <param name="applicationPaths">Instance of the <see cref="IApplicationPaths"/> interface.</param>
@@ -28,6 +23,11 @@ public class DlnaPlugin : BasePlugin<DlnaPluginConfiguration>, IHasWebPages
     {
         Instance = this;
     }
+
+    /// <summary>
+    /// Gets the <see cref="DlnaPlugin"/> instance.
+    /// </summary>
+    public static DlnaPlugin Instance { get; private set; } = null!;
 
     /// <inheritdoc />
     public override Guid Id => new("33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1");

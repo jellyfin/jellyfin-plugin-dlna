@@ -12,4 +12,10 @@
       <PackageReference Include="Jellyfin.Extensions" Version="12.*-*" />
       <PackageReference Include="Jellyfin.Model" Version="12.*-*" />
     </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="SerilogAnalyzer" Version="0.15.0" PrivateAssets="All" />
+        <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556" PrivateAssets="All" />
+        <PackageReference Include="SmartAnalyzers.MultithreadingAnalyzer" Version="1.1.31" PrivateAssets="All" />
+    </ItemGroup>
 </Project>

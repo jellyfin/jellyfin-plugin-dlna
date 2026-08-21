@@ -1,5 +1,3 @@
-# nullable disable
-
 using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Model.Dlna;
 
@@ -13,20 +11,20 @@ public class PlaylistItem
     /// <summary>
     /// Gets or sets the stream URL.
     /// </summary>
-    public string StreamUrl { get; set; }
+    public string StreamUrl { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the DIDL.
     /// </summary>
-    public string Didl { get; set; }
+    public string Didl { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the stream info.
     /// </summary>
-    public StreamInfo StreamInfo { get; set; }
+    public required StreamInfo StreamInfo { get; set; }
 
     /// <summary>
     /// Gets or sets the profile.
     /// </summary>
-    public DlnaDeviceProfile Profile { get; set; }
+    public required DlnaDeviceProfile Profile { get; set; }
 }

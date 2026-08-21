@@ -1,5 +1,3 @@
-#nullable disable
-
 using System;
 using System.Linq;
 using Jellyfin.Data.Events;
@@ -16,13 +14,13 @@ public sealed class DeviceDiscovery : IDeviceDiscovery, IDisposable
 {
     private readonly object _syncLock = new();
 
-    private SsdpDeviceLocator _deviceLocator;
-    private ISsdpCommunicationsServer _commsServer;
+    private SsdpDeviceLocator? _deviceLocator;
+    private ISsdpCommunicationsServer? _commsServer;
 
     private int _listenerCount;
     private bool _disposed;
 
-    private event EventHandler<GenericEventArgs<UpnpDeviceInfo>> DeviceDiscoveredInternal;
+    private event EventHandler<GenericEventArgs<UpnpDeviceInfo>>? DeviceDiscoveredInternal;
 
     /// <inheritdoc />
     public event EventHandler<GenericEventArgs<UpnpDeviceInfo>> DeviceDiscovered
@@ -49,11 +47,12 @@ public sealed class DeviceDiscovery : IDeviceDiscovery, IDisposable
     }
 
     /// <inheritdoc />
-    public event EventHandler<GenericEventArgs<UpnpDeviceInfo>> DeviceLeft;
+    public event EventHandler<GenericEventArgs<UpnpDeviceInfo>>? DeviceLeft;
 
     /// <summary>
     /// Starts device discovery.
     /// </summary>
+    /// <param name="communicationsServer">The <see cref="ISsdpCommunicationsServer"/>.</param>
     public void Start(ISsdpCommunicationsServer communicationsServer)
     {
         _commsServer = communicationsServer;
@@ -92,13 +91,13 @@ public sealed class DeviceDiscovery : IDeviceDiscovery, IDisposable
     }
 
     // Process each found device in the event handler
-    private void OnDeviceLocatorDeviceAvailable(object sender, DeviceAvailableEventArgs e)
+    private void OnDeviceLocatorDeviceAvailable(object? sender, DeviceAvailableEventArgs e)
     {
         var originalHeaders = e.DiscoveredDevice.ResponseHeaders;
 
         var headerDict = originalHeaders is null ? [] : originalHeaders.ToDictionary(i => i.Key, StringComparer.OrdinalIgnoreCase);
 
-        var headers = headerDict.ToDictionary(i => i.Key, i => i.Value.Value.FirstOrDefault(), StringComparer.OrdinalIgnoreCase);
+        var headers = headerDict.ToDictionary(i => i.Key, i => i.Value.Value.FirstOrDefault() ?? string.Empty, StringComparer.OrdinalIgnoreCase);
 
         var args = new GenericEventArgs<UpnpDeviceInfo>(
             new UpnpDeviceInfo
@@ -111,13 +110,13 @@ public sealed class DeviceDiscovery : IDeviceDiscovery, IDisposable
         DeviceDiscoveredInternal?.Invoke(this, args);
     }
 
-    private void OnDeviceLocatorDeviceUnavailable(object sender, DeviceUnavailableEventArgs e)
+    private void OnDeviceLocatorDeviceUnavailable(object? sender, DeviceUnavailableEventArgs e)
     {
         var originalHeaders = e.DiscoveredDevice.ResponseHeaders;
 
         var headerDict = originalHeaders is null ? [] : originalHeaders.ToDictionary(i => i.Key, StringComparer.OrdinalIgnoreCase);
 
-        var headers = headerDict.ToDictionary(i => i.Key, i => i.Value.Value.FirstOrDefault(), StringComparer.OrdinalIgnoreCase);
+        var headers = headerDict.ToDictionary(i => i.Key, i => i.Value.Value.FirstOrDefault() ?? string.Empty, StringComparer.OrdinalIgnoreCase);
 
         var args = new GenericEventArgs<UpnpDeviceInfo>(
             new UpnpDeviceInfo

@@ -47,6 +47,7 @@ public static class DlnaMaps
     /// <summary>
     /// Gets the image org operation value.
     /// </summary>
+    /// <returns>The image org operation value.</returns>
     public static string GetImageOrgOpValue()
     {
         string orgOp = string.Empty;

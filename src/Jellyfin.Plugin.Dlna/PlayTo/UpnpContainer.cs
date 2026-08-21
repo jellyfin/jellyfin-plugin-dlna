@@ -13,17 +13,18 @@ public class UpnpContainer : UBaseObject
     /// Create a <see cref="UBaseObject"/>.
     /// </summary>
     /// <param name="container">The <see cref="XElement"/>.</param>
+    /// <returns>The <see cref="UBaseObject"/>.</returns>
     public static UBaseObject Create(XElement container)
     {
         ArgumentNullException.ThrowIfNull(container);
 
         return new UBaseObject
         {
-            Id = container.GetAttributeValue(UPnpNamespaces.Id),
-            ParentId = container.GetAttributeValue(UPnpNamespaces.ParentId),
-            Title = container.GetValue(UPnpNamespaces.Title),
-            IconUrl = container.GetValue(UPnpNamespaces.Artwork),
-            UpnpClass = container.GetValue(UPnpNamespaces.Class)
+            Id = container.GetAttributeValue(UPnpNamespaces.Id) ?? string.Empty,
+            ParentId = container.GetAttributeValue(UPnpNamespaces.ParentId) ?? string.Empty,
+            Title = container.GetValue(UPnpNamespaces.Title) ?? string.Empty,
+            IconUrl = container.GetValue(UPnpNamespaces.Artwork) ?? string.Empty,
+            UpnpClass = container.GetValue(UPnpNamespaces.Class) ?? string.Empty
         };
     }
 }

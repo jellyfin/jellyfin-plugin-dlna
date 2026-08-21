@@ -70,6 +70,7 @@ public class DlnaManager : IDlnaManager
     /// <summary>
     /// Initializes the profiles asynchronously.
     /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task InitProfilesAsync()
     {
         try
@@ -100,6 +101,7 @@ public class DlnaManager : IDlnaManager
     /// <summary>
     /// Gets the profiles.
     /// </summary>
+    /// <returns>The profiles.</returns>
     public IEnumerable<DlnaDeviceProfile> GetProfiles()
     {
         lock (_profiles)
@@ -205,9 +207,9 @@ public class DlnaManager : IDlnaManager
     }
 
     /// <summary>
-    /// Returns the server name
+    /// Returns the server name.
     /// </summary>
-    /// <returns>string</returns>
+    /// <returns>The server name.</returns>
     public string GetServerName()
     {
         return _appHost.FriendlyName;

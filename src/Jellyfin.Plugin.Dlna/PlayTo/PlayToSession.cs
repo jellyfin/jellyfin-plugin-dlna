@@ -118,12 +118,12 @@ public class PlayToSession : ISessionController, IDisposable
     }
 
     /// <summary>
-    /// Gets or sets a value indicating the session is active.
+    /// Gets a value indicating whether the session is active.
     /// </summary>
     public bool IsSessionActive => !_disposed;
 
     /// <summary>
-    /// Gets or sets a value indicating whether media control is supported.
+    /// Gets a value indicating whether media control is supported.
     /// </summary>
     public bool SupportsMediaControl => IsSessionActive;
 
@@ -640,7 +640,7 @@ public class PlayToSession : ISessionController, IDisposable
                     AudioStreamIndex = audioStreamIndex,
                     SubtitleStreamIndex = subtitleStreamIndex,
                     EnableDirectStream = false
-                }),
+                }) ?? throw new InvalidOperationException("No optimal video stream found"),
                 Profile = profile
             },
             MediaType.Audio => new PlaylistItem
@@ -653,7 +653,7 @@ public class PlayToSession : ISessionController, IDisposable
                     DeviceId = deviceId,
                     MaxBitrate = profile.MaxStreamingBitrate,
                     MediaSourceId = mediaSourceId
-                }),
+                }) ?? throw new InvalidOperationException("No optimal audio stream found"),
                 Profile = profile
             },
             MediaType.Photo => PlaylistItemFactory.Create((Photo)item, profile),

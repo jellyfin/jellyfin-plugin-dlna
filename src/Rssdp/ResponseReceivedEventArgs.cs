@@ -9,7 +9,7 @@ namespace Rssdp.Infrastructure
     /// </summary>
     public sealed class ResponseReceivedEventArgs : EventArgs
     {
-        public IPAddress LocalIPAddress { get; set; }
+        public required IPAddress LocalIPAddress { get; set; }
 
         private readonly HttpResponseMessage _Message;
 

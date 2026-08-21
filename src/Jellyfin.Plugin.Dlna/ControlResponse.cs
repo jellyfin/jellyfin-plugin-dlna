@@ -8,7 +8,7 @@ namespace Jellyfin.Plugin.Dlna;
 public class ControlResponse
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="ControlRequest"/> class.
+    /// Initializes a new instance of the <see cref="ControlResponse"/> class.
     /// </summary>
     /// <param name="xml">The XML.</param>
     /// <param name="isSuccessful">A value indicating wether the triggering action is successful or not.</param>

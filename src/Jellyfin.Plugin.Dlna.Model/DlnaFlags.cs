@@ -1,4 +1,5 @@
-#pragma warning disable CA1711, CA1028
+#pragma warning disable CA1028 // Enum Storage should be Int32
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix
 
 using System;
 

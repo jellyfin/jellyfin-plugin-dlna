@@ -9,7 +9,7 @@ namespace Jellyfin.Plugin.Dlna.Service;
 public class BaseService : IDlnaEventManager
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="BaseControlHandler"/> class.
+    /// Initializes a new instance of the <see cref="BaseService"/> class.
     /// </summary>
     /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
     protected BaseService(ILogger<BaseService> logger)

@@ -21,7 +21,7 @@ namespace Rssdp.Infrastructure
         /// <returns>A <see cref="HttpRequestMessage"/> instance containing the parsed data.</returns>
         public override HttpRequestMessage Parse(string data)
         {
-            HttpRequestMessage retVal = null;
+            HttpRequestMessage? retVal = null;
 
             try
             {
