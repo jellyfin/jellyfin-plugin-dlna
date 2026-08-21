@@ -344,20 +344,20 @@ public class ControlHandler : BaseControlHandler
 
                 if (item.IsDisplayedAsFolder || serverItem.StubType.HasValue)
                 {
-                    var childrenResult = GetUserItems(item, serverItem.StubType, _user, sortCriteria, start, requestedCount);
+                    var childrenResult = GetUserItemsWithParts(item, serverItem.StubType, _user, sortCriteria, start, requestedCount);
 
                     _didlBuilder.WriteFolderElement(writer, item, serverItem.StubType, null, childrenResult.TotalRecordCount, filter, id);
                 }
                 else
                 {
-                    _didlBuilder.WriteItemElement(writer, item, _user, null, null, deviceId, filter);
+                    _didlBuilder.WriteItemElement(writer, item, _user, null, null, deviceId, filter, null, GetPartNumber(item));
                 }
 
                 provided++;
             }
             else
             {
-                var childrenResult = GetUserItems(item, serverItem.StubType, _user, sortCriteria, start, requestedCount);
+                var childrenResult = GetUserItemsWithParts(item, serverItem.StubType, _user, sortCriteria, start, requestedCount);
                 totalCount = childrenResult.TotalRecordCount;
 
                 provided = childrenResult.Items.Count;
@@ -369,14 +369,14 @@ public class ControlHandler : BaseControlHandler
 
                     if (childItem.IsDisplayedAsFolder || displayStubType.HasValue)
                     {
-                        var childCount = GetUserItems(childItem, displayStubType, _user, sortCriteria, null, null)
+                        var childCount = GetUserItemsWithParts(childItem, displayStubType, _user, sortCriteria, null, null)
                             .TotalRecordCount;
 
                         _didlBuilder.WriteFolderElement(writer, childItem, displayStubType, item, childCount, filter);
                     }
                     else
                     {
-                        _didlBuilder.WriteItemElement(writer, childItem, _user, item, serverItem.StubType, deviceId, filter);
+                        _didlBuilder.WriteItemElement(writer, childItem, _user, item, serverItem.StubType, deviceId, filter, null, i.PartNumber);
                     }
                 }
             }
@@ -432,7 +432,7 @@ public class ControlHandler : BaseControlHandler
             start = startVal;
         }
 
-        QueryResult<BaseItem> childrenResult;
+        QueryResult<ServerItem> childrenResult;
         var settings = new XmlWriterSettings
         {
             Encoding = Encoding.UTF8,
@@ -455,19 +455,21 @@ public class ControlHandler : BaseControlHandler
 
             var item = serverItem.Item;
 
-            childrenResult = GetChildrenSorted(item, _user, searchCriteria, sortCriteria, start, requestedCount);
+            childrenResult = GetSearchResultWithParts(item, _user, searchCriteria, sortCriteria, start, requestedCount);
             foreach (var i in childrenResult.Items)
             {
-                if (i.IsDisplayedAsFolder)
+                var childItem = i.Item;
+
+                if (childItem.IsDisplayedAsFolder)
                 {
-                    var childCount = GetChildrenSorted(i, _user, searchCriteria, sortCriteria, null, 0)
+                    var childCount = GetChildrenSorted(childItem, _user, searchCriteria, sortCriteria, null, 0)
                         .TotalRecordCount;
 
-                    _didlBuilder.WriteFolderElement(writer, i, null, item, childCount, filter);
+                    _didlBuilder.WriteFolderElement(writer, childItem, null, item, childCount, filter);
                 }
                 else
                 {
-                    _didlBuilder.WriteItemElement(writer, i, _user, item, serverItem.StubType, deviceId, filter);
+                    _didlBuilder.WriteItemElement(writer, childItem, _user, item, serverItem.StubType, deviceId, filter, null, i.PartNumber);
                 }
             }
 
@@ -607,6 +609,124 @@ public class ControlHandler : BaseControlHandler
 
         return ToResult(startIndex, queryResult);
     }
+
+    /// <summary>
+    /// Returns the User items meeting the criteria, with every stacked (multi-part) video replaced
+    /// by one item per part.
+    /// </summary>
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <param name="stubType">The <see cref="StubType"/>.</param>
+    /// <param name="user">The <see cref="User"/>.</param>
+    /// <param name="sort">The <see cref="SortCriteria"/>.</param>
+    /// <param name="startIndex">The start index.</param>
+    /// <param name="limit">The maximum number to return.</param>
+    /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
+    private QueryResult<ServerItem> GetUserItemsWithParts(BaseItem item, StubType? stubType, User? user, SortCriteria sort, int? startIndex, int? limit)
+        => ApplyPaging(ExpandStackedVideos(GetUserItems(item, stubType, user, sort, null, null).Items, user), startIndex, limit);
+
+    /// <summary>
+    /// Returns the search results meeting the criteria, with every stacked (multi-part) video
+    /// replaced by one item per part.
+    /// </summary>
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <param name="user">The <see cref="User"/>.</param>
+    /// <param name="search">The <see cref="SearchCriteria"/>.</param>
+    /// <param name="sort">The <see cref="SortCriteria"/>.</param>
+    /// <param name="startIndex">The start index.</param>
+    /// <param name="limit">The maximum number to return.</param>
+    /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
+    private QueryResult<ServerItem> GetSearchResultWithParts(BaseItem item, User? user, SearchCriteria search, SortCriteria sort, int? startIndex, int? limit)
+        => ApplyPaging(ExpandStackedVideos(ToResult(null, GetChildrenSorted(item, user, search, sort, null, null)).Items, user), startIndex, limit);
+
+    /// <summary>
+    /// Replaces every stacked (multi-part) video in a listing by one item per part, so that the
+    /// parts beyond the first one can be browsed and played as well.
+    /// </summary>
+    /// <param name="items">The listing to expand.</param>
+    /// <param name="user">The <see cref="User"/>.</param>
+    /// <returns>The expanded listing.</returns>
+    private static ServerItem[] ExpandStackedVideos(IReadOnlyList<ServerItem> items, User? user)
+    {
+        var stacked = items.Any(IsStackedVideo);
+        if (!stacked)
+        {
+            return items as ServerItem[] ?? [.. items];
+        }
+
+        List<ServerItem> expanded = [];
+        foreach (var serverItem in items)
+        {
+            if (!IsStackedVideo(serverItem))
+            {
+                expanded.Add(serverItem);
+                continue;
+            }
+
+            var video = (Video)serverItem.Item;
+            var partNumber = 1;
+
+            expanded.Add(new ServerItem(video, serverItem.StubType, partNumber));
+            foreach (var part in video.GetAdditionalParts(user))
+            {
+                expanded.Add(new ServerItem(part, null, ++partNumber));
+            }
+        }
+
+        return [.. expanded];
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether a listing entry is a stacked (multi-part) video.
+    /// </summary>
+    /// <param name="serverItem">The <see cref="ServerItem"/>.</param>
+    /// <returns><c>true</c> if the entry is a stacked video.</returns>
+    private static bool IsStackedVideo(ServerItem serverItem)
+        => serverItem.Item is Video { IsStacked: true } && !serverItem.StubType.HasValue;
+
+    /// <summary>
+    /// Gets the one based part number of a video that belongs to a stacked (multi-part) video.
+    /// </summary>
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <returns>The part number, or <c>null</c> when the item is not part of a stack.</returns>
+    private int? GetPartNumber(BaseItem item)
+    {
+        if (item is not Video video)
+        {
+            return null;
+        }
+
+        if (video.IsStacked)
+        {
+            return 1;
+        }
+
+        if (video.OwnerId.Equals(default) || video.GetOwner() is not Video { IsStacked: true } owner)
+        {
+            return null;
+        }
+
+        var partNumber = 1;
+        foreach (var part in owner.GetAdditionalParts(_user))
+        {
+            partNumber++;
+            if (part.Id.Equals(video.Id))
+            {
+                return partNumber;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Applies the requested paging window to a listing.
+    /// </summary>
+    /// <param name="serverItems">The full listing.</param>
+    /// <param name="startIndex">The start index.</param>
+    /// <param name="limit">The maximum number to return.</param>
+    /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
+    private static QueryResult<ServerItem> ApplyPaging(ServerItem[] serverItems, int? startIndex, int? limit)
+        => new(startIndex, serverItems.Length, GetTrimmedServerItemsArray(serverItems, startIndex, limit));
 
     /// <summary>
     /// Returns the Live Tv Channels meeting the criteria.

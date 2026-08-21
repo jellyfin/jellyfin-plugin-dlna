@@ -187,6 +187,7 @@ public class DidlBuilder
     /// <param name="deviceId">The device id.</param>
     /// <param name="filter">The <see cref="Filter"/>.</param>
     /// <param name="streamInfo">The <see cref="StreamInfo" />.</param>
+    /// <param name="partNumber">The one based part number of a stacked (multi-part) video.</param>
     public void WriteItemElement(
         XmlWriter writer,
         BaseItem item,
@@ -195,7 +196,8 @@ public class DidlBuilder
         StubType? contextStubType,
         string deviceId,
         Filter filter,
-        StreamInfo? streamInfo = null)
+        StreamInfo? streamInfo = null,
+        int? partNumber = null)
     {
         var clientId = GetClientId(item, null);
 
@@ -217,7 +219,7 @@ public class DidlBuilder
             }
         }
 
-        AddGeneralProperties(item, null, context, writer, filter);
+        AddGeneralProperties(item, null, context, writer, filter, partNumber);
 
         AddSamsungBookmarkInfo(item, user, writer, streamInfo);
 
@@ -467,7 +469,7 @@ public class DidlBuilder
         writer.WriteFullEndElement();
     }
 
-    private string GetDisplayName(BaseItem item, StubType? itemStubType, BaseItem? context)
+    private string GetDisplayName(BaseItem item, StubType? itemStubType, BaseItem? context, int? partNumber = null)
     {
         if (itemStubType.HasValue)
         {
@@ -494,9 +496,16 @@ public class DidlBuilder
             }
         }
 
-        return item is Episode episode
+        var name = item is Episode episode
             ? GetEpisodeDisplayName(episode, context)
             : item.Name;
+
+        // Every part of a stacked video is served as its own item, so the parts have to be told
+        // apart by name. Numbering them also keeps them next to each other and in order on
+        // devices that sort the listing by title themselves.
+        return partNumber.HasValue
+            ? string.Format(CultureInfo.InvariantCulture, "{0} - {1} {2}", name, _localization.GetLocalizedString("Part"), partNumber.Value)
+            : name;
     }
 
     /// <summary>
@@ -783,13 +792,13 @@ public class DidlBuilder
         }
     }
 
-    private void AddCommonFields(BaseItem item, StubType? itemStubType, BaseItem? context, XmlWriter writer, Filter filter)
+    private void AddCommonFields(BaseItem item, StubType? itemStubType, BaseItem? context, XmlWriter writer, Filter filter, int? partNumber = null)
     {
         // Don't filter on dc:title because not all devices will include it in the filter
         // MediaMonkey for example won't display content without a title
         // if (filter.Contains("dc:title"))
         {
-            AddValue(writer, "dc", "title", GetDisplayName(item, itemStubType, context), NsDc);
+            AddValue(writer, "dc", "title", GetDisplayName(item, itemStubType, context, partNumber), NsDc);
         }
 
         WriteObjectClass(writer, item, itemStubType);
@@ -965,9 +974,9 @@ public class DidlBuilder
         }
     }
 
-    private void AddGeneralProperties(BaseItem item, StubType? itemStubType, BaseItem? context, XmlWriter writer, Filter filter)
+    private void AddGeneralProperties(BaseItem item, StubType? itemStubType, BaseItem? context, XmlWriter writer, Filter filter, int? partNumber = null)
     {
-        AddCommonFields(item, itemStubType, context, writer, filter);
+        AddCommonFields(item, itemStubType, context, writer, filter, partNumber);
 
         var hasAlbumArtists = item as IHasAlbumArtist;
 
@@ -1178,6 +1187,14 @@ public class DidlBuilder
         if (parentWithImage is not null)
         {
             return GetImageInfo(parentWithImage, ImageType.Primary);
+        }
+
+        // The additional parts of a stacked video are owned items that sit outside of the library
+        // tree, so they have neither an image nor a parent to take one from. Use the owner's.
+        var owner = item.OwnerId.Equals(default) ? null : item.GetOwner();
+        if (owner is not null && owner.HasImage(ImageType.Primary))
+        {
+            return GetImageInfo(owner, ImageType.Primary);
         }
 
         return null;
