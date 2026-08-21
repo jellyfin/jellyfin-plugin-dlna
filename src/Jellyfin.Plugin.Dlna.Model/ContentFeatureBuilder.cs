@@ -21,6 +21,7 @@ public static class ContentFeatureBuilder
     /// <param name="height">The height.</param>
     /// <param name="isDirectStream">Value indicating wether the stream is direct.</param>
     /// <param name="orgPn">The orgPn.</param>
+    /// <returns>The image content features header.</returns>
     public static string BuildImageHeader(
         DlnaDeviceProfile profile,
         string container,
@@ -79,6 +80,7 @@ public static class ContentFeatureBuilder
     /// <param name="isDirectStream">Value indicating wether the stream is direct.</param>
     /// <param name="runtimeTicks">The runtime ticks.</param>
     /// <param name="transcodeSeekInfo">The <see cref="TranscodeSeekInfo"/>.</param>
+    /// <returns>The audio content features header.</returns>
     public static string BuildAudioHeader(
         DlnaDeviceProfile profile,
         string? container,
@@ -168,6 +170,7 @@ public static class ContentFeatureBuilder
     /// <param name="videoCodecTag">The video codec tag.</param>
     /// <param name="isAvc">Value indicating wether the stream is AVC.</param>
     /// <param name="videoRotation">The video rotation angle, usually 0 or +-90/180.</param>
+    /// <returns>The video content features headers.</returns>
     public static IEnumerable<string> BuildVideoHeader(
         DlnaDeviceProfile profile,
         string? container,

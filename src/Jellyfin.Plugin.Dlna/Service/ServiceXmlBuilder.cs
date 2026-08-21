@@ -15,6 +15,7 @@ public static class ServiceXmlBuilder
     /// </summary>
     /// <param name="actions">The actions.</param>
     /// <param name="stateVariables">The state variables.</param>
+    /// <returns>The XML.</returns>
     public static string GetXml(IEnumerable<ServiceAction> actions, IEnumerable<StateVariable> stateVariables)
     {
         var builder = new StringBuilder();

@@ -43,6 +43,7 @@ public class DescriptionXmlBuilder
     /// <summary>
     /// Gets the description XML.
     /// </summary>
+    /// <returns>The description XML.</returns>
     public string GetXml()
     {
         var builder = new StringBuilder();
@@ -328,14 +329,16 @@ public class DescriptionXmlBuilder
     {
         var list = new List<DeviceService>
         {
-            new() {
+            new()
+            {
                 ServiceType = "urn:schemas-upnp-org:service:ContentDirectory:1",
                 ServiceId = "urn:upnp-org:serviceId:ContentDirectory",
                 ScpdUrl = "contentdirectory/contentdirectory.xml",
                 ControlUrl = "contentdirectory/control",
                 EventSubUrl = "contentdirectory/events"
             },
-            new() {
+            new()
+            {
                 ServiceType = "urn:schemas-upnp-org:service:ConnectionManager:1",
                 ServiceId = "urn:upnp-org:serviceId:ConnectionManager",
                 ScpdUrl = "connectionmanager/connectionmanager.xml",

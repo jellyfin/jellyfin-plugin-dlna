@@ -13,6 +13,7 @@ public class UpnpContainer : UBaseObject
     /// Create a <see cref="UBaseObject"/>.
     /// </summary>
     /// <param name="container">The <see cref="XElement"/>.</param>
+    /// <returns>The <see cref="UBaseObject"/>.</returns>
     public static UBaseObject Create(XElement container)
     {
         ArgumentNullException.ThrowIfNull(container);

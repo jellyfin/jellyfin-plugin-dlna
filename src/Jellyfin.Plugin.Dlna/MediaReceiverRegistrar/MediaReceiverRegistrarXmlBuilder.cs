@@ -27,49 +27,57 @@ public static class MediaReceiverRegistrarXmlBuilder
     {
         return
         [
-            new() {
+            new()
+            {
                 Name = "AuthorizationGrantedUpdateID",
                 DataType = "ui4",
                 SendsEvents = true
             },
 
-            new() {
+            new()
+            {
                 Name = "A_ARG_TYPE_DeviceID",
                 DataType = "string",
                 SendsEvents = false
             },
 
-            new() {
+            new()
+            {
                 Name = "AuthorizationDeniedUpdateID",
                 DataType = "ui4",
                 SendsEvents = true
             },
 
-            new() {
+            new()
+            {
                 Name = "ValidationSucceededUpdateID",
                 DataType = "ui4",
                 SendsEvents = true
             },
 
-            new() {
+            new()
+            {
                 Name = "A_ARG_TYPE_RegistrationRespMsg",
                 DataType = "bin.base64",
                 SendsEvents = false
             },
 
-            new() {
+            new()
+            {
                 Name = "A_ARG_TYPE_RegistrationReqMsg",
                 DataType = "bin.base64",
                 SendsEvents = false
             },
 
-            new() {
+            new()
+            {
                 Name = "ValidationRevokedUpdateID",
                 DataType = "ui4",
                 SendsEvents = true
             },
 
-            new() {
+            new()
+            {
                 Name = "A_ARG_TYPE_Result",
                 DataType = "int",
                 SendsEvents = false

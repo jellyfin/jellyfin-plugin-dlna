@@ -98,22 +98,22 @@ public class Device : IDisposable
     public TimeSpan Position { get; set; } = TimeSpan.FromSeconds(0);
 
     /// <summary>
-    /// Gets or sets the transport state.
+    /// Gets the transport state.
     /// </summary>
     public TransportState TransportState { get; private set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the device is playing.
+    /// Gets a value indicating whether the device is playing.
     /// </summary>
     public bool IsPlaying => TransportState == TransportState.PLAYING;
 
     /// <summary>
-    /// Gets or sets a value indicating whether the device is paused.
+    /// Gets a value indicating whether the device is paused.
     /// </summary>
     public bool IsPaused => TransportState == TransportState.PAUSED_PLAYBACK;
 
     /// <summary>
-    /// Gets or sets a value indicating whether the device is stopped.
+    /// Gets a value indicating whether the device is stopped.
     /// </summary>
     public bool IsStopped => TransportState == TransportState.STOPPED;
 
@@ -133,7 +133,7 @@ public class Device : IDisposable
     private TransportCommands? RendererCommands { get; set; }
 
     /// <summary>
-    /// Gets or sets the current media info.
+    /// Gets the current media info.
     /// </summary>
     public UBaseObject? CurrentMediaInfo { get; private set; }
 
@@ -213,6 +213,8 @@ public class Device : IDisposable
     /// <summary>
     /// Lowers the volume.
     /// </summary>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public Task VolumeDown(CancellationToken cancellationToken)
     {
         var sendVolume = Math.Max(Volume - 5, 0);
@@ -223,6 +225,8 @@ public class Device : IDisposable
     /// <summary>
     /// Rises the volume.
     /// </summary>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public Task VolumeUp(CancellationToken cancellationToken)
     {
         var sendVolume = Math.Min(Volume + 5, 100);
@@ -233,6 +237,8 @@ public class Device : IDisposable
     /// <summary>
     /// Toggles mute.
     /// </summary>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public Task ToggleMute(CancellationToken cancellationToken)
     {
         if (IsMuted)
@@ -246,6 +252,8 @@ public class Device : IDisposable
     /// <summary>
     /// Mutes the device.
     /// </summary>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task Mute(CancellationToken cancellationToken)
     {
         var success = await SetMute(true, cancellationToken).ConfigureAwait(true);
@@ -259,6 +267,8 @@ public class Device : IDisposable
     /// <summary>
     /// Un-mutes the device.
     /// </summary>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task Unmute(CancellationToken cancellationToken)
     {
         var success = await SetMute(false, cancellationToken).ConfigureAwait(true);
@@ -358,6 +368,7 @@ public class Device : IDisposable
     /// </summary>
     /// <param name="value">The value to seek to.</param>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task Seek(TimeSpan value, CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -388,6 +399,7 @@ public class Device : IDisposable
     /// <param name="header">The header.</param>
     /// <param name="metaData">The meta data.</param>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task SetAvTransport(string url, string? header, string metaData, CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -446,6 +458,7 @@ public class Device : IDisposable
     /// SetNextAvTransport is used to specify to the DLNA device what is the next track to play.
     /// Without that information, the next track command on the device does not work.
     /// </remarks>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task SetNextAvTransport(string url, string? header, string metaData, CancellationToken cancellationToken = default)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -504,6 +517,7 @@ public class Device : IDisposable
     /// Sends play command.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task SetPlay(CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -521,6 +535,7 @@ public class Device : IDisposable
     /// Sends stop command.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task SetStop(CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -548,6 +563,7 @@ public class Device : IDisposable
     /// Sends pause command.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task SetPause(CancellationToken cancellationToken)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
@@ -1125,6 +1141,7 @@ public class Device : IDisposable
     /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
     /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>The <see cref="Device"/>, or <c>null</c> if the device description could not be retrieved.</returns>
     public static async Task<Device?> CreateuPnpDeviceAsync(Uri url, IHttpClientFactory httpClientFactory, ILogger logger, CancellationToken cancellationToken)
     {
         var ssdpHttpClient = new DlnaHttpClient(logger, httpClientFactory);
@@ -1249,35 +1266,35 @@ public class Device : IDisposable
             ServiceType = element.GetDescendantValue(UPnpNamespaces.Ud.GetName("serviceType")) ?? string.Empty
         };
 
-        private static List<DeviceService> GetServices(XDocument document)
+    private static List<DeviceService> GetServices(XDocument document)
+    {
+        List<DeviceService> deviceServices = [];
+        foreach (var services in document.Descendants(UPnpNamespaces.Ud.GetName("serviceList")))
         {
-            List<DeviceService> deviceServices = [];
-            foreach (var services in document.Descendants(UPnpNamespaces.Ud.GetName("serviceList")))
+            if (services is null)
             {
-                if (services is null)
-                {
-                    continue;
-                }
-
-                var servicesList = services.Descendants(UPnpNamespaces.Ud.GetName("service"));
-                if (servicesList is null)
-                {
-                    continue;
-                }
-
-                foreach (var element in servicesList)
-                {
-                    var service = Create(element);
-
-                    if (service is not null)
-                    {
-                        deviceServices.Add(service);
-                    }
-                }
+                continue;
             }
 
-            return deviceServices;
+            var servicesList = services.Descendants(UPnpNamespaces.Ud.GetName("service"));
+            if (servicesList is null)
+            {
+                continue;
+            }
+
+            foreach (var element in servicesList)
+            {
+                var service = Create(element);
+
+                if (service is not null)
+                {
+                    deviceServices.Add(service);
+                }
+            }
         }
+
+        return deviceServices;
+    }
 
     private void UpdateMediaInfo(UBaseObject? mediaInfo, TransportState state)
     {

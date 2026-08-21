@@ -54,6 +54,7 @@ public sealed class DeviceDiscovery : IDeviceDiscovery, IDisposable
     /// <summary>
     /// Starts device discovery.
     /// </summary>
+    /// <param name="communicationsServer">The <see cref="ISsdpCommunicationsServer"/>.</param>
     public void Start(ISsdpCommunicationsServer communicationsServer)
     {
         _commsServer = communicationsServer;

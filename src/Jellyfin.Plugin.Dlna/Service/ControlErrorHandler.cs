@@ -17,6 +17,7 @@ public static class ControlErrorHandler
     /// Gets the response for an <see cref="Exception"/>.
     /// </summary>
     /// <param name="ex">The <see cref="Exception"/>.</param>
+    /// <returns>The <see cref="ControlResponse"/>.</returns>
     public static ControlResponse GetResponse(Exception ex)
     {
         var settings = new XmlWriterSettings

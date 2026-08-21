@@ -64,18 +64,21 @@ public class ResponseProfile
     /// <summary>
     /// Gets the containers.
     /// </summary>
+    /// <returns>The containers.</returns>
     public string[] GetContainers()
         => ContainerHelper.Split(Container);
 
     /// <summary>
     /// Gets the audio codecs.
     /// </summary>
+    /// <returns>The audio codecs.</returns>
     public string[] GetAudioCodecs()
         => ContainerHelper.Split(AudioCodec);
 
     /// <summary>
     /// Gets the video codecs.
     /// </summary>
+    /// <returns>The video codecs.</returns>
     public string[] GetVideoCodecs()
         => ContainerHelper.Split(VideoCodec);
 }

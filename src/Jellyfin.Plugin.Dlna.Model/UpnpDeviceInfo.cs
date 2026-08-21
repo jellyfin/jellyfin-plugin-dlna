@@ -19,7 +19,7 @@ public class UpnpDeviceInfo
     public Uri Location { get; set; }
 
     /// <summary>
-    /// Gets the headers.
+    /// Gets or sets the headers.
     /// </summary>
     public Dictionary<string, string> Headers { get; set; }
 

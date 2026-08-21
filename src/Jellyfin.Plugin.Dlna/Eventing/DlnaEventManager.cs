@@ -135,7 +135,7 @@ public class DlnaEventManager : IDlnaEventManager
 
     private EventSubscription? GetSubscription(string? id, bool throwOnMissing)
     {
-        if (id is null || !_subscriptions.TryGetValue(id, out var e) && throwOnMissing)
+        if (id is null || (!_subscriptions.TryGetValue(id, out var e) && throwOnMissing))
         {
             throw new ResourceNotFoundException("Event with Id " + id + " not found.");
         }

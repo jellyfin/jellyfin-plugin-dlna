@@ -1263,7 +1263,7 @@ public class ControlHandler : BaseControlHandler
     /// <param name="serverItems">An array of <see cref="ServerItem"/>.</param>
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
-    /// <returns>The corresponding trimmed array of <see cref="ServerItem"/></returns>
+    /// <returns>The corresponding trimmed array of <see cref="ServerItem"/>.</returns>
     private static ServerItem[] GetTrimmedServerItemsArray(ServerItem[] serverItems, int? startIndex, int? limit)
     {
         if (startIndex >= serverItems.Length)

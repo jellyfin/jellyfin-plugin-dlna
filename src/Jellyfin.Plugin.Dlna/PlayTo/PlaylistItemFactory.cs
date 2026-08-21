@@ -17,6 +17,7 @@ public static class PlaylistItemFactory
     /// </summary>
     /// <param name="item">The <see cref="Photo"/>.</param>
     /// <param name="profile">The <see cref="DlnaDeviceProfile"/>.</param>
+    /// <returns>The <see cref="PlaylistItem"/>.</returns>
     public static PlaylistItem Create(Photo item, DlnaDeviceProfile profile)
     {
         var playlistItem = new PlaylistItem

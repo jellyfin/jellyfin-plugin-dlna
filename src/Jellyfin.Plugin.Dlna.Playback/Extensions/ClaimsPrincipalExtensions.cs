@@ -22,7 +22,6 @@ public static class ClaimsPrincipalExtensions
             : Guid.Parse(value);
     }
 
-
     /// <summary>
     /// Get token from claims.
     /// </summary>

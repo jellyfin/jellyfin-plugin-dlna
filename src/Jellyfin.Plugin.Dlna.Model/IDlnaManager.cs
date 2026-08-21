@@ -80,6 +80,6 @@ public interface IDlnaManager
     /// <summary>
     /// Gets the server name.
     /// </summary>
-    /// <returns>string</returns>
+    /// <returns>The server name.</returns>
     string GetServerName();
 }

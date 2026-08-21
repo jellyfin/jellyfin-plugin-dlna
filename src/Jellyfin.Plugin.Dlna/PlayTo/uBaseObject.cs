@@ -56,7 +56,7 @@ public class UBaseObject
     public string UpnpClass { get; set; }
 
     /// <summary>
-    /// Gets or sets the media type.
+    /// Gets the media type.
     /// </summary>
     public string MediaType
     {
@@ -83,7 +83,11 @@ public class UBaseObject
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Determines whether the specified <see cref="UBaseObject"/> has the same id as this instance.
+    /// </summary>
+    /// <param name="obj">The <see cref="UBaseObject"/> to compare with.</param>
+    /// <returns><c>true</c> if both instances share the same id; otherwise, <c>false</c>.</returns>
     public bool Equals(UBaseObject obj)
     {
         ArgumentNullException.ThrowIfNull(obj);

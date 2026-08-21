@@ -101,6 +101,7 @@ public class DeviceInfo
     /// <summary>
     /// Gets the <see cref="DeviceIdentification"/>.
     /// </summary>
+    /// <returns>The <see cref="DeviceIdentification"/>.</returns>
     public DeviceIdentification ToDeviceIdentification()
     {
         return new DeviceIdentification

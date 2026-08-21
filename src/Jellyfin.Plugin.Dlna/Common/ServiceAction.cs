@@ -21,9 +21,9 @@ public class ServiceAction
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets the ArgumentList.
+    /// Gets or sets the ArgumentList.
     /// </summary>
-    public IReadOnlyList<Argument> ArgumentList { get; set;}
+    public IReadOnlyList<Argument> ArgumentList { get; set; }
 
     /// <inheritdoc />
     public override string ToString() => Name;
