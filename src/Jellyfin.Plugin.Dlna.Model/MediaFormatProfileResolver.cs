@@ -11,6 +11,16 @@ namespace Jellyfin.Plugin.Dlna.Model;
 public static class MediaFormatProfileResolver
 {
     /// <summary>
+    /// The maximum bitrate of the WMABASE profile, in bits per second. Anything above it is WMAFULL.
+    /// </summary>
+    private const int WmaBaseMaxBitrate = 192_999;
+
+    /// <summary>
+    /// The maximum bitrate of the AAC_ISO_320 and AAC_ADTS_320 profiles, in bits per second.
+    /// </summary>
+    private const int AacMaxBitrate320 = 320_000;
+
+    /// <summary>
     /// Gets the video format profiles.
     /// </summary>
     /// <param name="container">The container.</param>
@@ -377,7 +387,7 @@ public static class MediaFormatProfileResolver
     /// Gets the audio format profile.
     /// </summary>
     /// <param name="container">The container.</param>
-    /// <param name="bitrate">The bitrate.</param>
+    /// <param name="bitrate">The bitrate, in bits per second.</param>
     /// <param name="frequency">The frequency.</param>
     /// <param name="channels">The channel count.</param>
     /// <returns>The audio format profile.</returns>
@@ -425,7 +435,7 @@ public static class MediaFormatProfileResolver
 
     private static MediaFormatProfile ResolveAudioASFFormat(int? bitrate)
     {
-        if (bitrate.HasValue && bitrate.Value <= 193)
+        if (bitrate.HasValue && bitrate.Value <= WmaBaseMaxBitrate)
         {
             return MediaFormatProfile.WMA_BASE;
         }
@@ -465,7 +475,7 @@ public static class MediaFormatProfileResolver
 
     private static MediaFormatProfile ResolveAudioMP4Format(int? bitrate)
     {
-        if (bitrate.HasValue && bitrate.Value <= 320)
+        if (bitrate.HasValue && bitrate.Value <= AacMaxBitrate320)
         {
             return MediaFormatProfile.AAC_ISO_320;
         }
@@ -475,7 +485,7 @@ public static class MediaFormatProfileResolver
 
     private static MediaFormatProfile ResolveAudioADTSFormat(int? bitrate)
     {
-        if (bitrate.HasValue && bitrate.Value <= 320)
+        if (bitrate.HasValue && bitrate.Value <= AacMaxBitrate320)
         {
             return MediaFormatProfile.AAC_ADTS_320;
         }

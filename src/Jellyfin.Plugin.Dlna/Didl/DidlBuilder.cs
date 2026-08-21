@@ -450,8 +450,9 @@ public class DidlBuilder
 
         var filename = url[..url.IndexOf('?', StringComparison.Ordinal)];
 
+        // A MIME type configured on the device profile wins, otherwise prefer the one DLNA mandates for the container.
         var mimeType = mediaProfile is null || string.IsNullOrEmpty(mediaProfile.MimeType)
-            ? MimeTypes.GetMimeType(filename)
+            ? DlnaMimeTypes.GetVideoMimeType(streamInfo.Container, streamInfo.TargetTimestamp) ?? MimeTypes.GetMimeType(filename)
             : mediaProfile.MimeType;
 
         writer.WriteAttributeString(
@@ -653,13 +654,15 @@ public class DidlBuilder
 
         var filename = url[..url.IndexOf('?', StringComparison.Ordinal)];
 
+        // A MIME type configured on the device profile wins, otherwise prefer the one DLNA mandates for the stream.
         var mimeType = mediaProfile is null || string.IsNullOrEmpty(mediaProfile.MimeType)
-            ? MimeTypes.GetMimeType(filename)
+            ? DlnaMimeTypes.GetAudioMimeType(streamInfo.Container, targetAudioBitrate, targetSampleRate, targetChannels)
+              ?? MimeTypes.GetMimeType(filename)
             : mediaProfile.MimeType;
 
         var contentFeatures = ContentFeatureBuilder.BuildAudioHeader(
             _profile,
-            streamInfo.Container?.FirstOrDefault().ToString(),
+            streamInfo.Container,
             targetAudioCodec,
             targetAudioBitrate,
             targetSampleRate,

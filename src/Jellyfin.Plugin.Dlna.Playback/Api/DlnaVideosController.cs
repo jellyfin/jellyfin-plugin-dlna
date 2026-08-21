@@ -303,7 +303,9 @@ public class DlnaVideosController : ControllerBase
         // Static stream
         if (@static.HasValue && @static.Value)
         {
-            var contentType = state.GetMimeType("." + state.OutputContainer, false) ?? state.GetMimeType(state.MediaPath);
+            var contentType = DlnaMimeTypes.GetVideoMimeType(state.OutputContainer, state.TargetTimestamp)
+                              ?? state.GetMimeType("." + state.OutputContainer, false)
+                              ?? state.GetMimeType(state.MediaPath);
 
             if (state.MediaSource.IsInfiniteStream)
             {
