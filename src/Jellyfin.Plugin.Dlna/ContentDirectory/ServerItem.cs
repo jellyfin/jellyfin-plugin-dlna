@@ -12,9 +12,11 @@ internal sealed class ServerItem
     /// </summary>
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="stubType">The stub type.</param>
-    public ServerItem(BaseItem item, StubType? stubType)
+    /// <param name="partNumber">The one based part number of a stacked (multi-part) video.</param>
+    public ServerItem(BaseItem item, StubType? stubType, int? partNumber = null)
     {
         Item = item;
+        PartNumber = partNumber;
 
         if (stubType.HasValue)
         {
@@ -35,4 +37,9 @@ internal sealed class ServerItem
     /// Gets the DLNA item type.
     /// </summary>
     public StubType? StubType { get; }
+
+    /// <summary>
+    /// Gets the one based part number when the item is one part of a stacked (multi-part) video.
+    /// </summary>
+    public int? PartNumber { get; }
 }
