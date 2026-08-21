@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Playback.Extensions;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Streaming;
@@ -84,7 +85,11 @@ public static class FileStreamResponseHelpers
 
         httpContext.Response.Headers[HeaderNames.AcceptRanges] = "none";
 
-        var contentType = state.GetMimeType(outputPath);
+        // Keep the served Content-Type in line with the MIME type advertised in the DIDL-Lite protocolInfo.
+        var contentType = (state.IsVideoRequest
+                              ? DlnaMimeTypes.GetVideoMimeType(state.OutputContainer, state.TargetTimestamp)
+                              : DlnaMimeTypes.GetAudioMimeType(state.OutputContainer, state.OutputAudioBitrate, state.OutputAudioSampleRate, state.OutputAudioChannels))
+                          ?? state.GetMimeType(outputPath);
 
         // Headers only
         if (isHeadRequest)

@@ -307,7 +307,19 @@ public static class ContentFeatureBuilder
             audioSampleRate,
             audioChannels);
 
-        return format.HasValue ? format.Value.ToString() : null;
+        return format switch
+        {
+            null => null,
+            MediaFormatProfile.WMA_BASE => "WMABASE",
+            MediaFormatProfile.WMA_FULL => "WMAFULL",
+
+            // LPCM has a single profile, the rate and the channel count are conveyed in the MIME type instead.
+            MediaFormatProfile.LPCM16_44_MONO
+                or MediaFormatProfile.LPCM16_44_STEREO
+                or MediaFormatProfile.LPCM16_48_MONO
+                or MediaFormatProfile.LPCM16_48_STEREO => "LPCM",
+            _ => format.Value.ToString()
+        };
     }
 
     private static MediaFormatProfile[] GetVideoOrgPnValue(string? container, string? videoCodec, string? audioCodec, int? width, int? height, TransportStreamTimestamp timestamp)

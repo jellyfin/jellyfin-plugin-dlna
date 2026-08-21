@@ -152,7 +152,9 @@ public class AudioHelper
         // Static stream
         if (streamingRequest.Static)
         {
-            var contentType = state.GetMimeType("." + state.OutputContainer, false) ?? state.GetMimeType(state.MediaPath);
+            var contentType = DlnaMimeTypes.GetAudioMimeType(state.OutputContainer, state.OutputAudioBitrate, state.OutputAudioSampleRate, state.OutputAudioChannels)
+                              ?? state.GetMimeType("." + state.OutputContainer, false)
+                              ?? state.GetMimeType(state.MediaPath);
 
             if (state.MediaSource.IsInfiniteStream)
             {
