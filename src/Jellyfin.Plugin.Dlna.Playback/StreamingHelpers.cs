@@ -171,6 +171,13 @@ public static class StreamingHelpers
 
         string? containerInternal = Path.GetExtension(state.RequestedUrl);
 
+        if (string.IsNullOrEmpty(containerInternal)
+            && (!string.IsNullOrWhiteSpace(streamingRequest.LiveStreamId)
+                || (mediaSource is not null && mediaSource.IsInfiniteStream)))
+        {
+            containerInternal = ".ts";
+        }
+
         if (!string.IsNullOrEmpty(streamingRequest.Container))
         {
             containerInternal = streamingRequest.Container;
@@ -249,6 +256,11 @@ public static class StreamingHelpers
                     state.VideoRequest.MaxHeight = resolution.MaxHeight;
                 }
             }
+
+            if (state.AudioStream is not null && !EncodingHelper.IsCopyCodec(state.OutputAudioCodec) && string.Equals(state.AudioStream.Codec, state.OutputAudioCodec, StringComparison.OrdinalIgnoreCase) && state.OutputAudioBitrate.HasValue)
+            {
+                state.OutputAudioCodec = state.SupportedAudioCodecs.Where(c => !EncodingHelper.LosslessAudioCodecs.Contains(c)).FirstOrDefault(mediaEncoder.CanEncodeToAudioCodec);
+            }
         }
 
         var deviceProfileId = state.IsVideoRequest
@@ -258,7 +270,7 @@ public static class StreamingHelpers
 
         var ext = string.IsNullOrWhiteSpace(state.OutputContainer)
             ? GetOutputFileExtension(state, mediaSource)
-            : ("." + state.OutputContainer);
+            : ("." + GetContainerFileExtension(state.OutputContainer));
 
         state.OutputFilePath = GetOutputFilePath(state, ext, serverConfigurationManager, streamingRequest.DeviceId, streamingRequest.PlaySessionId);
 
@@ -680,14 +692,18 @@ public static class StreamingHelpers
                     request.Static = string.Equals("true", val, StringComparison.OrdinalIgnoreCase);
                     break;
                 case 4:
-                    if (videoRequest is not null)
+                    if (videoRequest is not null && IsValidCodecName(val))
                     {
                         videoRequest.VideoCodec = val;
                     }
 
                     break;
                 case 5:
-                    request.AudioCodec = val;
+                    if (IsValidCodecName(val))
+                    {
+                        request.AudioCodec = val;
+                    }
+
                     break;
                 case 6:
                     if (videoRequest is not null)
@@ -741,7 +757,7 @@ public static class StreamingHelpers
                     request.StartTimeTicks = long.Parse(val, CultureInfo.InvariantCulture);
                     break;
                 case 15:
-                    if (videoRequest is not null)
+                    if (videoRequest is not null && EncodingHelper.LevelValidationRegex().IsMatch(val))
                     {
                         videoRequest.Level = val;
                     }
@@ -762,7 +778,7 @@ public static class StreamingHelpers
 
                     break;
                 case 18:
-                    if (videoRequest is not null)
+                    if (videoRequest is not null && IsValidCodecName(val))
                     {
                         videoRequest.Profile = val;
                     }
@@ -821,7 +837,11 @@ public static class StreamingHelpers
 
                     break;
                 case 30:
-                    request.SubtitleCodec = val;
+                    if (IsValidCodecName(val))
+                    {
+                        request.SubtitleCodec = val;
+                    }
+
                     break;
                 case 31:
                     if (videoRequest is not null)
@@ -842,5 +862,29 @@ public static class StreamingHelpers
                     break;
             }
         }
+    }
+
+    private static bool IsValidCodecName(string val)
+    {
+        return EncodingHelper.ContainerValidationRegex().IsMatch(val);
+    }
+
+    /// <summary>
+    /// Parses the container into its file extension.
+    /// </summary>
+    /// <param name="container">The container.</param>
+    private static string? GetContainerFileExtension(string? container)
+    {
+        if (string.Equals(container, "mpegts", StringComparison.OrdinalIgnoreCase))
+        {
+            return "ts";
+        }
+
+        if (string.Equals(container, "matroska", StringComparison.OrdinalIgnoreCase))
+        {
+            return "mkv";
+        }
+
+        return container;
     }
 }
