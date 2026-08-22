@@ -23,6 +23,7 @@ using MediaBrowser.Controller.TV;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
+using MediaBrowser.Model.Library;
 using MediaBrowser.Model.Querying;
 using Microsoft.Extensions.Logging;
 using DeviceProfile = MediaBrowser.Model.Dlna.DeviceProfile;
@@ -568,6 +569,11 @@ public class ControlHandler : BaseControlHandler
     {
         if (user is not null)
         {
+            if (item is UserRootFolder)
+            {
+                return GetUserViews(user, startIndex, limit);
+            }
+
             switch (item)
             {
                 case MusicGenre:
@@ -636,7 +642,8 @@ public class ControlHandler : BaseControlHandler
     /// <returns><c>true</c> if the entry is a folder listing its own children.</returns>
     private bool ListsOwnChildren(ServerItem serverItem)
     {
-        if (serverItem.Item is not Folder || serverItem.StubType is not (null or StubType.Folder))
+        // A user view holds no children of its own, it delegates to the libraries behind it
+        if (serverItem.Item is not Folder || serverItem.Item is UserView || serverItem.StubType is not (null or StubType.Folder))
         {
             return false;
         }
@@ -992,6 +999,24 @@ public class ControlHandler : BaseControlHandler
             startIndex,
             array.Length,
             array);
+    }
+
+    /// <summary>
+    /// Returns the user views, which is the top level listing every other client is served.
+    /// </summary>
+    /// <param name="user">The <see cref="User"/>.</param>
+    /// <param name="startIndex">The start index.</param>
+    /// <param name="limit">The maximum number to return.</param>
+    /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
+    /// <remarks>
+    /// Listing the raw children of the user root folder instead would skip library grouping, the
+    /// hidden library and display order preferences, and the synthetic views such as "Folders".
+    /// </remarks>
+    private QueryResult<ServerItem> GetUserViews(User user, int? startIndex, int? limit)
+    {
+        var views = _userViewManager.GetUserViews(new UserViewQuery { User = user });
+
+        return ApplyPaging([.. views.Select(i => new ServerItem(i, null))], startIndex, limit);
     }
 
     /// <summary>
