@@ -39,6 +39,7 @@ public class ControlHandler : BaseControlHandler
     private const string NsDidl = "urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/";
     private const string NsDlna = "urn:schemas-dlna-org:metadata-1-0/";
     private const string NsUpnp = "urn:schemas-upnp-org:metadata-1-0/upnp/";
+    private const int MaxPageSize = 200;
 
     private readonly ILibraryManager _libraryManager;
     private readonly IUserDataManager _userDataManager;
@@ -299,14 +300,12 @@ public class ControlHandler : BaseControlHandler
 
         var provided = 0;
 
-        // Default to null instead of 0
-        // Upnp inspector sends 0 as requestedCount when it wants everything
-        int? requestedCount = null;
+        int? requestedCount = MaxPageSize;
         int? start = 0;
 
         if (sparams.ContainsKey("RequestedCount") && int.TryParse(sparams["RequestedCount"], out var requestedVal) && requestedVal > 0)
         {
-            requestedCount = requestedVal;
+            requestedCount = Math.Min(requestedVal, MaxPageSize);
         }
 
         if (sparams.ContainsKey("StartingIndex") && int.TryParse(sparams["StartingIndex"], out var startVal) && startVal > 0)
@@ -417,14 +416,12 @@ public class ControlHandler : BaseControlHandler
 
         // sort example: dc:title, dc:date
 
-        // Default to null instead of 0
-        // Upnp inspector sends 0 as requestedCount when it wants everything
-        int? requestedCount = null;
+        int? requestedCount = MaxPageSize;
         int? start = 0;
 
         if (sparams.ContainsKey("RequestedCount") && int.TryParse(sparams["RequestedCount"], out var requestedVal) && requestedVal > 0)
         {
-            requestedCount = requestedVal;
+            requestedCount = Math.Min(requestedVal, MaxPageSize);
         }
 
         if (sparams.ContainsKey("StartingIndex") && int.TryParse(sparams["StartingIndex"], out var startVal) && startVal > 0)
