@@ -148,11 +148,23 @@ public class PlayToSession : ISessionController, IDisposable
                 return;
             }
 
-            // Send the SetNextAvTransport message. A device that accepts it advances to that track by
-            // itself, which OnDevicePlaybackStopped has to know about to not advance the playlist again.
-            if (await _device.SetNextAvTransport(nextItem.StreamUrl, GetDlnaHeaders(nextItem), nextItem.Didl, cancellationToken).ConfigureAwait(false))
+            try
             {
-                _nextTrackIndex = nextItemIndex;
+                // Send the SetNextAvTransport message. A device that accepts it advances to that track by
+                // itself, which OnDevicePlaybackStopped has to know about to not advance the playlist again.
+                if (await _device.SetNextAvTransport(nextItem.StreamUrl, GetDlnaHeaders(nextItem), nextItem.Didl, cancellationToken).ConfigureAwait(false))
+                {
+                    _nextTrackIndex = nextItemIndex;
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Announcing the next track is optional, so a device that refuses it must not fail playback of
+                // the current one. The playlist is advanced by the server instead, _nextTrackIndex stays unset.
+                _logger.LogWarning(
+                    ex,
+                    "{DeviceName} - Failed to announce the next track, the server will advance the playlist itself",
+                    _session.DeviceName);
             }
         }
     }
