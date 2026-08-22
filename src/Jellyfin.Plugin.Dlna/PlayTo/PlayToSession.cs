@@ -36,6 +36,8 @@ namespace Jellyfin.Plugin.Dlna.PlayTo;
 /// </summary>
 public class PlayToSession : ISessionController, IDisposable
 {
+    private static readonly MediaType[] _playableMediaTypes = [MediaType.Audio, MediaType.Video, MediaType.Photo];
+
     private readonly SessionInfo _session;
     private readonly ISessionManager _sessionManager;
     private readonly ILibraryManager _libraryManager;
@@ -388,15 +390,29 @@ public class PlayToSession : ISessionController, IDisposable
             ? null :
             _userManager.GetUserById(command.ControllingUserId);
 
+        var profile = GetProfile();
+
+        // A profile can name any media type, but only the ones GetPlaylistItem knows can be played
+        var supportedMediaTypes = profile.FetchSupportedMediaTypes().Intersect(_playableMediaTypes).ToArray();
+
+        if (supportedMediaTypes.Length == 0)
+        {
+            _logger.LogWarning(
+                "{DeviceName} - Profile {ProfileName} declares no playable media type in \"{SupportedMediaTypes}\", nothing can be played",
+                _session.DeviceName,
+                profile.Name,
+                profile.SupportedMediaTypes);
+        }
+
         var items = new List<BaseItem>();
         foreach (var id in command.ItemIds)
         {
-            AddItemFromId(id, items);
+            AddItemFromId(id, supportedMediaTypes, items);
         }
 
         var startIndex = command.StartIndex ?? 0;
 
-        if (startIndex > items.Count)
+        if (startIndex >= items.Count)
         {
             _logger.LogDebug("{DeviceName} - Play command resulted in no items", _session.DeviceName);
             return Task.CompletedTask;
@@ -417,11 +433,12 @@ public class PlayToSession : ISessionController, IDisposable
             command.StartPositionTicks ?? 0,
             command.MediaSourceId ?? string.Empty,
             command.AudioStreamIndex,
-            command.SubtitleStreamIndex);
+            command.SubtitleStreamIndex,
+            profile);
 
         for (int i = 1; i < len; i++)
         {
-            playlist[i] = CreatePlaylistItem(items[i], user, 0, string.Empty, null, null);
+            playlist[i] = CreatePlaylistItem(items[i], user, 0, string.Empty, null, null, profile);
         }
 
         _logger.LogDebug("{0} - Playlist created", _session.DeviceName);
@@ -493,7 +510,7 @@ public class PlayToSession : ISessionController, IDisposable
                 var user = _session.UserId.IsEmpty()
                     ? null
                     : _userManager.GetUserById(_session.UserId);
-                var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, info.AudioStreamIndex, info.SubtitleStreamIndex);
+                var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, info.AudioStreamIndex, info.SubtitleStreamIndex, GetProfile());
 
                 await _device.SetAvTransport(newItem.StreamUrl, GetDlnaHeaders(newItem), newItem.Didl, CancellationToken.None).ConfigureAwait(false);
 
@@ -518,14 +535,30 @@ public class PlayToSession : ISessionController, IDisposable
         return info.IsDirectStream;
     }
 
-    private void AddItemFromId(Guid id, List<BaseItem> list)
+    private void AddItemFromId(Guid id, IReadOnlyCollection<MediaType> supportedMediaTypes, List<BaseItem> list)
     {
         var item = _libraryManager.GetItemById(id);
-        if (item?.MediaType == MediaType.Audio || item?.MediaType == MediaType.Video)
+        if (item is null)
         {
-            list.Add(item);
+            return;
         }
+
+        if (!supportedMediaTypes.Contains(item.MediaType))
+        {
+            _logger.LogDebug(
+                "{DeviceName} - Skipping {ItemName}, the device does not support {MediaType}",
+                _session.DeviceName,
+                item.Name,
+                item.MediaType);
+
+            return;
+        }
+
+        list.Add(item);
     }
+
+    private DlnaDeviceProfile GetProfile()
+        => _dlnaManager.GetProfile(_device.Properties.ToDeviceIdentification()) ?? _dlnaManager.GetDefaultProfile();
 
     private PlaylistItem CreatePlaylistItem(
         BaseItem item,
@@ -533,13 +566,9 @@ public class PlayToSession : ISessionController, IDisposable
         long startPostionTicks,
         string? mediaSourceId,
         int? audioStreamIndex,
-        int? subtitleStreamIndex)
+        int? subtitleStreamIndex,
+        DlnaDeviceProfile profile)
     {
-        var deviceInfo = _device.Properties;
-
-        var profile = _dlnaManager.GetProfile(deviceInfo.ToDeviceIdentification()) ??
-                      _dlnaManager.GetDefaultProfile();
-
         var mediaSources = item is IHasMediaSources
             ? _mediaSourceManager.GetStaticMediaSources(item, true, user).ToArray()
             : [];
@@ -802,7 +831,7 @@ public class PlayToSession : ISessionController, IDisposable
                 var user = _session.UserId.IsEmpty()
                     ? null
                     : _userManager.GetUserById(_session.UserId);
-                var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, newIndex, info.SubtitleStreamIndex);
+                var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, newIndex, info.SubtitleStreamIndex, GetProfile());
 
                 await _device.SetAvTransport(newItem.StreamUrl, GetDlnaHeaders(newItem), newItem.Didl, CancellationToken.None).ConfigureAwait(false);
 
@@ -833,7 +862,7 @@ public class PlayToSession : ISessionController, IDisposable
                 var user = _session.UserId.IsEmpty()
                     ? null
                     : _userManager.GetUserById(_session.UserId);
-                var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, info.AudioStreamIndex, newIndex);
+                var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, info.AudioStreamIndex, newIndex, GetProfile());
 
                 await _device.SetAvTransport(newItem.StreamUrl, GetDlnaHeaders(newItem), newItem.Didl, CancellationToken.None).ConfigureAwait(false);
 
