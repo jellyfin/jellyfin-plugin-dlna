@@ -342,11 +342,11 @@ public class ControlHandler : BaseControlHandler
             {
                 totalCount = 1;
 
-                if (item.IsDisplayedAsFolder || serverItem.StubType.HasValue)
+                if (IsWrittenAsContainer(serverItem))
                 {
-                    var childrenResult = GetUserItemsWithParts(item, serverItem.StubType, _user, sortCriteria, start, requestedCount);
+                    var childCount = GetChildCounts([serverItem], sortCriteria)[0];
 
-                    _didlBuilder.WriteFolderElement(writer, item, serverItem.StubType, null, childrenResult.TotalRecordCount, filter, id);
+                    _didlBuilder.WriteFolderElement(writer, item, serverItem.StubType, null, childCount, filter, id);
                 }
                 else
                 {
@@ -362,17 +362,17 @@ public class ControlHandler : BaseControlHandler
 
                 provided = childrenResult.Items.Count;
 
-                foreach (var i in childrenResult.Items)
+                var childCounts = GetChildCounts(childrenResult.Items, sortCriteria);
+
+                for (var index = 0; index < childrenResult.Items.Count; index++)
                 {
+                    var i = childrenResult.Items[index];
                     var childItem = i.Item;
                     var displayStubType = i.StubType;
 
-                    if (childItem.IsDisplayedAsFolder || displayStubType.HasValue)
+                    if (IsWrittenAsContainer(i))
                     {
-                        var childCount = GetUserItemsWithParts(childItem, displayStubType, _user, sortCriteria, null, null)
-                            .TotalRecordCount;
-
-                        _didlBuilder.WriteFolderElement(writer, childItem, displayStubType, item, childCount, filter);
+                        _didlBuilder.WriteFolderElement(writer, childItem, displayStubType, item, childCounts[index], filter);
                     }
                     else
                     {
@@ -608,6 +608,122 @@ public class ControlHandler : BaseControlHandler
         var queryResult = folder.GetItems(query);
 
         return ToResult(startIndex, queryResult);
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether a listing entry is written as a container.
+    /// </summary>
+    /// <param name="serverItem">The <see cref="ServerItem"/>.</param>
+    /// <returns><c>true</c> if the entry is written as a container.</returns>
+    private static bool IsWrittenAsContainer(ServerItem serverItem)
+        => serverItem.Item.IsDisplayedAsFolder || serverItem.StubType.HasValue;
+
+    /// <summary>
+    /// Gets a value indicating whether the children of a listing entry are the folder's own
+    /// children, so that they can be counted without listing them.
+    /// </summary>
+    /// <param name="serverItem">The <see cref="ServerItem"/>.</param>
+    /// <returns><c>true</c> if the entry is a folder listing its own children.</returns>
+    private bool ListsOwnChildren(ServerItem serverItem)
+    {
+        if (serverItem.Item is not Folder || serverItem.StubType is not (null or StubType.Folder))
+        {
+            return false;
+        }
+
+        // Mirrors the dispatching in GetUserItems: a collection folder is listed as a set of stub
+        // containers rather than as its own children, unless it is browsed as a plain folder
+        return serverItem.StubType == StubType.Folder
+            || _user is null
+            || serverItem.Item is not IHasCollectionType
+            {
+                CollectionType: CollectionType.music
+                    or CollectionType.movies
+                    or CollectionType.tvshows
+                    or CollectionType.folders
+                    or CollectionType.livetv
+            };
+    }
+
+    /// <summary>
+    /// Determines the child count of every container in a listing, without listing the content of
+    /// each of them.
+    /// </summary>
+    /// <param name="children">The listing.</param>
+    /// <param name="sort">The <see cref="SortCriteria"/>.</param>
+    /// <returns>The child counts, in the order of <paramref name="children"/>.</returns>
+    private int[] GetChildCounts(IReadOnlyList<ServerItem> children, SortCriteria sort)
+    {
+        var counts = new int[children.Count];
+
+        // Folders are counted in a single batched query instead of one query per entry
+        List<Guid> folderIds = [];
+        List<int> folderIndexes = [];
+
+        for (var index = 0; index < children.Count; index++)
+        {
+            var child = children[index];
+            if (!IsWrittenAsContainer(child))
+            {
+                continue;
+            }
+
+            var itemByNameCount = GetItemByNameChildCount(child.Item);
+            if (itemByNameCount.HasValue)
+            {
+                counts[index] = itemByNameCount.Value;
+            }
+            else if (ListsOwnChildren(child))
+            {
+                folderIds.Add(child.Item.Id);
+                folderIndexes.Add(index);
+            }
+            else
+            {
+                // A stub container has no children of its own, its content has to be listed
+                counts[index] = GetUserItemsWithParts(child.Item, child.StubType, _user, sort, null, null)
+                    .TotalRecordCount;
+            }
+        }
+
+        if (folderIds.Count > 0)
+        {
+            var folderCounts = _libraryManager.GetChildCountBatch(folderIds, _user?.Id);
+            for (var i = 0; i < folderIds.Count; i++)
+            {
+                counts[folderIndexes[i]] = folderCounts.GetValueOrDefault(folderIds[i]);
+            }
+        }
+
+        return counts;
+    }
+
+    /// <summary>
+    /// Gets the child count of a "by name" container using an optimized count query, instead of
+    /// listing every item below it.
+    /// </summary>
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <returns>The child count, or <c>null</c> if the item is not a "by name" container.</returns>
+    private int? GetItemByNameChildCount(BaseItem item)
+    {
+        // The counted kinds have to match what GetUserItems lists for the container
+        switch (item)
+        {
+            case MusicGenre:
+                return _libraryManager
+                    .GetItemCountsForNameItem(BaseItemKind.MusicGenre, item.Id, [BaseItemKind.MusicAlbum], _user)
+                    .AlbumCount;
+            case MusicArtist:
+                return _libraryManager
+                    .GetItemCountsForNameItem(BaseItemKind.MusicArtist, item.Id, [BaseItemKind.MusicAlbum], _user)
+                    .AlbumCount;
+            case Genre:
+                var counts = _libraryManager
+                    .GetItemCountsForNameItem(BaseItemKind.Genre, item.Id, [BaseItemKind.Movie, BaseItemKind.Series], _user);
+                return counts.MovieCount + counts.SeriesCount;
+            default:
+                return null;
+        }
     }
 
     /// <summary>
