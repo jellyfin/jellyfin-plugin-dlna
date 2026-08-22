@@ -1029,11 +1029,11 @@ public class DidlBuilder
             writer.WriteStartElement("upnp", "artist", NsUpnp);
             writer.WriteAttributeString("role", "AlbumArtist");
 
-            writer.WriteString(name);
+            writer.WriteString(name.RemoveInvalidXmlChars());
 
             writer.WriteFullEndElement();
         }
-        catch (XmlException ex)
+        catch (Exception ex) when (ex is XmlException or ArgumentException)
         {
             _logger.LogError(ex, "Error adding xml value: {Value}", name);
         }
@@ -1043,9 +1043,9 @@ public class DidlBuilder
     {
         try
         {
-            writer.WriteElementString(prefix, name, namespaceUri, value);
+            writer.WriteElementString(prefix, name, namespaceUri, value.RemoveInvalidXmlChars());
         }
-        catch (XmlException ex)
+        catch (Exception ex) when (ex is XmlException or ArgumentException)
         {
             _logger.LogError(ex, "Error adding xml value: {Value}", value);
         }
