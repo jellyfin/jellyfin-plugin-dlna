@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Security;
 using System.Threading;
@@ -319,7 +320,7 @@ public class Device : IDisposable
 
         await new DlnaHttpClient(_logger, _httpClientFactory)
             .SendCommandAsync(
-                Properties.BaseUrl,
+                NormalizeUrl(service.ControlUrl),
                 service,
                 command.Name,
                 rendererCommands!.BuildPost(command, service.ServiceType, value), // null checked above
@@ -355,7 +356,7 @@ public class Device : IDisposable
 
         await new DlnaHttpClient(_logger, _httpClientFactory)
             .SendCommandAsync(
-                Properties.BaseUrl,
+                NormalizeUrl(service.ControlUrl),
                 service,
                 command.Name,
                 rendererCommands!.BuildPost(command, service.ServiceType, value), // null checked above
@@ -382,7 +383,7 @@ public class Device : IDisposable
         var service = GetAvTransportService() ?? throw new InvalidOperationException("Unable to find service");
         await new DlnaHttpClient(_logger, _httpClientFactory)
             .SendCommandAsync(
-                Properties.BaseUrl,
+                NormalizeUrl(service.ControlUrl),
                 service,
                 command.Name,
                 avCommands!.BuildPost(command, service.ServiceType, string.Format(CultureInfo.InvariantCulture, "{0:hh}:{0:mm}:{0:ss}", value), "REL_TIME"), // null checked above
@@ -422,9 +423,10 @@ public class Device : IDisposable
 
         var service = GetAvTransportService() ?? throw new InvalidOperationException("Unable to find service");
         var post = avCommands!.BuildPost(command, service.ServiceType, url, dictionary); // null checked above
+
         await new DlnaHttpClient(_logger, _httpClientFactory)
             .SendCommandAsync(
-                Properties.BaseUrl,
+                NormalizeUrl(service.ControlUrl),
                 service,
                 command.Name,
                 post,
@@ -482,7 +484,7 @@ public class Device : IDisposable
         var service = GetAvTransportService() ?? throw new InvalidOperationException("Unable to find service");
         var post = avCommands!.BuildPost(command, service.ServiceType, url, dictionary); // null checked above
         await new DlnaHttpClient(_logger, _httpClientFactory)
-            .SendCommandAsync(Properties.BaseUrl, service, command.Name, post, header, cancellationToken)
+            .SendCommandAsync(NormalizeUrl(service.ControlUrl), service, command.Name, post, header, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -506,7 +508,7 @@ public class Device : IDisposable
 
         var service = GetAvTransportService() ?? throw new InvalidOperationException("Unable to find service");
         return new DlnaHttpClient(_logger, _httpClientFactory).SendCommandAsync(
-            Properties.BaseUrl,
+            NormalizeUrl(service.ControlUrl),
             service,
             command.Name,
             avCommands.BuildPost(command, service.ServiceType, 1),
@@ -549,7 +551,7 @@ public class Device : IDisposable
         var service = GetAvTransportService() ?? throw new InvalidOperationException("Unable to find service");
         await new DlnaHttpClient(_logger, _httpClientFactory)
             .SendCommandAsync(
-                Properties.BaseUrl,
+                NormalizeUrl(service.ControlUrl),
                 service,
                 command.Name,
                 avCommands!.BuildPost(command, service.ServiceType, 1), // null checked above
@@ -577,7 +579,7 @@ public class Device : IDisposable
         var service = GetAvTransportService() ?? throw new InvalidOperationException("Unable to find service");
         await new DlnaHttpClient(_logger, _httpClientFactory)
             .SendCommandAsync(
-                Properties.BaseUrl,
+                NormalizeUrl(service.ControlUrl),
                 service,
                 command.Name,
                 avCommands!.BuildPost(command, service.ServiceType, 1), // null checked above
@@ -709,7 +711,7 @@ public class Device : IDisposable
         }
 
         var result = await new DlnaHttpClient(_logger, _httpClientFactory).SendCommandAsync(
-            Properties.BaseUrl,
+            NormalizeUrl(service.ControlUrl),
             service,
             command.Name,
             rendererCommands!.BuildPost(command, service.ServiceType), // null checked above
@@ -759,7 +761,7 @@ public class Device : IDisposable
         }
 
         var result = await new DlnaHttpClient(_logger, _httpClientFactory).SendCommandAsync(
-            Properties.BaseUrl,
+            NormalizeUrl(service.ControlUrl),
             service,
             command.Name,
             rendererCommands!.BuildPost(command, service.ServiceType), // null checked above
@@ -792,7 +794,7 @@ public class Device : IDisposable
         }
 
         var result = await new DlnaHttpClient(_logger, _httpClientFactory).SendCommandAsync(
-            Properties.BaseUrl,
+            NormalizeUrl(service.ControlUrl),
             service,
             command.Name,
             avCommands.BuildPost(command, service.ServiceType),
@@ -838,7 +840,7 @@ public class Device : IDisposable
         }
 
         var result = await new DlnaHttpClient(_logger, _httpClientFactory).SendCommandAsync(
-            Properties.BaseUrl,
+            NormalizeUrl(service.ControlUrl),
             service,
             command.Name,
             rendererCommands.BuildPost(command, service.ServiceType),
@@ -910,7 +912,7 @@ public class Device : IDisposable
         }
 
         var result = await new DlnaHttpClient(_logger, _httpClientFactory).SendCommandAsync(
-            Properties.BaseUrl,
+            NormalizeUrl(service.ControlUrl),
             service,
             command.Name,
             rendererCommands.BuildPost(command, service.ServiceType),
@@ -1073,17 +1075,7 @@ public class Device : IDisposable
             return null;
         }
 
-        bool append_dmr = true;
-        if (Properties.Manufacturer.Contains("xiaomi", StringComparison.OrdinalIgnoreCase))
-        {
-            append_dmr = false;
-        }
-
-        string url = NormalizeUrl(Properties.BaseUrl, avService.ScpdUrl, append_dmr);
-
-        var httpClient = new DlnaHttpClient(_logger, _httpClientFactory);
-
-        var document = await httpClient.GetDataAsync(url, cancellationToken).ConfigureAwait(false);
+        var document = await GetServiceDescriptionAsync(avService, cancellationToken).ConfigureAwait(false);
         if (document is null)
         {
             return null;
@@ -1105,15 +1097,7 @@ public class Device : IDisposable
         var avService = GetServiceRenderingControl();
         ArgumentNullException.ThrowIfNull(avService);
 
-        bool append_dmr = true;
-        if (Properties.Manufacturer.Contains("xiaomi", StringComparison.OrdinalIgnoreCase))
-        {
-            append_dmr = false;
-        }
-        string url = NormalizeUrl(Properties.BaseUrl, avService.ScpdUrl, append_dmr);
-
-        var httpClient = new DlnaHttpClient(_logger, _httpClientFactory);
-        var document = await httpClient.GetDataAsync(url, cancellationToken).ConfigureAwait(false);
+        var document = await GetServiceDescriptionAsync(avService, cancellationToken).ConfigureAwait(false);
         if (document is null)
         {
             return null;
@@ -1123,7 +1107,47 @@ public class Device : IDisposable
         return RendererCommands;
     }
 
-    private static string NormalizeUrl(string baseUrl, string url, bool append_dmr = true)
+    /// <summary>
+    /// Fetches the description of a service, retrying below <c>/dmr/</c> if the device does not serve it
+    /// at the location its description points to.
+    /// </summary>
+    /// <param name="service">The <see cref="DeviceService"/>.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>The service description, or <c>null</c> if it could not be parsed.</returns>
+    private async Task<XDocument?> GetServiceDescriptionAsync(DeviceService service, CancellationToken cancellationToken)
+    {
+        var httpClient = new DlnaHttpClient(_logger, _httpClientFactory);
+        var url = NormalizeUrl(service.ScpdUrl);
+
+        try
+        {
+            return await httpClient.GetDataAsync(url, cancellationToken).ConfigureAwait(false);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            var fallbackUrl = GetDmrFallbackUrl(service.ScpdUrl);
+            if (fallbackUrl is null || string.Equals(fallbackUrl, url, StringComparison.Ordinal))
+            {
+                throw;
+            }
+
+            _logger.LogDebug(
+                ex,
+                "{Name} - no service description at {Url}, retrying at {FallbackUrl}",
+                Properties.Name,
+                url,
+                fallbackUrl);
+
+            return await httpClient.GetDataAsync(fallbackUrl, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Resolves a URL of the device description against its base URL.
+    /// </summary>
+    /// <param name="url">The URL to resolve.</param>
+    /// <returns>The absolute URL.</returns>
+    private string NormalizeUrl(string url)
     {
         // If it's already a complete url, don't stick anything onto the front of it
         if (url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
@@ -1131,9 +1155,11 @@ public class Device : IDisposable
             return url;
         }
 
-        if (append_dmr && !url.Contains('/', StringComparison.Ordinal))
+        // UPnP Device Architecture 1.0 section 2.1: relative URLs are resolved against the base URL,
+        // so a URL without a leading slash points next to the description, not to the server root.
+        if (Properties.BaseUri is not null && Uri.TryCreate(Properties.BaseUri, url, out var resolved))
         {
-            url = "/dmr/" + url;
+            return resolved.ToString();
         }
 
         if (!url.StartsWith('/'))
@@ -1141,7 +1167,22 @@ public class Device : IDisposable
             url = "/" + url;
         }
 
-        return baseUrl + url;
+        return Properties.BaseUrl + url;
+    }
+
+    /// <summary>
+    /// Gets the URL below <c>/dmr/</c> some devices serve their service descriptions from, without advertising it.
+    /// </summary>
+    /// <param name="url">The URL of the device description.</param>
+    /// <returns>The fallback URL, or <c>null</c> if it does not apply to <paramref name="url"/>.</returns>
+    private string? GetDmrFallbackUrl(string url)
+    {
+        if (url.StartsWith("http", StringComparison.OrdinalIgnoreCase) || url.Contains('/', StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        return Properties.BaseUrl + "/dmr/" + url;
     }
 
     /// <summary>
@@ -1180,6 +1221,7 @@ public class Device : IDisposable
         {
             Name = string.Join(' ', friendlyNames),
             BaseUrl = string.Format(CultureInfo.InvariantCulture, "http://{0}:{1}", url.Host, url.Port),
+            BaseUri = GetDescriptionBaseUri(document, url),
             Services = GetServices(document)
         };
 
@@ -1244,6 +1286,30 @@ public class Device : IDisposable
         }
 
         return new Device(deviceProperties, httpClientFactory, logger);
+    }
+
+    /// <summary>
+    /// Gets the base <see cref="Uri"/> the relative URLs of a device description resolve against.
+    /// </summary>
+    /// <param name="document">The device description.</param>
+    /// <param name="descriptionUrl">The <see cref="Uri"/> the description was retrieved from.</param>
+    /// <returns>The base <see cref="Uri"/>.</returns>
+    private static Uri GetDescriptionBaseUri(XDocument document, Uri descriptionUrl)
+    {
+        // UPnP Device Architecture 1.0 section 2.1: URLBase takes precedence over the retrieval URL if present.
+        var urlBase = document.Descendants(UPnpNamespaces.Ud.GetName("URLBase")).FirstOrDefault()?.Value.Trim();
+        if (!string.IsNullOrEmpty(urlBase) && Uri.TryCreate(urlBase, UriKind.Absolute, out var baseUri))
+        {
+            // URLBase denotes a directory and is specified to end with a slash, but not all devices honor that.
+            if (!baseUri.AbsolutePath.EndsWith('/'))
+            {
+                baseUri = new Uri(baseUri, baseUri.AbsolutePath + "/");
+            }
+
+            return baseUri;
+        }
+
+        return descriptionUrl;
     }
 
     private static DeviceIcon CreateIcon(XElement element)

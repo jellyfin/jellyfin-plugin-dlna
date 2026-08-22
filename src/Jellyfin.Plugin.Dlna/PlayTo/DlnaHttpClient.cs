@@ -37,22 +37,6 @@ public partial class DlnaHttpClient
     [GeneratedRegex("(&(?![a-z]*;))")]
     private static partial Regex EscapeAmpersandRegex();
 
-    private static string NormalizeServiceUrl(string baseUrl, string serviceUrl)
-    {
-        // If it's already a complete url, don't stick anything onto the front of it
-        if (serviceUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-        {
-            return serviceUrl;
-        }
-
-        if (!serviceUrl.StartsWith('/'))
-        {
-            serviceUrl = "/" + serviceUrl;
-        }
-
-        return baseUrl + serviceUrl;
-    }
-
     private async Task<XDocument?> SendRequestAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var client = _httpClientFactory.CreateClient(NamedClient.Dlna);
@@ -115,7 +99,7 @@ public partial class DlnaHttpClient
     /// <summary>
     /// Sends command async.
     /// </summary>
-    /// <param name="baseUrl">The base URL.</param>
+    /// <param name="controlUrl">The absolute control URL of the service.</param>
     /// <param name="service">The <see cref="DeviceService"/>.</param>
     /// <param name="command">The command.</param>
     /// <param name="postData">The POST data.</param>
@@ -123,14 +107,14 @@ public partial class DlnaHttpClient
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>The task object representing the asynchronous send operation.</returns>
     public async Task<XDocument?> SendCommandAsync(
-        string baseUrl,
+        string controlUrl,
         DeviceService service,
         string command,
         string postData,
         string? header = null,
         CancellationToken cancellationToken = default)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, NormalizeServiceUrl(baseUrl, service.ControlUrl))
+        using var request = new HttpRequestMessage(HttpMethod.Post, controlUrl)
         {
             Content = new StringContent(postData, Encoding.UTF8, MediaTypeNames.Text.Xml)
         };
