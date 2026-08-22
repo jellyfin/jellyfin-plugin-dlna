@@ -877,14 +877,48 @@ public class ControlHandler : BaseControlHandler
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
     private QueryResult<ServerItem> GetChildrenOfItem(BaseItem parent, InternalItemsQuery query, BaseItemKind itemType, bool isFavorite = false)
     {
-        query.Recursive = true;
-        query.Parent = parent;
         query.IsFavorite = isFavorite;
         query.IncludeItemTypes = [itemType];
+        query.DtoOptions = GetDtoOptions();
 
-        var result = _libraryManager.GetItemsResult(query);
+        // For music items, use UserViewManager like GetLatest does (but not for favorites)
+        if (!isFavorite && (itemType == BaseItemKind.MusicAlbum || itemType == BaseItemKind.Audio))
+        {
+            var items = _userViewManager.GetLatestItems(
+                new LatestItemsQuery
+                {
+                    User = query.User!,
+                    Limit = query.Limit ?? 1000,
+                    IncludeItemTypes = [itemType],
+                    ParentId = parent?.Id ?? Guid.Empty,
+                    GroupItems = false
+                },
+                query.DtoOptions).Select(i => i.Item1 ?? i.Item2.FirstOrDefault()).OfType<BaseItem>().ToArray();
 
-        return ToResult(query.StartIndex, result);
+            if (query.StartIndex > 0)
+            {
+                items = (items.Length <= query.StartIndex) ? [] : items[query.StartIndex.Value..];
+            }
+
+            return ToResult(query.StartIndex, items);
+        }
+
+
+        if (parent is Folder folder)
+        {
+            var folderResult = folder.GetItems(query);
+            if (folderResult.TotalRecordCount > 0)
+            {
+                return ToResult(query.StartIndex, folderResult);
+            }
+        }
+
+        query.Recursive = true;
+        query.Parent = parent;
+
+        var libraryResult = _libraryManager.GetItemsResult(query);
+
+        return ToResult(query.StartIndex, libraryResult);
     }
 
     /// <summary>
