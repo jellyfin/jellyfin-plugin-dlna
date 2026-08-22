@@ -132,9 +132,24 @@ public sealed class PlayToManager : IDisposable
                 return;
             }
 
-            if (_sessionManager.Sessions.Any(i => usn.Contains(i.DeviceId, StringComparison.OrdinalIgnoreCase)))
+            var existingSession = _sessionManager.Sessions.FirstOrDefault(
+                i => !string.IsNullOrEmpty(i.DeviceId) && usn.Contains(i.DeviceId, StringComparison.OrdinalIgnoreCase));
+
+            if (existingSession is not null)
             {
-                return;
+                if (!HasMoved(existingSession, info.Location))
+                {
+                    return;
+                }
+
+                // The renderer is reachable at another address than the one its controller was
+                // built from, so that controller can only talk to a dead endpoint from now on
+                _logger.LogInformation(
+                    "Renderer {Name} moved to {Location}, recreating its session",
+                    existingSession.DeviceName,
+                    info.Location);
+
+                await _sessionManager.ReportSessionEnded(existingSession.Id).ConfigureAwait(false);
             }
 
             await AddDevice(info, cancellationToken).ConfigureAwait(false);
@@ -150,6 +165,29 @@ public sealed class PlayToManager : IDisposable
         {
             _sessionLock.Release();
         }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether a renderer announced itself at another address than the one
+    /// the controller of its existing session was built from.
+    /// </summary>
+    /// <param name="session">The existing <see cref="SessionInfo"/>.</param>
+    /// <param name="location">The announced location of the device description.</param>
+    /// <returns><c>true</c> when the announced address differs from the one in use.</returns>
+    private static bool HasMoved(SessionInfo session, Uri? location)
+    {
+        if (location is null)
+        {
+            return false;
+        }
+
+        var controller = session.SessionControllers.OfType<PlayToSession>().FirstOrDefault();
+        if (controller is null)
+        {
+            return false;
+        }
+
+        return !string.Equals(controller.DeviceBaseUrl, Device.GetBaseUrl(location), StringComparison.OrdinalIgnoreCase);
     }
 
     internal static string GetUuid(string usn)

@@ -123,6 +123,11 @@ public class PlayToSession : ISessionController, IDisposable
     public bool IsSessionActive => !_disposed;
 
     /// <summary>
+    /// Gets the base URL the renderer is currently controlled through.
+    /// </summary>
+    internal string DeviceBaseUrl => _device.Properties.BaseUrl;
+
+    /// <summary>
     /// Gets a value indicating whether media control is supported.
     /// </summary>
     public bool SupportsMediaControl => IsSessionActive;

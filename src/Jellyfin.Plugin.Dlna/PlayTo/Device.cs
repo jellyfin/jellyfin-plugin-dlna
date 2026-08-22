@@ -1135,6 +1135,18 @@ public class Device : IDisposable
     }
 
     /// <summary>
+    /// Gets the base URL a device is reachable at from the location of its device description.
+    /// </summary>
+    /// <param name="descriptionLocation">The location of the device description.</param>
+    /// <returns>The base URL.</returns>
+    internal static string GetBaseUrl(Uri descriptionLocation)
+    {
+        ArgumentNullException.ThrowIfNull(descriptionLocation);
+
+        return string.Format(CultureInfo.InvariantCulture, "http://{0}:{1}", descriptionLocation.Host, descriptionLocation.Port);
+    }
+
+    /// <summary>
     /// Creates uPNP device.
     /// </summary>
     /// <param name="url">The <see cref="Uri"/>.</param>
