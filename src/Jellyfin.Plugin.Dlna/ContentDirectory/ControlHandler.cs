@@ -399,8 +399,12 @@ public class ControlHandler : BaseControlHandler
     /// <param name="deviceId">The device id.</param>
     private void HandleXBrowseByLetter(XmlWriter xmlWriter, IReadOnlyDictionary<string, string> sparams, string deviceId)
     {
-        // TODO: Implement this method
-        HandleSearch(xmlWriter, sparams, deviceId);
+        // Devices disagree on the name of the argument carrying the letter
+        var letter = sparams.GetValueOrDefault("StartingLetter")
+                     ?? sparams.GetValueOrDefault("Letter")
+                     ?? sparams.GetValueOrDefault("StartingCharacter");
+
+        HandleSearch(xmlWriter, sparams, deviceId, string.IsNullOrWhiteSpace(letter) ? null : letter);
     }
 
     /// <summary>
@@ -409,9 +413,11 @@ public class ControlHandler : BaseControlHandler
     /// <param name="xmlWriter">The xmlWriter<see cref="XmlWriter"/>.</param>
     /// <param name="sparams">The method parameters.</param>
     /// <param name="deviceId">The deviceId<see cref="string"/>.</param>
-    private void HandleSearch(XmlWriter xmlWriter, IReadOnlyDictionary<string, string> sparams, string deviceId)
+    /// <param name="nameStartsWith">The letter the results have to start with, if any.</param>
+    private void HandleSearch(XmlWriter xmlWriter, IReadOnlyDictionary<string, string> sparams, string deviceId, string? nameStartsWith = null)
     {
-        var searchCriteria = new SearchCriteria(sparams.GetValueOrDefault("SearchCriteria", string.Empty));
+        // "*" is the criteria matching everything, and the fallback for a device that sends none
+        var searchCriteria = new SearchCriteria(sparams.GetValueOrDefault("SearchCriteria", "*"));
         var sortCriteria = new SortCriteria(sparams.GetValueOrDefault("SortCriteria", string.Empty));
         var filter = new Filter(sparams.GetValueOrDefault("Filter", "*"));
 
@@ -455,14 +461,14 @@ public class ControlHandler : BaseControlHandler
 
             var item = serverItem.Item;
 
-            childrenResult = GetSearchResultWithParts(item, _user, searchCriteria, sortCriteria, start, requestedCount);
+            childrenResult = GetSearchResultWithParts(item, _user, searchCriteria, sortCriteria, start, requestedCount, nameStartsWith);
             foreach (var i in childrenResult.Items)
             {
                 var childItem = i.Item;
 
                 if (childItem.IsDisplayedAsFolder)
                 {
-                    var childCount = GetChildrenSorted(childItem, _user, searchCriteria, sortCriteria, null, 0)
+                    var childCount = GetChildrenSorted(childItem, _user, searchCriteria, sortCriteria, null, 0, nameStartsWith)
                         .TotalRecordCount;
 
                     _didlBuilder.WriteFolderElement(writer, childItem, null, item, childCount, filter);
@@ -492,8 +498,9 @@ public class ControlHandler : BaseControlHandler
     /// <param name="sort">The <see cref="SortCriteria"/>.</param>
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
+    /// <param name="nameStartsWith">The letter the results have to start with, if any.</param>
     /// <returns>The <see cref="QueryResult{BaseItem}"/>.</returns>
-    private static QueryResult<BaseItem> GetChildrenSorted(BaseItem item, User? user, SearchCriteria search, SortCriteria sort, int? startIndex, int? limit)
+    private static QueryResult<BaseItem> GetChildrenSorted(BaseItem item, User? user, SearchCriteria search, SortCriteria sort, int? startIndex, int? limit, string? nameStartsWith = null)
     {
         var folder = (Folder)item;
 
@@ -531,6 +538,9 @@ public class ControlHandler : BaseControlHandler
             ExcludeItemTypes = [BaseItemKind.Book],
             IsFolder = isFolder,
             MediaTypes = mediaTypes,
+            NameContains = search.NameContains,
+            NameStartsWith = nameStartsWith,
+            SearchTerm = search.SearchTerm,
             DtoOptions = GetDtoOptions()
         });
     }
@@ -750,9 +760,10 @@ public class ControlHandler : BaseControlHandler
     /// <param name="sort">The <see cref="SortCriteria"/>.</param>
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
+    /// <param name="nameStartsWith">The letter the results have to start with, if any.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetSearchResultWithParts(BaseItem item, User? user, SearchCriteria search, SortCriteria sort, int? startIndex, int? limit)
-        => ApplyPaging(ExpandStackedVideos(ToResult(null, GetChildrenSorted(item, user, search, sort, null, null)).Items, user), startIndex, limit);
+    private QueryResult<ServerItem> GetSearchResultWithParts(BaseItem item, User? user, SearchCriteria search, SortCriteria sort, int? startIndex, int? limit, string? nameStartsWith = null)
+        => ApplyPaging(ExpandStackedVideos(ToResult(null, GetChildrenSorted(item, user, search, sort, null, null, nameStartsWith)).Items, user), startIndex, limit);
 
     /// <summary>
     /// Replaces every stacked (multi-part) video in a listing by one item per part, so that the
