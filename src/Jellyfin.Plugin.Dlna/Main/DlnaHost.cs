@@ -246,7 +246,6 @@ public sealed class DlnaHost : IHostedService, IDisposable
         // IPv6 is currently unsupported
         var validInterfaces = _networkManager.GetInternalBindAddresses()
             .Where(x => x.Address is not null)
-            .Where(x => x.AddressFamily != AddressFamily.InterNetworkV6)
             .Where(x => x.AddressFamily == AddressFamily.InterNetwork)
             .Where(x => x.SupportsMulticast)
             .Where(x => !x.Address.Equals(IPAddress.Loopback))
@@ -256,17 +255,25 @@ public sealed class DlnaHost : IHostedService, IDisposable
 
         if (validInterfaces.Count == 0)
         {
-            // No interfaces returned, fall back to loopback
-            validInterfaces = _networkManager.GetLoopbacks().ToList();
+            // No interfaces returned, fall back to loopback.
+            // As IPv6 is unsupported, the IPv6 loopback is of no use here either.
+            validInterfaces = _networkManager.GetLoopbacks()
+                .Where(x => x.AddressFamily == AddressFamily.InterNetwork)
+                .ToList();
+
+            if (validInterfaces.Count == 0)
+            {
+                _logger.LogWarning("Found no usable IPv4 interface, not registering any server endpoint");
+                return;
+            }
         }
 
         foreach (var intf in validInterfaces)
         {
             var fullService = "urn:schemas-upnp-org:device:MediaServer:1";
 
-            var uri = new UriBuilder(intf.Address + descriptorUri);
-            uri.Scheme = "http://";
-            uri.Port = httpBindPort;
+            // Build the URI from its parts, so that the host is escaped correctly
+            var uri = new UriBuilder("http", intf.Address.ToString(), httpBindPort, descriptorUri);
 
             _logger.LogInformation("Registering publisher for {ResourceName} on {DeviceAddress} with uri {FullUri}", fullService, intf.Address, uri);
 
