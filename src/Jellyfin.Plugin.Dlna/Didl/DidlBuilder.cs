@@ -962,7 +962,8 @@ public class DidlBuilder
             new InternalPeopleQuery
             {
                 ItemId = item.Id,
-                Limit = 6
+                Limit = 6,
+                EnableTotalRecordCount = false
             });
 
         foreach (var actor in people)
