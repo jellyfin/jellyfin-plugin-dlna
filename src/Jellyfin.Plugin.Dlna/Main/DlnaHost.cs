@@ -185,7 +185,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
             .Replace(":1", string.Empty, StringComparison.OrdinalIgnoreCase)
             .Split(':');
 
-        device.DeviceTypeNamespace = serviceParts[0].Replace('.', '-');
+        device.DeviceTypeNamespace = serviceParts[0];
         device.DeviceClass = serviceParts[1];
         device.DeviceType = serviceParts[2];
     }
@@ -297,7 +297,9 @@ public sealed class DlnaHost : IHostedService, IDisposable
             {
                 "urn:schemas-upnp-org:service:ContentDirectory:1",
                 "urn:schemas-upnp-org:service:ConnectionManager:1",
-                // "urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1"
+
+                // Windows looks for this service to treat the server as a media source
+                "urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1"
             };
 
             foreach (var subDevice in embeddedDevices)

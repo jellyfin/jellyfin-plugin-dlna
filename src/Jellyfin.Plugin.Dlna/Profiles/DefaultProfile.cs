@@ -27,6 +27,8 @@ public class DefaultProfile : DlnaDeviceProfile
         ModelUrl = "https://github.com/jellyfin/jellyfin";
         ManufacturerUrl = "https://github.com/jellyfin/jellyfin";
 
+        EnableMSMediaReceiverRegistrar = true;
+
         AlbumArtPn = "JPEG_SM";
 
         MaxAlbumArtHeight = 480;
