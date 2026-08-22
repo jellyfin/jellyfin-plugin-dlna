@@ -715,7 +715,8 @@ public class DidlBuilder
     /// <param name="childCount">The child count.</param>
     /// <param name="filter">The <see cref="Filter"/>.</param>
     /// <param name="requestedId">The request id.</param>
-    public void WriteFolderElement(XmlWriter writer, BaseItem folder, StubType? stubType, BaseItem? context, int childCount, Filter filter, string? requestedId = null)
+    /// <param name="ancestorId">The library to scope the folder to, if any.</param>
+    public void WriteFolderElement(XmlWriter writer, BaseItem folder, StubType? stubType, BaseItem? context, int childCount, Filter filter, string? requestedId = null, Guid? ancestorId = null)
     {
         writer.WriteStartElement(string.Empty, "container", NsDidl);
 
@@ -723,7 +724,7 @@ public class DidlBuilder
         writer.WriteAttributeString("searchable", "1");
         writer.WriteAttributeString("childCount", childCount.ToString(CultureInfo.InvariantCulture));
 
-        var clientId = GetClientId(folder, stubType);
+        var clientId = GetClientId(folder, stubType, ancestorId);
 
         if (string.Equals(requestedId, "0", StringComparison.Ordinal))
         {
@@ -1285,10 +1286,11 @@ public class DidlBuilder
     /// </summary>
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="stubType">Current <see cref="StubType"/>.</param>
+    /// <param name="ancestorId">The library to scope the item to, if any.</param>
     /// <returns>The client id.</returns>
-    public static string GetClientId(BaseItem item, StubType? stubType)
+    public static string GetClientId(BaseItem item, StubType? stubType, Guid? ancestorId = null)
     {
-        return GetClientId(item.Id, stubType);
+        return GetClientId(item.Id, stubType, ancestorId);
     }
 
     /// <summary>
@@ -1296,14 +1298,20 @@ public class DidlBuilder
     /// </summary>
     /// <param name="idValue">The <see cref="Guid"/>.</param>
     /// <param name="stubType">Current <see cref="StubType"/>.</param>
+    /// <param name="ancestorId">The library to scope the item to, if any.</param>
     /// <returns>The client id.</returns>
-    public static string GetClientId(Guid idValue, StubType? stubType)
+    public static string GetClientId(Guid idValue, StubType? stubType, Guid? ancestorId = null)
     {
         var id = idValue.ToString("N", CultureInfo.InvariantCulture);
 
         if (stubType.HasValue)
         {
             id = stubType.Value.ToString().ToLowerInvariant() + "_" + id;
+        }
+
+        if (ancestorId.HasValue)
+        {
+            id += "_" + ancestorId.Value.ToString("N", CultureInfo.InvariantCulture);
         }
 
         return id;

@@ -344,7 +344,7 @@ public class ControlHandler : BaseControlHandler
 
                 if (IsWrittenAsContainer(serverItem))
                 {
-                    var childCount = GetChildCounts([serverItem], sortCriteria)[0];
+                    var childCount = GetChildCounts([serverItem], null, sortCriteria)[0];
 
                     _didlBuilder.WriteFolderElement(writer, item, serverItem.StubType, null, childCount, filter, id);
                 }
@@ -357,12 +357,13 @@ public class ControlHandler : BaseControlHandler
             }
             else
             {
-                var childrenResult = GetUserItemsWithParts(item, serverItem.StubType, _user, sortCriteria, start, requestedCount);
+                var childrenResult = GetUserItemsWithParts(item, serverItem.StubType, _user, sortCriteria, start, requestedCount, serverItem.AncestorId);
                 totalCount = childrenResult.TotalRecordCount;
 
                 provided = childrenResult.Items.Count;
 
-                var childCounts = GetChildCounts(childrenResult.Items, sortCriteria);
+                var childAncestorIds = new Guid?[childrenResult.Items.Count];
+                var childCounts = GetChildCounts(childrenResult.Items, item, sortCriteria, childAncestorIds);
 
                 for (var index = 0; index < childrenResult.Items.Count; index++)
                 {
@@ -372,7 +373,7 @@ public class ControlHandler : BaseControlHandler
 
                     if (IsWrittenAsContainer(i))
                     {
-                        _didlBuilder.WriteFolderElement(writer, childItem, displayStubType, item, childCounts[index], filter);
+                        _didlBuilder.WriteFolderElement(writer, childItem, displayStubType, item, childCounts[index], filter, null, childAncestorIds[index]);
                     }
                     else
                     {
@@ -561,8 +562,9 @@ public class ControlHandler : BaseControlHandler
     /// <param name="sort">The <see cref="SortCriteria"/>.</param>
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
+    /// <param name="ancestorId">The library to scope the listing to, if any.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetUserItems(BaseItem item, StubType? stubType, User? user, SortCriteria sort, int? startIndex, int? limit)
+    private QueryResult<ServerItem> GetUserItems(BaseItem item, StubType? stubType, User? user, SortCriteria sort, int? startIndex, int? limit, Guid? ancestorId = null)
     {
         if (user is not null)
         {
@@ -574,11 +576,11 @@ public class ControlHandler : BaseControlHandler
             switch (item)
             {
                 case MusicGenre:
-                    return GetMusicGenreItems(item, user, sort, startIndex, limit);
+                    return GetMusicGenreItems(item, user, sort, startIndex, limit, ancestorId);
                 case MusicArtist:
-                    return GetMusicArtistItems(item, user, sort, startIndex, limit);
+                    return GetMusicArtistItems(item, user, sort, startIndex, limit, ancestorId);
                 case Genre:
-                    return GetGenreItems(item, user, sort, startIndex, limit);
+                    return GetGenreItems(item, user, sort, startIndex, limit, ancestorId);
             }
 
             if (stubType != StubType.Folder && item is IHasCollectionType collectionFolder)
@@ -664,9 +666,11 @@ public class ControlHandler : BaseControlHandler
     /// each of them.
     /// </summary>
     /// <param name="children">The listing.</param>
+    /// <param name="parent">The <see cref="BaseItem"/> being browsed, if any.</param>
     /// <param name="sort">The <see cref="SortCriteria"/>.</param>
+    /// <param name="ancestorIds">Receives the library each entry is scoped to, if any.</param>
     /// <returns>The child counts, in the order of <paramref name="children"/>.</returns>
-    private int[] GetChildCounts(IReadOnlyList<ServerItem> children, SortCriteria sort)
+    private int[] GetChildCounts(IReadOnlyList<ServerItem> children, BaseItem? parent, SortCriteria sort, Guid?[]? ancestorIds = null)
     {
         var counts = new int[children.Count];
 
@@ -677,6 +681,16 @@ public class ControlHandler : BaseControlHandler
         for (var index = 0; index < children.Count; index++)
         {
             var child = children[index];
+
+            // A genre or artist aggregates content from every library. An id browsed into already
+            // names the library to stay within; one being listed takes it from its parent.
+            var ancestorId = child.AncestorId
+                             ?? (parent is not null && child.Item is IItemByName ? parent.Id : null);
+            if (ancestorIds is not null)
+            {
+                ancestorIds[index] = ancestorId;
+            }
+
             if (!IsWrittenAsContainer(child))
             {
                 continue;
@@ -695,7 +709,7 @@ public class ControlHandler : BaseControlHandler
             else
             {
                 // A stub container has no children of its own, its content has to be listed
-                counts[index] = GetUserItemsWithParts(child.Item, child.StubType, _user, sort, null, null)
+                counts[index] = GetUserItemsWithParts(child.Item, child.StubType, _user, sort, null, null, ancestorId)
                     .TotalRecordCount;
             }
         }
@@ -750,9 +764,10 @@ public class ControlHandler : BaseControlHandler
     /// <param name="sort">The <see cref="SortCriteria"/>.</param>
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
+    /// <param name="ancestorId">The library to scope the listing to, if any.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetUserItemsWithParts(BaseItem item, StubType? stubType, User? user, SortCriteria sort, int? startIndex, int? limit)
-        => ApplyPaging(ExpandStackedVideos(GetUserItems(item, stubType, user, sort, null, null).Items, user), startIndex, limit);
+    private QueryResult<ServerItem> GetUserItemsWithParts(BaseItem item, StubType? stubType, User? user, SortCriteria sort, int? startIndex, int? limit, Guid? ancestorId = null)
+        => ApplyPaging(ExpandStackedVideos(GetUserItems(item, stubType, user, sort, null, null, ancestorId).Items, user), startIndex, limit);
 
     /// <summary>
     /// Returns the search results meeting the criteria, with every stacked (multi-part) video
@@ -1326,13 +1341,15 @@ public class ControlHandler : BaseControlHandler
     /// <param name="sort">The <see cref="SortCriteria"/>.</param>
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
+    /// <param name="ancestorId">The library to scope the artist to, if any.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetMusicArtistItems(BaseItem item, User user, SortCriteria sort, int? startIndex, int? limit)
+    private QueryResult<ServerItem> GetMusicArtistItems(BaseItem item, User user, SortCriteria sort, int? startIndex, int? limit, Guid? ancestorId)
     {
         var query = new InternalItemsQuery(user)
         {
             Recursive = true,
             ArtistIds = [item.Id],
+            AncestorIds = ancestorId.HasValue ? [ancestorId.Value] : [],
             IncludeItemTypes = [BaseItemKind.MusicAlbum],
             Limit = limit,
             StartIndex = startIndex,
@@ -1353,13 +1370,15 @@ public class ControlHandler : BaseControlHandler
     /// <param name="sort">The <see cref="SortCriteria"/>.</param>
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
+    /// <param name="ancestorId">The library to scope the genre to, if any.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetGenreItems(BaseItem item, User user, SortCriteria sort, int? startIndex, int? limit)
+    private QueryResult<ServerItem> GetGenreItems(BaseItem item, User user, SortCriteria sort, int? startIndex, int? limit, Guid? ancestorId)
     {
         var query = new InternalItemsQuery(user)
         {
             Recursive = true,
             GenreIds = [item.Id],
+            AncestorIds = ancestorId.HasValue ? [ancestorId.Value] : [],
             IncludeItemTypes =
             [
                 BaseItemKind.Movie,
@@ -1384,13 +1403,15 @@ public class ControlHandler : BaseControlHandler
     /// <param name="sort">The <see cref="SortCriteria"/>.</param>
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
+    /// <param name="ancestorId">The library to scope the genre to, if any.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetMusicGenreItems(BaseItem item, User user, SortCriteria sort, int? startIndex, int? limit)
+    private QueryResult<ServerItem> GetMusicGenreItems(BaseItem item, User user, SortCriteria sort, int? startIndex, int? limit, Guid? ancestorId)
     {
         var query = new InternalItemsQuery(user)
         {
             Recursive = true,
             GenreIds = [item.Id],
+            AncestorIds = ancestorId.HasValue ? [ancestorId.Value] : [],
             IncludeItemTypes = [BaseItemKind.MusicAlbum],
             Limit = limit,
             StartIndex = startIndex,
@@ -1512,12 +1533,22 @@ public class ControlHandler : BaseControlHandler
             stubType = parsedStubType;
         }
 
+        // An id may carry the library the client browsed in from, so that listings which would
+        // otherwise span every library stay scoped to it. Ids without it keep parsing as before.
+        Guid? ancestorId = null;
+        var ancestorIndex = id.IndexOf('_', StringComparison.Ordinal);
+        if (ancestorIndex != -1 && Guid.TryParse(id.AsSpan(ancestorIndex + 1), out var parsedAncestorId))
+        {
+            ancestorId = parsedAncestorId;
+            id = id[..ancestorIndex];
+        }
+
         if (Guid.TryParse(id, out var itemId))
         {
             var item = _libraryManager.GetItemById(itemId);
             if (item is not null)
             {
-                return new ServerItem(item, stubType);
+                return new ServerItem(item, stubType, ancestorId: ancestorId);
             }
         }
 
