@@ -26,6 +26,11 @@ namespace Rssdp.Infrastructure
         private string _OSVersion;
         private bool _sendOnlyMatchedHost;
 
+        /// <summary>
+        /// The longest a search response is held back for, in milliseconds.
+        /// </summary>
+        private const int MaxSearchResponseDelayMilliseconds = 500;
+
         private bool _SupportPnpRootDevice;
 
         private IList<SsdpRootDevice> _Devices;
@@ -253,8 +258,14 @@ namespace Rssdp.Infrastructure
                 maxWaitInterval = _Random.Next(0, 120);
             }
 
+            // The spec has a device spread its answers across the MX window so that a large network
+            // does not answer a search all at once. A home network has few enough devices for that
+            // to cost only discovery time: with the MX of 5 seconds clients commonly ask for, the
+            // server turns up seconds after everything else. Keep the jitter, cap how far it runs.
+            var maxWaitMilliseconds = Math.Min(maxWaitInterval * 1000, MaxSearchResponseDelayMilliseconds);
+
             // Do not block synchronously as that may tie up a threadpool thread for several seconds.
-            Task.Delay(_Random.Next(16, maxWaitInterval * 1000), cancellationToken).ContinueWith((parentTask) =>
+            Task.Delay(_Random.Next(16, maxWaitMilliseconds), cancellationToken).ContinueWith((parentTask) =>
             {
                 // Copying devices to local array here to avoid threading issues/enumerator exceptions.
                 IEnumerable<SsdpDevice>? devices = null;
