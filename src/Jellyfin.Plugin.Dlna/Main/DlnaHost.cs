@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.Dlna.Configuration;
+using Jellyfin.Plugin.Dlna.Localization;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.PlayTo;
 using Jellyfin.Plugin.Dlna.Ssdp;
@@ -19,7 +20,6 @@ using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Session;
-using MediaBrowser.Model.Globalization;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Rssdp;
@@ -42,7 +42,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
     private readonly IDlnaManager _dlnaManager;
     private readonly IImageProcessor _imageProcessor;
     private readonly IUserDataManager _userDataManager;
-    private readonly ILocalizationManager _localization;
+    private readonly DlnaLocalization _localization;
     private readonly IMediaSourceManager _mediaSourceManager;
     private readonly IMediaEncoder _mediaEncoder;
     private readonly IDeviceDiscovery _deviceDiscovery;
@@ -67,7 +67,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
     /// <param name="dlnaManager">The <see cref="IDlnaManager"/>.</param>
     /// <param name="imageProcessor">The <see cref="IImageProcessor"/>.</param>
     /// <param name="userDataManager">The <see cref="IUserDataManager"/>.</param>
-    /// <param name="localizationManager">The <see cref="ILocalizationManager"/>.</param>
+    /// <param name="localizationManager">The <see cref="DlnaLocalization"/>.</param>
     /// <param name="mediaSourceManager">The <see cref="IMediaSourceManager"/>.</param>
     /// <param name="deviceDiscovery">The <see cref="IDeviceDiscovery"/>.</param>
     /// <param name="mediaEncoder">The <see cref="IMediaEncoder"/>.</param>
@@ -84,7 +84,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
         IDlnaManager dlnaManager,
         IImageProcessor imageProcessor,
         IUserDataManager userDataManager,
-        ILocalizationManager localizationManager,
+        DlnaLocalization localizationManager,
         IMediaSourceManager mediaSourceManager,
         IDeviceDiscovery deviceDiscovery,
         IMediaEncoder mediaEncoder,
