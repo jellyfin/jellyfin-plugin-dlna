@@ -1073,7 +1073,13 @@ public class Device : IDisposable
             return null;
         }
 
-        string url = NormalizeUrl(Properties.BaseUrl, avService.ScpdUrl);
+        bool append_dmr = true;
+        if (Properties.Manufacturer.Contains("xiaomi", StringComparison.OrdinalIgnoreCase))
+        {
+            append_dmr = false;
+        }
+
+        string url = NormalizeUrl(Properties.BaseUrl, avService.ScpdUrl, append_dmr);
 
         var httpClient = new DlnaHttpClient(_logger, _httpClientFactory);
 
@@ -1099,10 +1105,14 @@ public class Device : IDisposable
         var avService = GetServiceRenderingControl();
         ArgumentNullException.ThrowIfNull(avService);
 
-        string url = NormalizeUrl(Properties.BaseUrl, avService.ScpdUrl);
+        bool append_dmr = true;
+        if (Properties.Manufacturer.Contains("xiaomi", StringComparison.OrdinalIgnoreCase))
+        {
+            append_dmr = false;
+        }
+        string url = NormalizeUrl(Properties.BaseUrl, avService.ScpdUrl, append_dmr);
 
         var httpClient = new DlnaHttpClient(_logger, _httpClientFactory);
-        _logger.LogDebug("Dlna Device.GetRenderingProtocolAsync");
         var document = await httpClient.GetDataAsync(url, cancellationToken).ConfigureAwait(false);
         if (document is null)
         {
@@ -1113,7 +1123,7 @@ public class Device : IDisposable
         return RendererCommands;
     }
 
-    private static string NormalizeUrl(string baseUrl, string url)
+    private static string NormalizeUrl(string baseUrl, string url, bool append_dmr = true)
     {
         // If it's already a complete url, don't stick anything onto the front of it
         if (url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
@@ -1121,7 +1131,7 @@ public class Device : IDisposable
             return url;
         }
 
-        if (!url.Contains('/', StringComparison.Ordinal))
+        if (append_dmr && !url.Contains('/', StringComparison.Ordinal))
         {
             url = "/dmr/" + url;
         }
