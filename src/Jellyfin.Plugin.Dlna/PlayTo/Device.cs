@@ -424,6 +424,19 @@ public class Device : IDisposable
         var service = GetAvTransportService() ?? throw new InvalidOperationException("Unable to find service");
         var post = avCommands!.BuildPost(command, service.ServiceType, url, dictionary); // null checked above
 
+        // AVTransport:1 section 2.4.2 defines SetAVTransportURI for the STOPPED and NO_MEDIA_PRESENT states only.
+        // A renderer that is still playing, e.g. because it was stopped from its own remote, answers every
+        // following request with 705 (Transport is locked) until it is stopped.
+        try
+        {
+            await SetStop(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Stopping a transport that is already idle is a no-op that some devices fault on
+            _logger.LogDebug(ex, "{Name} - Stop before SetAVTransportURI failed", Properties.Name);
+        }
+
         await new DlnaHttpClient(_logger, _httpClientFactory)
             .SendCommandAsync(
                 NormalizeUrl(service.ControlUrl),
