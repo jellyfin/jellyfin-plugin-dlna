@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Mime;
 using System.Text;
@@ -20,6 +21,8 @@ namespace Jellyfin.Plugin.Dlna.PlayTo;
 /// </summary>
 public partial class DlnaHttpClient
 {
+    private const int MaxLoggedContentLength = 1024;
+
     private readonly ILogger _logger;
     private readonly IHttpClientFactory _httpClientFactory;
 
@@ -37,10 +40,95 @@ public partial class DlnaHttpClient
     [GeneratedRegex("(&(?![a-z]*;))")]
     private static partial Regex EscapeAmpersandRegex();
 
+    /// <summary>
+    /// Logs what a device answered to a request it refused.
+    /// </summary>
+    /// <remarks>
+    /// The status code alone does not say why a device rejected a command: the reason is in the SOAP fault
+    /// it returns, which would otherwise be dropped with the response.
+    /// </remarks>
+    /// <param name="request">The <see cref="HttpRequestMessage"/> that was refused.</param>
+    /// <param name="response">The <see cref="HttpResponseMessage"/> of the device.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    private async Task LogErrorResponseAsync(HttpRequestMessage request, HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        string content;
+        try
+        {
+            content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(
+                "Device answered {StatusCode} to {Method} {Uri}, the response could not be read: {Message}",
+                (int)response.StatusCode,
+                request.Method,
+                request.RequestUri,
+                ex.Message);
+
+            return;
+        }
+
+        var (errorCode, errorDescription) = GetUPnPError(content);
+        if (errorCode is not null)
+        {
+            _logger.LogWarning(
+                "Device answered {StatusCode} to {Method} {Uri} with UPnP error {ErrorCode}: {ErrorDescription}",
+                (int)response.StatusCode,
+                request.Method,
+                request.RequestUri,
+                errorCode,
+                errorDescription ?? "no description");
+
+            return;
+        }
+
+        _logger.LogWarning(
+            "Device answered {StatusCode} to {Method} {Uri}: {Content}",
+            (int)response.StatusCode,
+            request.Method,
+            request.RequestUri,
+            content.Length > MaxLoggedContentLength ? content[..MaxLoggedContentLength] + "..." : content);
+    }
+
+    /// <summary>
+    /// Gets the UPnP error a device reported in a SOAP fault.
+    /// </summary>
+    /// <param name="content">The response content.</param>
+    /// <returns>The error code and description, both <c>null</c> if the content carries no UPnP error.</returns>
+    private static (string? ErrorCode, string? ErrorDescription) GetUPnPError(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return (null, null);
+        }
+
+        try
+        {
+            var document = XDocument.Parse(content);
+
+            // The fault is wrapped in SOAP envelope and detail elements, so go by name only.
+            var errorCode = document.Descendants().FirstOrDefault(e => string.Equals(e.Name.LocalName, "errorCode", StringComparison.Ordinal))?.Value;
+            var errorDescription = document.Descendants().FirstOrDefault(e => string.Equals(e.Name.LocalName, "errorDescription", StringComparison.Ordinal))?.Value;
+
+            return (errorCode, errorDescription);
+        }
+        catch (XmlException)
+        {
+            return (null, null);
+        }
+    }
+
     private async Task<XDocument?> SendRequestAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var client = _httpClientFactory.CreateClient(NamedClient.Dlna);
         using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            await LogErrorResponseAsync(request, response, cancellationToken).ConfigureAwait(false);
+        }
+
         response.EnsureSuccessStatusCode();
         Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         await using (stream.ConfigureAwait(false))
