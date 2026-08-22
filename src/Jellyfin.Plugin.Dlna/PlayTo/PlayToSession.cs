@@ -55,6 +55,7 @@ public class PlayToSession : ISessionController, IDisposable
     private readonly List<PlaylistItem> _playlist = [];
     private Device _device;
     private int _currentPlaylistIndex;
+    private int _nextTrackIndex = -1;
     private bool _disposed;
 
     /// <summary>
@@ -134,6 +135,8 @@ public class PlayToSession : ISessionController, IDisposable
      */
     private async Task SendNextTrackMessage(int currentPlayListItemIndex, CancellationToken cancellationToken)
     {
+        _nextTrackIndex = -1;
+
         if (currentPlayListItemIndex >= 0 && currentPlayListItemIndex < _playlist.Count - 1)
         {
             // The current playing item is indeed in the play list and we are not yet at the end of the playlist.
@@ -145,8 +148,12 @@ public class PlayToSession : ISessionController, IDisposable
                 return;
             }
 
-            // Send the SetNextAvTransport message.
-            await _device.SetNextAvTransport(nextItem.StreamUrl, GetDlnaHeaders(nextItem), nextItem.Didl, cancellationToken).ConfigureAwait(false);
+            // Send the SetNextAvTransport message. A device that accepts it advances to that track by
+            // itself, which OnDevicePlaybackStopped has to know about to not advance the playlist again.
+            if (await _device.SetNextAvTransport(nextItem.StreamUrl, GetDlnaHeaders(nextItem), nextItem.Didl, cancellationToken).ConfigureAwait(false))
+            {
+                _nextTrackIndex = nextItemIndex;
+            }
         }
     }
 
@@ -258,11 +265,25 @@ public class PlayToSession : ISessionController, IDisposable
 
             if (playedToCompletion)
             {
-                await SetPlaylistIndex(_currentPlaylistIndex + 1).ConfigureAwait(false);
+                var nextIndex = _currentPlaylistIndex + 1;
+
+                // The device was handed this track with SetNextAVTransportURI and moves to it on its own.
+                // Sending it again restarts the track the device is already playing, or skips the one after it.
+                if (_nextTrackIndex == nextIndex)
+                {
+                    _logger.LogDebug(
+                        "{DeviceName} - Not advancing the playlist, the device moves to track {NextIndex} on its own",
+                        _session.DeviceName,
+                        nextIndex);
+
+                    return;
+                }
+
+                await SetPlaylistIndex(nextIndex).ConfigureAwait(false);
             }
             else
             {
-                _playlist.Clear();
+                ClearPlaylist();
             }
         }
         catch (Exception ex)
@@ -486,7 +507,7 @@ public class PlayToSession : ISessionController, IDisposable
         switch (command.Command)
         {
             case PlaystateCommand.Stop:
-                _playlist.Clear();
+                ClearPlaylist();
                 return _device.SetStop(CancellationToken.None);
 
             case PlaystateCommand.Pause:
@@ -711,7 +732,7 @@ public class PlayToSession : ISessionController, IDisposable
     /// <returns><c>true</c> on success.</returns>
     private async Task<bool> PlayItems(IEnumerable<PlaylistItem> items, CancellationToken cancellationToken = default)
     {
-        _playlist.Clear();
+        ClearPlaylist();
         _playlist.AddRange(items);
         _logger.LogDebug("{0} - Playing {1} items", _session.DeviceName, _playlist.Count);
 
@@ -719,11 +740,17 @@ public class PlayToSession : ISessionController, IDisposable
         return true;
     }
 
+    private void ClearPlaylist()
+    {
+        _playlist.Clear();
+        _nextTrackIndex = -1;
+    }
+
     private async Task SetPlaylistIndex(int index, CancellationToken cancellationToken = default)
     {
         if (index < 0 || index >= _playlist.Count)
         {
-            _playlist.Clear();
+            ClearPlaylist();
             await _device.SetStop(cancellationToken).ConfigureAwait(false);
             return;
         }

@@ -473,8 +473,8 @@ public class Device : IDisposable
     /// SetNextAvTransport is used to specify to the DLNA device what is the next track to play.
     /// Without that information, the next track command on the device does not work.
     /// </remarks>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task SetNextAvTransport(string url, string? header, string metaData, CancellationToken cancellationToken = default)
+    /// <returns><c>true</c> if the device was told about the next track; otherwise, <c>false</c>.</returns>
+    public async Task<bool> SetNextAvTransport(string url, string? header, string metaData, CancellationToken cancellationToken = default)
     {
         var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
 
@@ -485,7 +485,7 @@ public class Device : IDisposable
         var command = avCommands?.ServiceActions.FirstOrDefault(c => string.Equals(c.Name, "SetNextAVTransportURI", StringComparison.OrdinalIgnoreCase));
         if (command is null)
         {
-            return;
+            return false;
         }
 
         var dictionary = new Dictionary<string, string>
@@ -499,6 +499,8 @@ public class Device : IDisposable
         await new DlnaHttpClient(_logger, _httpClientFactory)
             .SendCommandAsync(NormalizeUrl(service.ControlUrl), service, command.Name, post, header, cancellationToken)
             .ConfigureAwait(false);
+
+        return true;
     }
 
     private static string CreateDidlMeta(string value)
