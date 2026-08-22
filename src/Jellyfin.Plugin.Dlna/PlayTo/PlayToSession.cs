@@ -443,16 +443,6 @@ public class PlayToSession : ISessionController, IDisposable
 
         _logger.LogDebug("{0} - Playlist created", _session.DeviceName);
 
-        if (command.PlayCommand == PlayCommand.PlayLast)
-        {
-            _playlist.AddRange(playlist);
-        }
-
-        if (command.PlayCommand == PlayCommand.PlayNext)
-        {
-            _playlist.AddRange(playlist);
-        }
-
         if (!command.ControllingUserId.IsEmpty())
         {
             _sessionManager.LogSessionActivity(
@@ -462,6 +452,30 @@ public class PlayToSession : ISessionController, IDisposable
                 _session.DeviceName,
                 _session.RemoteEndPoint,
                 user);
+        }
+
+        // Queueing only applies while there is a playlist to queue onto, an empty one just starts playing
+        if (_playlist.Count > 0
+            && (command.PlayCommand == PlayCommand.PlayLast || command.PlayCommand == PlayCommand.PlayNext))
+        {
+            if (command.PlayCommand == PlayCommand.PlayLast)
+            {
+                _playlist.AddRange(playlist);
+            }
+            else
+            {
+                _playlist.InsertRange(Math.Clamp(_currentPlaylistIndex + 1, 0, _playlist.Count), playlist);
+            }
+
+            _logger.LogDebug(
+                "{DeviceName} - {PlayCommand} queued {Count} items, playlist holds {Total}",
+                _session.DeviceName,
+                command.PlayCommand,
+                playlist.Length,
+                _playlist.Count);
+
+            // The item following the one that is playing may have changed, so tell the device about it again
+            return SendNextTrackMessage(_currentPlaylistIndex, cancellationToken);
         }
 
         return PlayItems(playlist, cancellationToken);
