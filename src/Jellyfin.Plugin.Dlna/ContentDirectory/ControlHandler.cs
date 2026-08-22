@@ -586,7 +586,6 @@ public class ControlHandler : BaseControlHandler
 
         if (stubType.HasValue && stubType.Value != StubType.Folder)
         {
-            // TODO should this be doing something?
             return new QueryResult<ServerItem>();
         }
 
@@ -877,14 +876,114 @@ public class ControlHandler : BaseControlHandler
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
     private QueryResult<ServerItem> GetChildrenOfItem(BaseItem parent, InternalItemsQuery query, BaseItemKind itemType, bool isFavorite = false)
     {
+        if (itemType == BaseItemKind.MusicAlbum && parent is Folder folder)
+        {
+            return GetMusicAlbumChildren(folder, query, isFavorite);
+        }
+
         query.Recursive = true;
-        query.Parent = parent;
-        query.IsFavorite = isFavorite;
+        query.IsFavorite = isFavorite ? true : null;
         query.IncludeItemTypes = [itemType];
+        query.Parent = parent;
 
         var result = _libraryManager.GetItemsResult(query);
 
         return ToResult(query.StartIndex, result);
+    }
+
+    private QueryResult<ServerItem> GetMusicAlbumChildren(Folder parent, InternalItemsQuery sourceQuery, bool isFavorite)
+    {
+        var primaryQuery = CreateChildItemsQuery(sourceQuery, BaseItemKind.MusicAlbum, isFavorite);
+        var primaryResult = parent.GetItems(primaryQuery);
+
+        if (primaryResult.TotalRecordCount > 0)
+        {
+            return ToResult(primaryQuery.StartIndex, primaryResult);
+        }
+
+        if (sourceQuery.User is not null)
+        {
+            var aggregateResult = GetMusicAlbumChildrenFromLibraryFolders(parent, sourceQuery, isFavorite);
+            if (aggregateResult.TotalRecordCount > 0)
+            {
+                return aggregateResult;
+            }
+        }
+
+        var libraryParentQuery = CreateChildItemsQuery(sourceQuery, BaseItemKind.MusicAlbum, isFavorite);
+        libraryParentQuery.Parent = parent;
+        var libraryParentResult = _libraryManager.GetItemsResult(libraryParentQuery);
+
+        if (libraryParentResult.TotalRecordCount > 0)
+        {
+            return ToResult(libraryParentQuery.StartIndex, libraryParentResult);
+        }
+
+        var ancestorQuery = CreateChildItemsQuery(sourceQuery, BaseItemKind.MusicAlbum, isFavorite);
+        ancestorQuery.AncestorIds = [parent.Id];
+        var ancestorResult = _libraryManager.GetItemsResult(ancestorQuery);
+
+        if (ancestorResult.TotalRecordCount > 0)
+        {
+            return ToResult(ancestorQuery.StartIndex, ancestorResult);
+        }
+
+        return ToResult(primaryQuery.StartIndex, primaryResult);
+    }
+
+    private QueryResult<ServerItem> GetMusicAlbumChildrenFromLibraryFolders(Folder parent, InternalItemsQuery sourceQuery, bool isFavorite)
+    {
+        var user = sourceQuery.User;
+        ArgumentNullException.ThrowIfNull(user);
+
+        List<BaseItem> libraryFolders;
+        if (parent is CollectionFolder collectionFolder)
+        {
+            var foldersFromIds = collectionFolder.PhysicalFolderIds
+                .Select(_libraryManager.GetItemById)
+                .OfType<Folder>();
+
+            var foldersFromPaths = collectionFolder.PhysicalLocationsList
+                .Select(path => _libraryManager.FindByPath(path, true))
+                .OfType<Folder>();
+
+            libraryFolders = foldersFromIds
+                .Concat(foldersFromPaths)
+                .Cast<BaseItem>()
+                .DistinctBy(i => i.Id)
+                .ToList();
+        }
+        else
+        {
+            libraryFolders = parent.GetChildren(user, true)
+                .OfType<Folder>()
+                .Cast<BaseItem>()
+                .DistinctBy(i => i.Id)
+                .ToList();
+        }
+
+        if (libraryFolders.Count == 0)
+        {
+            return new QueryResult<ServerItem>(sourceQuery.StartIndex, 0, []);
+        }
+
+        var allItemsQuery = CreateChildItemsQuery(sourceQuery, BaseItemKind.MusicAlbum, isFavorite);
+        allItemsQuery.StartIndex = null;
+        allItemsQuery.Limit = null;
+
+        var allItems = _libraryManager.GetItemList(allItemsQuery, libraryFolders);
+        var totalCount = allItems.Count;
+
+        var pagedItems = allItems
+            .Skip(sourceQuery.StartIndex ?? 0)
+            .Take(sourceQuery.Limit ?? totalCount)
+            .Select(i => new ServerItem(i, null))
+            .ToArray();
+
+        return new QueryResult<ServerItem>(
+            sourceQuery.StartIndex,
+            totalCount,
+            pagedItems);
     }
 
     /// <summary>
@@ -1211,9 +1310,11 @@ public class ControlHandler : BaseControlHandler
     /// <returns>The <see cref="ServerItem"/>.</returns>
     private ServerItem GetItemFromObjectId(string id)
     {
-        return DidlBuilder.IsIdRoot(id)
+        var serverItem = DidlBuilder.IsIdRoot(id)
             ? new ServerItem(_libraryManager.GetUserRootFolder(), null)
             : ParseItemId(id);
+
+        return serverItem;
     }
 
     /// <summary>
@@ -1282,5 +1383,31 @@ public class ControlHandler : BaseControlHandler
         }
 
         return serverItems;
+    }
+
+    private static InternalItemsQuery CreateChildItemsQuery(InternalItemsQuery sourceQuery, BaseItemKind itemType, bool isFavorite)
+    {
+        return new InternalItemsQuery(sourceQuery.User)
+        {
+            StartIndex = sourceQuery.StartIndex,
+            Limit = sourceQuery.Limit,
+            OrderBy = sourceQuery.OrderBy.ToArray(),
+            DtoOptions = sourceQuery.DtoOptions,
+            Recursive = true,
+            IsFavorite = isFavorite ? true : null,
+            IncludeItemTypes = [itemType],
+            GroupByPresentationUniqueKey = sourceQuery.GroupByPresentationUniqueKey,
+            IncludeItemsByName = sourceQuery.IncludeItemsByName,
+            DisplayAlbumFolders = sourceQuery.DisplayAlbumFolders,
+            IsFolder = sourceQuery.IsFolder,
+            IsVirtualItem = sourceQuery.IsVirtualItem,
+            IsPlaceHolder = sourceQuery.IsPlaceHolder,
+            IsMissing = sourceQuery.IsMissing,
+            NameStartsWith = sourceQuery.NameStartsWith,
+            NameStartsWithOrGreater = sourceQuery.NameStartsWithOrGreater,
+            NameLessThan = sourceQuery.NameLessThan,
+            NameContains = sourceQuery.NameContains,
+            EnableTotalRecordCount = sourceQuery.EnableTotalRecordCount
+        };
     }
 }
