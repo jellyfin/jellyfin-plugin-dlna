@@ -239,7 +239,7 @@ public class DidlBuilder
             }
         }
 
-        AddCover(item, null, writer);
+        AddCover(item, null, writer, false);
         writer.WriteFullEndElement();
     }
 
@@ -754,7 +754,7 @@ public class DidlBuilder
 
         AddGeneralProperties(folder, stubType, context, writer, filter);
 
-        AddCover(folder, stubType, writer);
+        AddCover(folder, stubType, writer, true);
 
         writer.WriteFullEndElement();
     }
@@ -1052,7 +1052,7 @@ public class DidlBuilder
         }
     }
 
-    private void AddCover(BaseItem item, StubType? stubType, XmlWriter writer)
+    private void AddCover(BaseItem item, StubType? stubType, XmlWriter writer, bool isContainer)
     {
         ImageDownloadInfo? imageInfo = GetImageInfo(item);
 
@@ -1084,6 +1084,11 @@ public class DidlBuilder
             _profile.MaxIconHeight ?? 48,
             "jpg");
         writer.WriteElementString("upnp", "icon", NsUpnp, iconUrlInfo.Url);
+
+        if (isContainer)
+        {
+            return;
+        }
 
         if (!_profile.EnableAlbumArtInDidl)
         {
