@@ -19,6 +19,7 @@ using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
+using MediaBrowser.Model.MediaInfo;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
@@ -107,6 +108,10 @@ public static class StreamingHelpers
         {
             state.User = userManager.GetUserById(userId);
         }
+        else
+        {
+            state.User = GetDefaultDlnaUser(userManager);
+        }
 
         if (state.IsVideoRequest && !string.IsNullOrWhiteSpace(state.Request.VideoCodec))
         {
@@ -146,13 +151,21 @@ public static class StreamingHelpers
 
             if (mediaSource is null)
             {
-                var mediaSources = await mediaSourceManager.GetPlaybackMediaSources(libraryManager.GetItemById(streamingRequest.Id), null, false, false, cancellationToken).ConfigureAwait(false);
+                var mediaSources = await mediaSourceManager.GetPlaybackMediaSources(
+                    libraryManager.GetItemById(streamingRequest.Id),
+                    state.User,
+                    false,
+                    false,
+                    cancellationToken).ConfigureAwait(false);
 
                 mediaSource = string.IsNullOrEmpty(streamingRequest.MediaSourceId)
                     ? mediaSources[0]
-                    : mediaSources.First(i => string.Equals(i.Id, streamingRequest.MediaSourceId, StringComparison.Ordinal));
+                    : mediaSources.FirstOrDefault(i => string.Equals(i.Id, streamingRequest.MediaSourceId, StringComparison.Ordinal));
 
-                if (mediaSource is null && Guid.Parse(streamingRequest.MediaSourceId).Equals(streamingRequest.Id))
+                if (mediaSource is null
+                    && !string.IsNullOrEmpty(streamingRequest.MediaSourceId)
+                    && Guid.TryParse(streamingRequest.MediaSourceId, out var mediaSourceGuid)
+                    && mediaSourceGuid.Equals(streamingRequest.Id))
                 {
                     mediaSource = mediaSources[0];
                 }
@@ -165,15 +178,50 @@ public static class StreamingHelpers
             state.DirectStreamProvider = liveStreamInfo.Item2;
         }
 
+        // Many DLNA clients do not call /LiveStreams/Open before playback. Open the tuner
+        // here so MediaPath points at LiveStreamFiles/... instead of the placeholder LAN base URL.
+        if (mediaSource is not null
+            && mediaSource.RequiresOpening
+            && string.IsNullOrWhiteSpace(streamingRequest.LiveStreamId)
+            && string.IsNullOrWhiteSpace(mediaSource.LiveStreamId)
+            && !string.IsNullOrWhiteSpace(mediaSource.OpenToken))
+        {
+            var liveStreamRequest = new LiveStreamRequest
+            {
+                OpenToken = mediaSource.OpenToken,
+                ItemId = streamingRequest.Id
+            };
+
+            if (state.User is not null)
+            {
+                liveStreamRequest.UserId = state.User.Id;
+            }
+
+            var openResult = await mediaSourceManager.OpenLiveStreamInternal(liveStreamRequest, cancellationToken)
+                .ConfigureAwait(false);
+            mediaSource = openResult.Item1.MediaSource;
+            state.DirectStreamProvider = openResult.Item2;
+            streamingRequest.LiveStreamId = mediaSource.LiveStreamId;
+        }
+
         var encodingOptions = serverConfigurationManager.GetEncodingOptions();
 
         encodingHelper.AttachMediaSourceInfo(state, encodingOptions, mediaSource, url);
+
+        DlnaStreamRequestAdjustments.CapLiveStreamTranscodeResolution(state, mediaSource);
 
         string? containerInternal = Path.GetExtension(state.RequestedUrl);
 
         if (!string.IsNullOrEmpty(streamingRequest.Container))
         {
             containerInternal = streamingRequest.Container;
+        }
+
+        if (string.IsNullOrEmpty(containerInternal)
+            && (!string.IsNullOrWhiteSpace(streamingRequest.LiveStreamId)
+                || (mediaSource?.IsInfiniteStream ?? false)))
+        {
+            containerInternal = ".ts";
         }
 
         if (string.IsNullOrEmpty(containerInternal))
@@ -839,5 +887,16 @@ public static class StreamingHelpers
                     break;
             }
         }
+    }
+
+    private static Jellyfin.Database.Implementations.Entities.User? GetDefaultDlnaUser(IUserManager userManager)
+    {
+        var defaultUserId = DlnaPluginConfigurationAccessor.DefaultUserId;
+        if (defaultUserId is null || defaultUserId.Value.Equals(default))
+        {
+            return null;
+        }
+
+        return userManager.GetUserById(defaultUserId.Value);
     }
 }
