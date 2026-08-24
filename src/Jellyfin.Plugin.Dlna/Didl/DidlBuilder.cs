@@ -9,6 +9,7 @@ using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Plugin.Dlna.ContentDirectory;
 using Jellyfin.Plugin.Dlna.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
+using Jellyfin.Plugin.Dlna.Playback;
 using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Entities;
@@ -245,14 +246,19 @@ public class DidlBuilder
         {
             var sources = _mediaSourceManager.GetStaticMediaSources(video, true, _user);
 
+            var mediaSources = sources.ToArray();
+            var browseMediaSource = mediaSources.FirstOrDefault(s => s.IsInfiniteStream) ?? mediaSources.FirstOrDefault();
+
             streamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalVideoStream(new MediaOptions
             {
                 ItemId = video.Id,
-                MediaSources = sources.ToArray(),
+                MediaSources = mediaSources,
                 Profile = _profile,
                 DeviceId = deviceId,
                 MaxBitrate = _profile.MaxStreamingBitrate
             }) ?? throw new InvalidOperationException("No optimal video stream found");
+
+            DlnaStreamRequestAdjustments.ApplyBrowseSubtitlePreferences(streamInfo, browseMediaSource);
         }
 
         var targetWidth = streamInfo.TargetWidth;
@@ -290,6 +296,11 @@ public class DidlBuilder
         foreach (var contentFeature in contentFeatureList)
         {
             AddVideoResource(writer, filter, contentFeature, streamInfo);
+        }
+
+        if (!DlnaPluginConfigurationAccessor.EnableSubtitleBurnIn)
+        {
+            return;
         }
 
         var subtitleProfiles = streamInfo.GetSubtitleProfiles(_mediaEncoder, false, _serverAddress, _accessToken);
