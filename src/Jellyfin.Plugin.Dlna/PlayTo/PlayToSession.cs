@@ -931,16 +931,33 @@ public class PlayToSession : ISessionController, IDisposable
         }
     }
 
+    /// <summary>
+    /// Waits for the renderer to start playing what was just set as its transport, then seeks to the requested position.
+    /// </summary>
+    /// <param name="positionTicks">The position to seek to.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     private async Task SeekAfterTransportChange(long positionTicks, CancellationToken cancellationToken)
     {
-        const int MaxWait = 15000000;
-        const int Interval = 500;
+        var maxWait = TimeSpan.FromSeconds(15);
+        var interval = TimeSpan.FromMilliseconds(500);
 
-        var currentWait = 0;
-        while (_device.TransportState != TransportState.PLAYING && currentWait < MaxWait)
+        var waited = TimeSpan.Zero;
+        while (_device.TransportState != TransportState.PLAYING)
         {
-            await Task.Delay(Interval, cancellationToken).ConfigureAwait(false);
-            currentWait += Interval;
+            if (waited >= maxWait)
+            {
+                _logger.LogWarning(
+                    "{DeviceName} did not start playing within {Seconds}s of the transport change, not seeking to {Position}",
+                    _session.DeviceName,
+                    maxWait.TotalSeconds,
+                    TimeSpan.FromTicks(positionTicks));
+
+                return;
+            }
+
+            await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
+            waited += interval;
         }
 
         await _device.Seek(TimeSpan.FromTicks(positionTicks), cancellationToken).ConfigureAwait(false);
