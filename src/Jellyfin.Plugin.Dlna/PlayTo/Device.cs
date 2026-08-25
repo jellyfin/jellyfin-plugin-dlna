@@ -79,11 +79,7 @@ public class Device : IDisposable
     /// </summary>
     public int Volume
     {
-        get
-        {
-            RefreshVolumeIfNeeded().GetAwaiter().GetResult();
-            return _volume;
-        }
+        get => _volume;
 
         set => _volume = value;
     }
@@ -616,6 +612,8 @@ public class Device : IDisposable
         try
         {
             var cancellationToken = CancellationToken.None;
+
+            await RefreshVolumeIfNeeded().ConfigureAwait(false);
 
             var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
 
