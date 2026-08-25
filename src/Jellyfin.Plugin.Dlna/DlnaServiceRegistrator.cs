@@ -29,6 +29,8 @@ public class DlnaServiceRegistrator : IPluginServiceRegistrator
     {
         serviceCollection.AddHttpClient(NamedClient.Dlna, c =>
             {
+                c.Timeout = TimeSpan.FromSeconds(30);
+
                 c.DefaultRequestHeaders.UserAgent.ParseAdd(
                     string.Format(
                         CultureInfo.InvariantCulture,

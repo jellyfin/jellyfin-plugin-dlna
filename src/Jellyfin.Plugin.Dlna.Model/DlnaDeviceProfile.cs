@@ -173,7 +173,7 @@ public class DlnaDeviceProfile : DeviceProfile
     public MediaType[] FetchSupportedMediaTypes()
     {
         return ContainerHelper.Split(SupportedMediaTypes)
-            .Select(m => Enum.TryParse<MediaType>(m, out var parsed) ? parsed : MediaType.Unknown)
+            .Select(m => Enum.TryParse<MediaType>(m, true, out var parsed) ? parsed : MediaType.Unknown)
             .Where(m => m != MediaType.Unknown)
             .ToArray();
     }
