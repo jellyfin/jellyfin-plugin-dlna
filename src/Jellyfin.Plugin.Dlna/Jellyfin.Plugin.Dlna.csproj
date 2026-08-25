@@ -23,6 +23,7 @@
       <EmbeddedResource Include="Configuration\config.js" />
       <EmbeddedResource Include="Images\*.jpg" />
       <EmbeddedResource Include="Images\*.png" />
+      <EmbeddedResource Include="Localization\*.json" />
       <EmbeddedResource Include="Profiles\Xml\*.xml" />
     </ItemGroup>
 

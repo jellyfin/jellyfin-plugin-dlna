@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.Dlna.Configuration;
+using Jellyfin.Plugin.Dlna.Localization;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.PlayTo;
 using Jellyfin.Plugin.Dlna.Ssdp;
@@ -19,7 +20,6 @@ using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Session;
-using MediaBrowser.Model.Globalization;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Rssdp;
@@ -42,7 +42,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
     private readonly IDlnaManager _dlnaManager;
     private readonly IImageProcessor _imageProcessor;
     private readonly IUserDataManager _userDataManager;
-    private readonly ILocalizationManager _localization;
+    private readonly DlnaLocalization _localization;
     private readonly IMediaSourceManager _mediaSourceManager;
     private readonly IMediaEncoder _mediaEncoder;
     private readonly IDeviceDiscovery _deviceDiscovery;
@@ -67,7 +67,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
     /// <param name="dlnaManager">The <see cref="IDlnaManager"/>.</param>
     /// <param name="imageProcessor">The <see cref="IImageProcessor"/>.</param>
     /// <param name="userDataManager">The <see cref="IUserDataManager"/>.</param>
-    /// <param name="localizationManager">The <see cref="ILocalizationManager"/>.</param>
+    /// <param name="localizationManager">The <see cref="DlnaLocalization"/>.</param>
     /// <param name="mediaSourceManager">The <see cref="IMediaSourceManager"/>.</param>
     /// <param name="deviceDiscovery">The <see cref="IDeviceDiscovery"/>.</param>
     /// <param name="mediaEncoder">The <see cref="IMediaEncoder"/>.</param>
@@ -84,7 +84,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
         IDlnaManager dlnaManager,
         IImageProcessor imageProcessor,
         IUserDataManager userDataManager,
-        ILocalizationManager localizationManager,
+        DlnaLocalization localizationManager,
         IMediaSourceManager mediaSourceManager,
         IDeviceDiscovery deviceDiscovery,
         IMediaEncoder mediaEncoder,
@@ -127,11 +127,24 @@ public sealed class DlnaHost : IHostedService, IDisposable
     }
 
     /// <inheritdoc />
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
-        Stop();
+        _config.NamedConfigurationUpdated -= OnNamedConfigurationUpdated;
 
-        return Task.CompletedTask;
+        var publisher = _publisher;
+        if (publisher is not null)
+        {
+            try
+            {
+                await publisher.StopAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error announcing the shutdown of the DLNA server");
+            }
+        }
+
+        Stop();
     }
 
     /// <inheritdoc />
@@ -185,7 +198,7 @@ public sealed class DlnaHost : IHostedService, IDisposable
             .Replace(":1", string.Empty, StringComparison.OrdinalIgnoreCase)
             .Split(':');
 
-        device.DeviceTypeNamespace = serviceParts[0].Replace('.', '-');
+        device.DeviceTypeNamespace = serviceParts[0];
         device.DeviceClass = serviceParts[1];
         device.DeviceType = serviceParts[2];
     }
@@ -246,7 +259,6 @@ public sealed class DlnaHost : IHostedService, IDisposable
         // IPv6 is currently unsupported
         var validInterfaces = _networkManager.GetInternalBindAddresses()
             .Where(x => x.Address is not null)
-            .Where(x => x.AddressFamily != AddressFamily.InterNetworkV6)
             .Where(x => x.AddressFamily == AddressFamily.InterNetwork)
             .Where(x => x.SupportsMulticast)
             .Where(x => !x.Address.Equals(IPAddress.Loopback))
@@ -256,17 +268,25 @@ public sealed class DlnaHost : IHostedService, IDisposable
 
         if (validInterfaces.Count == 0)
         {
-            // No interfaces returned, fall back to loopback
-            validInterfaces = _networkManager.GetLoopbacks().ToList();
+            // No interfaces returned, fall back to loopback.
+            // As IPv6 is unsupported, the IPv6 loopback is of no use here either.
+            validInterfaces = _networkManager.GetLoopbacks()
+                .Where(x => x.AddressFamily == AddressFamily.InterNetwork)
+                .ToList();
+
+            if (validInterfaces.Count == 0)
+            {
+                _logger.LogWarning("Found no usable IPv4 interface, not registering any server endpoint");
+                return;
+            }
         }
 
         foreach (var intf in validInterfaces)
         {
             var fullService = "urn:schemas-upnp-org:device:MediaServer:1";
 
-            var uri = new UriBuilder(intf.Address + descriptorUri);
-            uri.Scheme = "http://";
-            uri.Port = httpBindPort;
+            // Build the URI from its parts, so that the host is escaped correctly
+            var uri = new UriBuilder("http", intf.Address.ToString(), httpBindPort, descriptorUri);
 
             _logger.LogInformation("Registering publisher for {ResourceName} on {DeviceAddress} with uri {FullUri}", fullService, intf.Address, uri);
 
@@ -290,7 +310,9 @@ public sealed class DlnaHost : IHostedService, IDisposable
             {
                 "urn:schemas-upnp-org:service:ContentDirectory:1",
                 "urn:schemas-upnp-org:service:ConnectionManager:1",
-                // "urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1"
+
+                // Windows looks for this service to treat the server as a media source
+                "urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1"
             };
 
             foreach (var subDevice in embeddedDevices)

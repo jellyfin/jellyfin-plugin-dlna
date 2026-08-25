@@ -8,6 +8,7 @@ using Jellyfin.Data.Enums;
 using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Plugin.Dlna.ContentDirectory;
 using Jellyfin.Plugin.Dlna.Extensions;
+using Jellyfin.Plugin.Dlna.Localization;
 using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Drawing;
@@ -19,7 +20,6 @@ using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Playlists;
 using MediaBrowser.Model.Drawing;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.Net;
 using Microsoft.Extensions.Logging;
 using Episode = MediaBrowser.Controller.Entities.TV.Episode;
@@ -53,7 +53,7 @@ public class DidlBuilder
     private readonly string? _accessToken;
     private readonly User? _user;
     private readonly IUserDataManager _userDataManager;
-    private readonly ILocalizationManager _localization;
+    private readonly DlnaLocalization _localization;
     private readonly IMediaSourceManager _mediaSourceManager;
     private readonly ILogger _logger;
     private readonly IMediaEncoder _mediaEncoder;
@@ -68,7 +68,7 @@ public class DidlBuilder
     /// <param name="serverAddress">The server address.</param>
     /// <param name="accessToken">The access token.</param>
     /// <param name="userDataManager">Instance of the <see cref="IUserDataManager"/> interface.</param>
-    /// <param name="localization">Instance of the <see cref="ILocalizationManager"/> interface.</param>
+    /// <param name="localization">Instance of the <see cref="DlnaLocalization"/> class.</param>
     /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
     /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
     /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
@@ -80,7 +80,7 @@ public class DidlBuilder
         string serverAddress,
         string? accessToken,
         IUserDataManager userDataManager,
-        ILocalizationManager localization,
+        DlnaLocalization localization,
         IMediaSourceManager mediaSourceManager,
         ILogger logger,
         IMediaEncoder mediaEncoder,
@@ -239,7 +239,7 @@ public class DidlBuilder
             }
         }
 
-        AddCover(item, null, writer);
+        AddCover(item, null, writer, false);
         writer.WriteFullEndElement();
     }
 
@@ -715,7 +715,8 @@ public class DidlBuilder
     /// <param name="childCount">The child count.</param>
     /// <param name="filter">The <see cref="Filter"/>.</param>
     /// <param name="requestedId">The request id.</param>
-    public void WriteFolderElement(XmlWriter writer, BaseItem folder, StubType? stubType, BaseItem? context, int childCount, Filter filter, string? requestedId = null)
+    /// <param name="ancestorId">The library to scope the folder to, if any.</param>
+    public void WriteFolderElement(XmlWriter writer, BaseItem folder, StubType? stubType, BaseItem? context, int childCount, Filter filter, string? requestedId = null, Guid? ancestorId = null)
     {
         writer.WriteStartElement(string.Empty, "container", NsDidl);
 
@@ -723,7 +724,7 @@ public class DidlBuilder
         writer.WriteAttributeString("searchable", "1");
         writer.WriteAttributeString("childCount", childCount.ToString(CultureInfo.InvariantCulture));
 
-        var clientId = GetClientId(folder, stubType);
+        var clientId = GetClientId(folder, stubType, ancestorId);
 
         if (string.Equals(requestedId, "0", StringComparison.Ordinal))
         {
@@ -754,7 +755,7 @@ public class DidlBuilder
 
         AddGeneralProperties(folder, stubType, context, writer, filter);
 
-        AddCover(folder, stubType, writer);
+        AddCover(folder, stubType, writer, true);
 
         writer.WriteFullEndElement();
     }
@@ -962,7 +963,8 @@ public class DidlBuilder
             new InternalPeopleQuery
             {
                 ItemId = item.Id,
-                Limit = 6
+                Limit = 6,
+                EnableTotalRecordCount = false
             });
 
         foreach (var actor in people)
@@ -1051,7 +1053,7 @@ public class DidlBuilder
         }
     }
 
-    private void AddCover(BaseItem item, StubType? stubType, XmlWriter writer)
+    private void AddCover(BaseItem item, StubType? stubType, XmlWriter writer, bool isContainer)
     {
         ImageDownloadInfo? imageInfo = GetImageInfo(item);
 
@@ -1083,6 +1085,11 @@ public class DidlBuilder
             _profile.MaxIconHeight ?? 48,
             "jpg");
         writer.WriteElementString("upnp", "icon", NsUpnp, iconUrlInfo.Url);
+
+        if (isContainer)
+        {
+            return;
+        }
 
         if (!_profile.EnableAlbumArtInDidl)
         {
@@ -1279,10 +1286,11 @@ public class DidlBuilder
     /// </summary>
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="stubType">Current <see cref="StubType"/>.</param>
+    /// <param name="ancestorId">The library to scope the item to, if any.</param>
     /// <returns>The client id.</returns>
-    public static string GetClientId(BaseItem item, StubType? stubType)
+    public static string GetClientId(BaseItem item, StubType? stubType, Guid? ancestorId = null)
     {
-        return GetClientId(item.Id, stubType);
+        return GetClientId(item.Id, stubType, ancestorId);
     }
 
     /// <summary>
@@ -1290,14 +1298,20 @@ public class DidlBuilder
     /// </summary>
     /// <param name="idValue">The <see cref="Guid"/>.</param>
     /// <param name="stubType">Current <see cref="StubType"/>.</param>
+    /// <param name="ancestorId">The library to scope the item to, if any.</param>
     /// <returns>The client id.</returns>
-    public static string GetClientId(Guid idValue, StubType? stubType)
+    public static string GetClientId(Guid idValue, StubType? stubType, Guid? ancestorId = null)
     {
         var id = idValue.ToString("N", CultureInfo.InvariantCulture);
 
         if (stubType.HasValue)
         {
             id = stubType.Value.ToString().ToLowerInvariant() + "_" + id;
+        }
+
+        if (ancestorId.HasValue)
+        {
+            id += "_" + ancestorId.Value.ToString("N", CultureInfo.InvariantCulture);
         }
 
         return id;

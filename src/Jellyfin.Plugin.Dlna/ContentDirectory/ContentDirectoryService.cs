@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Jellyfin.Data;
 using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Database.Implementations.Enums;
+using Jellyfin.Plugin.Dlna.Localization;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Service;
 using MediaBrowser.Controller.Drawing;
@@ -12,7 +13,6 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.TV;
 using MediaBrowser.Model.Dlna;
-using MediaBrowser.Model.Globalization;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Dlna.ContentDirectory;
@@ -27,7 +27,7 @@ public class ContentDirectoryService : BaseService, IContentDirectory
     private readonly IUserDataManager _userDataManager;
     private readonly IDlnaManager _dlna;
     private readonly IUserManager _userManager;
-    private readonly ILocalizationManager _localization;
+    private readonly DlnaLocalization _localization;
     private readonly IMediaSourceManager _mediaSourceManager;
     private readonly IUserViewManager _userViewManager;
     private readonly IMediaEncoder _mediaEncoder;
@@ -43,7 +43,7 @@ public class ContentDirectoryService : BaseService, IContentDirectory
     /// <param name="userManager">The <see cref="IUserManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
     /// <param name="logger">The <see cref="ILogger{ContentDirectoryService}"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
     /// <param name="httpClient">The <see cref="IHttpClientFactory"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
-    /// <param name="localization">The <see cref="ILocalizationManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
+    /// <param name="localization">The <see cref="DlnaLocalization"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
     /// <param name="mediaSourceManager">The <see cref="IMediaSourceManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
     /// <param name="userViewManager">The <see cref="IUserViewManager"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
     /// <param name="mediaEncoder">The <see cref="IMediaEncoder"/> to use in the <see cref="ContentDirectoryService"/> instance.</param>
@@ -56,7 +56,7 @@ public class ContentDirectoryService : BaseService, IContentDirectory
         IUserManager userManager,
         ILogger<ContentDirectoryService> logger,
         IHttpClientFactory httpClient,
-        ILocalizationManager localization,
+        DlnaLocalization localization,
         IMediaSourceManager mediaSourceManager,
         IUserViewManager userViewManager,
         IMediaEncoder mediaEncoder,

@@ -172,7 +172,11 @@ namespace Rssdp.Infrastructure
                 var tasks = sockets.Select(s => SendFromSocket(s, messageData, destination, cancellationToken)).ToArray();
                 await Task.WhenAll(tasks).ConfigureAwait(false);
 
-                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                // Space the repeats out, but do not wait after the last one - nothing follows it.
+                if (i < SsdpConstants.UdpResendCount - 1)
+                {
+                    await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                }
             }
         }
 
@@ -188,12 +192,24 @@ namespace Rssdp.Infrastructure
             catch (OperationCanceledException)
             {
             }
+            catch (SocketException ex) when (IsTransientSendError(ex.SocketErrorCode))
+            {
+                var localIP = (socket.LocalEndPoint as IPEndPoint)?.Address;
+                _logger.LogDebug(ex, "Unable to send socket message from {0} to {1}", localIP?.ToString(), destination.ToString());
+            }
             catch (Exception ex)
             {
                 var localIP = (socket.LocalEndPoint as IPEndPoint)?.Address;
                 _logger.LogError(ex, "Error sending socket message from {0} to {1}", localIP?.ToString(), destination.ToString());
             }
         }
+
+        private static bool IsTransientSendError(SocketError error)
+            => error is SocketError.HostUnreachable
+                or SocketError.HostDown
+                or SocketError.NetworkUnreachable
+                or SocketError.NetworkDown
+                or SocketError.NetworkReset;
 
         private List<Socket> GetSendSockets(IPAddress fromlocalIPAddress, IPEndPoint destination)
         {
@@ -280,7 +296,11 @@ namespace Rssdp.Infrastructure
                     fromLocalIPAddress,
                     cancellationToken).ConfigureAwait(false);
 
-                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                // Space the repeats out, but do not wait after the last one - nothing follows it.
+                if (i < sendCount - 1)
+                {
+                    await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                }
             }
         }
 

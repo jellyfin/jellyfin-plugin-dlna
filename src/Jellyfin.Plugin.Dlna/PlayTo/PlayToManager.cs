@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Data.Events;
+using Jellyfin.Plugin.Dlna.Localization;
 using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Controller;
@@ -12,7 +13,6 @@ using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Session;
-using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.Session;
 using Microsoft.Extensions.Logging;
 using IDlnaManager = Jellyfin.Plugin.Dlna.Model.IDlnaManager;
@@ -33,7 +33,7 @@ public sealed class PlayToManager : IDisposable
     private readonly IImageProcessor _imageProcessor;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IUserDataManager _userDataManager;
-    private readonly ILocalizationManager _localization;
+    private readonly DlnaLocalization _localization;
     private readonly IDeviceDiscovery _deviceDiscovery;
     private readonly IMediaSourceManager _mediaSourceManager;
     private readonly IMediaEncoder _mediaEncoder;
@@ -54,7 +54,7 @@ public sealed class PlayToManager : IDisposable
     /// <param name="deviceDiscovery">Instance of the <see cref="IDeviceDiscovery"/> interface.</param>
     /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
     /// <param name="userDataManager">Instance of the <see cref="IUserDataManager"/> interface.</param>
-    /// <param name="localization">Instance of the <see cref="ILocalizationManager"/> interface.</param>
+    /// <param name="localization">Instance of the <see cref="DlnaLocalization"/> class.</param>
     /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
     /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
     public PlayToManager(
@@ -68,7 +68,7 @@ public sealed class PlayToManager : IDisposable
         IDeviceDiscovery deviceDiscovery,
         IHttpClientFactory httpClientFactory,
         IUserDataManager userDataManager,
-        ILocalizationManager localization,
+        DlnaLocalization localization,
         IMediaSourceManager mediaSourceManager,
         IMediaEncoder mediaEncoder)
     {
@@ -132,9 +132,24 @@ public sealed class PlayToManager : IDisposable
                 return;
             }
 
-            if (_sessionManager.Sessions.Any(i => usn.Contains(i.DeviceId, StringComparison.OrdinalIgnoreCase)))
+            var existingSession = _sessionManager.Sessions.FirstOrDefault(
+                i => !string.IsNullOrEmpty(i.DeviceId) && usn.Contains(i.DeviceId, StringComparison.OrdinalIgnoreCase));
+
+            if (existingSession is not null)
             {
-                return;
+                if (!HasMoved(existingSession, info.Location))
+                {
+                    return;
+                }
+
+                // The renderer is reachable at another address than the one its controller was
+                // built from, so that controller can only talk to a dead endpoint from now on
+                _logger.LogInformation(
+                    "Renderer {Name} moved to {Location}, recreating its session",
+                    existingSession.DeviceName,
+                    info.Location);
+
+                await _sessionManager.ReportSessionEnded(existingSession.Id).ConfigureAwait(false);
             }
 
             await AddDevice(info, cancellationToken).ConfigureAwait(false);
@@ -150,6 +165,29 @@ public sealed class PlayToManager : IDisposable
         {
             _sessionLock.Release();
         }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether a renderer announced itself at another address than the one
+    /// the controller of its existing session was built from.
+    /// </summary>
+    /// <param name="session">The existing <see cref="SessionInfo"/>.</param>
+    /// <param name="location">The announced location of the device description.</param>
+    /// <returns><c>true</c> when the announced address differs from the one in use.</returns>
+    private static bool HasMoved(SessionInfo session, Uri? location)
+    {
+        if (location is null)
+        {
+            return false;
+        }
+
+        var controller = session.SessionControllers.OfType<PlayToSession>().FirstOrDefault();
+        if (controller is null)
+        {
+            return false;
+        }
+
+        return !string.Equals(controller.DeviceBaseUrl, Device.GetBaseUrl(location), StringComparison.OrdinalIgnoreCase);
     }
 
     internal static string GetUuid(string usn)
