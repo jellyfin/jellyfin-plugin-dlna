@@ -127,11 +127,24 @@ public sealed class DlnaHost : IHostedService, IDisposable
     }
 
     /// <inheritdoc />
-    public Task StopAsync(CancellationToken cancellationToken)
+    public async Task StopAsync(CancellationToken cancellationToken)
     {
-        Stop();
+        _config.NamedConfigurationUpdated -= OnNamedConfigurationUpdated;
 
-        return Task.CompletedTask;
+        var publisher = _publisher;
+        if (publisher is not null)
+        {
+            try
+            {
+                await publisher.StopAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error announcing the shutdown of the DLNA server");
+            }
+        }
+
+        Stop();
     }
 
     /// <inheritdoc />

@@ -172,7 +172,11 @@ namespace Rssdp.Infrastructure
                 var tasks = sockets.Select(s => SendFromSocket(s, messageData, destination, cancellationToken)).ToArray();
                 await Task.WhenAll(tasks).ConfigureAwait(false);
 
-                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                // Space the repeats out, but do not wait after the last one - nothing follows it.
+                if (i < SsdpConstants.UdpResendCount - 1)
+                {
+                    await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                }
             }
         }
 
@@ -292,7 +296,11 @@ namespace Rssdp.Infrastructure
                     fromLocalIPAddress,
                     cancellationToken).ConfigureAwait(false);
 
-                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                // Space the repeats out, but do not wait after the last one - nothing follows it.
+                if (i < sendCount - 1)
+                {
+                    await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                }
             }
         }
 

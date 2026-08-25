@@ -31,6 +31,11 @@ namespace Rssdp.Infrastructure
         /// </summary>
         private const int MaxSearchResponseDelayMilliseconds = 500;
 
+        /// <summary>
+        /// The longest Dispose waits for the byebye notifications to go out.
+        /// </summary>
+        private static readonly TimeSpan ByeByeNotificationTimeout = TimeSpan.FromSeconds(2);
+
         private bool _SupportPnpRootDevice;
 
         private IList<SsdpRootDevice> _Devices;
@@ -131,7 +136,19 @@ namespace Rssdp.Infrastructure
         /// </remarks>
         /// <param name="device">The <see cref="SsdpDevice"/> instance to add.</param>
         /// <exception cref="ArgumentNullException">Thrown if the <paramref name="device"/> argument is null.</exception>
-        public async Task RemoveDevice(SsdpRootDevice device)
+        public Task RemoveDevice(SsdpRootDevice device)
+        {
+            return RemoveDevice(device, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Removes a device (and it's children) from the list of devices being published by this server, making them undiscoverable.
+        /// </summary>
+        /// <param name="device">The <see cref="SsdpDevice"/> instance to remove.</param>
+        /// <param name="cancellationToken">The token that aborts the byebye notifications.</param>
+        /// <returns>An awaitable <see cref="Task"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if the <paramref name="device"/> argument is null.</exception>
+        public async Task RemoveDevice(SsdpRootDevice device, CancellationToken cancellationToken)
         {
             if (device is null)
             {
@@ -151,7 +168,38 @@ namespace Rssdp.Infrastructure
             {
                 WriteTrace("Device Removed", device);
 
-                await SendByeByeNotifications(device, true, CancellationToken.None).ConfigureAwait(false);
+                await SendByeByeNotifications(device, true, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Stops publishing and sends the byebye notifications for every device still published.
+        /// </summary>
+        /// <param name="cancellationToken">The token that aborts the byebye notifications.</param>
+        /// <returns>An awaitable <see cref="Task"/>.</returns>
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            DisposeRebroadcastTimer();
+
+            var commsServer = _CommsServer;
+            if (commsServer is not null)
+            {
+                commsServer.RequestReceived -= this.CommsServer_RequestReceived;
+            }
+
+            SsdpRootDevice[] devices;
+            lock (_Devices)
+            {
+                devices = _Devices.ToArray();
+            }
+
+            try
+            {
+                await Task.WhenAll(Array.ConvertAll(devices, device => RemoveDevice(device, cancellationToken))).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                WriteTrace("Aborted sending byebye notifications");
             }
         }
 
@@ -199,8 +247,18 @@ namespace Rssdp.Infrastructure
                     commsServer.RequestReceived -= this.CommsServer_RequestReceived;
                 }
 
-                var tasks = Devices.ToList().Select(RemoveDevice).ToArray();
-                Task.WaitAll(tasks);
+                try
+                {
+                    var byebye = Task.WhenAll(Devices.ToList().Select(RemoveDevice));
+                    if (!byebye.Wait(ByeByeNotificationTimeout))
+                    {
+                        WriteTrace("Timed out sending byebye notifications");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    WriteTrace("Error sending byebye notifications, exception " + ex.Message);
+                }
 
                 _CommsServer = null;
                 if (commsServer is not null)
