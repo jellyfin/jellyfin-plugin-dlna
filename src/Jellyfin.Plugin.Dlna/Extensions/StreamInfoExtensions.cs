@@ -23,6 +23,15 @@ public static class StreamInfoExtensions
     {
         ArgumentException.ThrowIfNullOrEmpty(baseUrl);
 
+        // HLS is served by core: the plugin has no variant playlist or segment routes of its own, and
+        // every setting core needs has already been resolved onto the StreamInfo by the StreamBuilder.
+        // Core's own url builder emits the complete parameter set, so use it verbatim rather than
+        // maintaining a second, narrower copy here.
+        if (streamInfo.SubProtocol == MediaStreamProtocol.hls)
+        {
+            return streamInfo.ToUrl(baseUrl, accessToken, null);
+        }
+
         var list = new List<string>();
         foreach (NameValuePair pair in BuildParams(streamInfo, accessToken))
         {
@@ -71,17 +80,7 @@ public static class StreamInfoExtensions
         var itemId = streamInfo.ItemId;
         if (streamInfo.MediaType == DlnaProfileType.Audio)
         {
-            if (streamInfo.SubProtocol == MediaStreamProtocol.hls)
-            {
-                return string.Format(CultureInfo.InvariantCulture, "{0}/dlna/audio/{1}/master.m3u8?{2}", baseUrl, itemId, queryString);
-            }
-
             return string.Format(CultureInfo.InvariantCulture, "{0}/dlna/audio/{1}/stream{2}?{3}", baseUrl, itemId, extension, queryString);
-        }
-
-        if (streamInfo.SubProtocol == MediaStreamProtocol.hls)
-        {
-            return string.Format(CultureInfo.InvariantCulture, "{0}/dlna/videos/{1}/master.m3u8?{2}", baseUrl, itemId, queryString);
         }
 
         return string.Format(CultureInfo.InvariantCulture, "{0}/dlna/videos/{1}/stream{2}?{3}", baseUrl, itemId, extension, queryString);
@@ -115,20 +114,10 @@ public static class StreamInfoExtensions
         list.Add(new NameValuePair("MaxWidth", item.MaxWidth.HasValue ? item.MaxWidth.Value.ToString(CultureInfo.InvariantCulture) : string.Empty));
         list.Add(new NameValuePair("MaxHeight", item.MaxHeight.HasValue ? item.MaxHeight.Value.ToString(CultureInfo.InvariantCulture) : string.Empty));
 
-        long startPositionTicks = item.StartPositionTicks;
-        var isHls = item.SubProtocol == MediaStreamProtocol.hls;
-
-        if (isHls)
-        {
-            list.Add(new NameValuePair("StartTimeTicks", string.Empty));
-        }
-        else
-        {
-            list.Add(new NameValuePair("StartTimeTicks", startPositionTicks.ToString(CultureInfo.InvariantCulture)));
-        }
+        list.Add(new NameValuePair("StartTimeTicks", item.StartPositionTicks.ToString(CultureInfo.InvariantCulture)));
 
         list.Add(new NameValuePair("PlaySessionId", item.PlaySessionId ?? string.Empty));
-        list.Add(new NameValuePair("api_key", accessToken ?? string.Empty));
+        list.Add(new NameValuePair("ApiKey", accessToken ?? string.Empty));
 
         string? liveStreamId = item.MediaSource?.LiveStreamId;
         list.Add(new NameValuePair("LiveStreamId", liveStreamId ?? string.Empty));
@@ -179,21 +168,6 @@ public static class StreamInfoExtensions
             string.Join(",", item.SubtitleCodecs);
 
         list.Add(new NameValuePair("SubtitleCodec", item.SubtitleStreamIndex.HasValue && item.SubtitleDeliveryMethod == SubtitleDeliveryMethod.Embed ? subtitleCodecs : string.Empty));
-
-        if (isHls)
-        {
-            list.Add(new NameValuePair("SegmentContainer", item.Container ?? string.Empty));
-
-            if (item.SegmentLength.HasValue)
-            {
-                list.Add(new NameValuePair("SegmentLength", item.SegmentLength.Value.ToString(CultureInfo.InvariantCulture)));
-            }
-
-            if (item.MinSegments.HasValue)
-            {
-                list.Add(new NameValuePair("MinSegments", item.MinSegments.Value.ToString(CultureInfo.InvariantCulture)));
-            }
-        }
 
         foreach (var pair in item.StreamOptions)
         {
