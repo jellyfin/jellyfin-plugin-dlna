@@ -6,7 +6,7 @@
 
     <ItemGroup>
       <PackageReference Include="Jellyfin.Common" Version="10.*-*" />
-      <PackageReference Include="Jellyfin.Controller" Version="10.*-*" />
+      <PackageReference Include="Jellyfin.Controller" Version="10.1*-*" />
       <PackageReference Include="Jellyfin.Extensions" Version="10.*-*" />
     </ItemGroup>
 </Project>
