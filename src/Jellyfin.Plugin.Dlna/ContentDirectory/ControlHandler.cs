@@ -876,10 +876,10 @@ public class ControlHandler : BaseControlHandler
     /// <param name="isFavorite">A value indicating whether to only fetch favorite items.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
     private QueryResult<ServerItem> GetChildrenOfItem(
-    BaseItem parent,
-    InternalItemsQuery query,
-    BaseItemKind itemType,
-    bool isFavorite = false)
+        BaseItem parent,
+        InternalItemsQuery query,
+        BaseItemKind itemType,
+        bool isFavorite = false)
     {
         query.Recursive = true;
         query.Parent = parent;
