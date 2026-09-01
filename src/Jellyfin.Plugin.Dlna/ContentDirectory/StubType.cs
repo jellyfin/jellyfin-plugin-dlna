@@ -98,5 +98,15 @@ public enum StubType
     /// <summary>
     /// FavoriteEpisodes stub.
     /// </summary>
-    FavoriteEpisodes = 19
+    FavoriteEpisodes = 19,
+
+    /// <summary>
+    /// Alphabetical movie bucket stub.
+    /// </summary>
+    MovieLetter = 20,
+
+    /// <summary>
+    /// Alphabetical series bucket stub.
+    /// </summary>
+    SeriesLetter = 21
 }
