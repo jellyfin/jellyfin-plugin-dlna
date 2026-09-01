@@ -83,7 +83,8 @@ public class ControlHandler : BaseControlHandler
         IMediaSourceManager mediaSourceManager,
         IUserViewManager userViewManager,
         IMediaEncoder mediaEncoder,
-        ITVSeriesManager tvSeriesManager)
+        ITVSeriesManager tvSeriesManager
+    )
         : base(logger)
     {
         _libraryManager = libraryManager;
@@ -105,11 +106,16 @@ public class ControlHandler : BaseControlHandler
             mediaSourceManager,
             Logger,
             mediaEncoder,
-            libraryManager);
+            libraryManager
+        );
     }
 
     /// <inheritdoc />
-    protected override void WriteResult(string methodName, IReadOnlyDictionary<string, string> methodParams, XmlWriter xmlWriter)
+    protected override void WriteResult(
+        string methodName,
+        IReadOnlyDictionary<string, string> methodParams,
+        XmlWriter xmlWriter
+    )
     {
         ArgumentNullException.ThrowIfNull(xmlWriter);
         ArgumentNullException.ThrowIfNull(methodParams);
@@ -128,7 +134,13 @@ public class ControlHandler : BaseControlHandler
             return;
         }
 
-        if (string.Equals(methodName, "GetSortExtensionCapabilities", StringComparison.OrdinalIgnoreCase))
+        if (
+            string.Equals(
+                methodName,
+                "GetSortExtensionCapabilities",
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
         {
             HandleGetSortExtensionCapabilities(xmlWriter);
             return;
@@ -207,7 +219,8 @@ public class ControlHandler : BaseControlHandler
             item,
             userdata,
             UserDataSaveReason.TogglePlayed,
-            CancellationToken.None);
+            CancellationToken.None
+        );
     }
 
     /// <summary>
@@ -218,7 +231,8 @@ public class ControlHandler : BaseControlHandler
     {
         xmlWriter.WriteElementString(
             "SearchCaps",
-            "res@resolution,res@size,res@duration,dc:title,dc:creator,upnp:actor,upnp:artist,upnp:genre,upnp:album,dc:date,upnp:class,@id,@refID,@protocolInfo,upnp:author,dc:description,pv:avKeywords");
+            "res@resolution,res@size,res@duration,dc:title,dc:creator,upnp:actor,upnp:artist,upnp:genre,upnp:album,dc:date,upnp:class,@id,@refID,@protocolInfo,upnp:author,dc:description,pv:avKeywords"
+        );
     }
 
     /// <summary>
@@ -229,7 +243,8 @@ public class ControlHandler : BaseControlHandler
     {
         xmlWriter.WriteElementString(
             "SortCaps",
-            "res@duration,res@size,res@bitrate,dc:date,dc:title,dc:size,upnp:album,upnp:artist,upnp:albumArtist,upnp:episodeNumber,upnp:genre,upnp:originalTrackNumber,upnp:rating");
+            "res@duration,res@size,res@bitrate,dc:date,dc:title,dc:size,upnp:album,upnp:artist,upnp:albumArtist,upnp:episodeNumber,upnp:genre,upnp:originalTrackNumber,upnp:rating"
+        );
     }
 
     /// <summary>
@@ -240,7 +255,8 @@ public class ControlHandler : BaseControlHandler
     {
         xmlWriter.WriteElementString(
             "SortExtensionCaps",
-            "res@duration,res@size,res@bitrate,dc:date,dc:title,dc:size,upnp:album,upnp:artist,upnp:albumArtist,upnp:episodeNumber,upnp:genre,upnp:originalTrackNumber,upnp:rating");
+            "res@duration,res@size,res@bitrate,dc:date,dc:title,dc:size,upnp:album,upnp:artist,upnp:albumArtist,upnp:episodeNumber,upnp:genre,upnp:originalTrackNumber,upnp:rating"
+        );
     }
 
     /// <summary>
@@ -265,8 +281,8 @@ public class ControlHandler : BaseControlHandler
     /// Adds the "FeatureList" element to the xml document.
     /// </summary>
     /// <param name="xmlWriter">The <see cref="XmlWriter"/>.</param>
-    private static void HandleXGetFeatureList(XmlWriter xmlWriter)
-        => HandleGetFeatureList(xmlWriter);
+    private static void HandleXGetFeatureList(XmlWriter xmlWriter) =>
+        HandleGetFeatureList(xmlWriter);
 
     /// <summary>
     /// Builds a static feature list.
@@ -275,13 +291,13 @@ public class ControlHandler : BaseControlHandler
     private static string WriteFeatureListXml()
     {
         return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-               + "<Features xmlns=\"urn:schemas-upnp-org:av:avs\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"urn:schemas-upnp-org:av:avs http://www.upnp.org/schemas/av/avs.xsd\">"
-               + "<Feature name=\"samsung.com_BASICVIEW\" version=\"1\">"
-               + "<container id=\"0\" type=\"object.item.imageItem\"/>"
-               + "<container id=\"0\" type=\"object.item.audioItem\"/>"
-               + "<container id=\"0\" type=\"object.item.videoItem\"/>"
-               + "</Feature>"
-               + "</Features>";
+            + "<Features xmlns=\"urn:schemas-upnp-org:av:avs\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"urn:schemas-upnp-org:av:avs http://www.upnp.org/schemas/av/avs.xsd\">"
+            + "<Feature name=\"samsung.com_BASICVIEW\" version=\"1\">"
+            + "<container id=\"0\" type=\"object.item.imageItem\"/>"
+            + "<container id=\"0\" type=\"object.item.audioItem\"/>"
+            + "<container id=\"0\" type=\"object.item.videoItem\"/>"
+            + "</Feature>"
+            + "</Features>";
     }
 
     /// <summary>
@@ -290,12 +306,18 @@ public class ControlHandler : BaseControlHandler
     /// <param name="xmlWriter">The <see cref="XmlWriter"/>.</param>
     /// <param name="sparams">The method parameters.</param>
     /// <param name="deviceId">The device Id to use.</param>
-    private void HandleBrowse(XmlWriter xmlWriter, IReadOnlyDictionary<string, string> sparams, string deviceId)
+    private void HandleBrowse(
+        XmlWriter xmlWriter,
+        IReadOnlyDictionary<string, string> sparams,
+        string deviceId
+    )
     {
         var id = sparams["ObjectID"];
         var flag = sparams["BrowseFlag"];
         var filter = new Filter(sparams.GetValueOrDefault("Filter", "*"));
-        var sortCriteria = new SortCriteria(sparams.GetValueOrDefault("SortCriteria", string.Empty));
+        var sortCriteria = new SortCriteria(
+            sparams.GetValueOrDefault("SortCriteria", string.Empty)
+        );
 
         var provided = 0;
 
@@ -304,12 +326,20 @@ public class ControlHandler : BaseControlHandler
         int? requestedCount = null;
         int? start = 0;
 
-        if (sparams.ContainsKey("RequestedCount") && int.TryParse(sparams["RequestedCount"], out var requestedVal) && requestedVal > 0)
+        if (
+            sparams.ContainsKey("RequestedCount")
+            && int.TryParse(sparams["RequestedCount"], out var requestedVal)
+            && requestedVal > 0
+        )
         {
             requestedCount = requestedVal;
         }
 
-        if (sparams.ContainsKey("StartingIndex") && int.TryParse(sparams["StartingIndex"], out var startVal) && startVal > 0)
+        if (
+            sparams.ContainsKey("StartingIndex")
+            && int.TryParse(sparams["StartingIndex"], out var startVal)
+            && startVal > 0
+        )
         {
             start = startVal;
         }
@@ -321,7 +351,7 @@ public class ControlHandler : BaseControlHandler
             Encoding = Encoding.UTF8,
             CloseOutput = false,
             OmitXmlDeclaration = true,
-            ConformanceLevel = ConformanceLevel.Fragment
+            ConformanceLevel = ConformanceLevel.Fragment,
         };
 
         using (StringWriter builder = new StringWriterWithEncoding(Encoding.UTF8))
@@ -345,19 +375,40 @@ public class ControlHandler : BaseControlHandler
                 if (item.IsDisplayedAsFolder || serverItem.StubType.HasValue)
                 {
                     var childrenResult = GetUserItems(
-    item,
-    serverItem.StubType,
-    serverItem.IdSuffix,
-    _user,
-    sortCriteria,
-    start,
-    requestedCount);
+                        item,
+                        serverItem.StubType,
+                        serverItem.IdSuffix,
+                        _user,
+                        sortCriteria,
+                        start,
+                        requestedCount
+                    );
 
-                    _didlBuilder.WriteFolderElement(writer, item, serverItem.StubType, GetAlphabetParentStub(serverItem.StubType) is null ? null : item, childrenResult.TotalRecordCount, filter, id, serverItem.VirtualFolderName, serverItem.IdSuffix, GetAlphabetParentStub(serverItem.StubType));
+                    var alphabetParentStub = GetAlphabetParentStub(serverItem.StubType);
+                    _didlBuilder.WriteFolderElement(
+                        writer,
+                        item,
+                        serverItem.StubType,
+                        alphabetParentStub is null ? null : item,
+                        childrenResult.TotalRecordCount,
+                        filter,
+                        id,
+                        serverItem.VirtualFolderName,
+                        serverItem.IdSuffix,
+                        alphabetParentStub
+                    );
                 }
                 else
                 {
-                    _didlBuilder.WriteItemElement(writer, item, _user, null, null, deviceId, filter);
+                    _didlBuilder.WriteItemElement(
+                        writer,
+                        item,
+                        _user,
+                        null,
+                        null,
+                        deviceId,
+                        filter
+                    );
                 }
 
                 provided++;
@@ -365,13 +416,14 @@ public class ControlHandler : BaseControlHandler
             else
             {
                 var childrenResult = GetUserItems(
-    item,
-    serverItem.StubType,
-    serverItem.IdSuffix,
-    _user,
-    sortCriteria,
-    start,
-    requestedCount);
+                    item,
+                    serverItem.StubType,
+                    serverItem.IdSuffix,
+                    _user,
+                    sortCriteria,
+                    start,
+                    requestedCount
+                );
                 totalCount = childrenResult.TotalRecordCount;
 
                 provided = childrenResult.Items.Count;
@@ -384,20 +436,42 @@ public class ControlHandler : BaseControlHandler
                     if (childItem.IsDisplayedAsFolder || displayStubType.HasValue)
                     {
                         var childCount = GetUserItems(
-    childItem,
-    displayStubType,
-    i.IdSuffix,
-    _user,
-    sortCriteria,
-    null,
-    null)
-                            .TotalRecordCount;
+                            childItem,
+                            displayStubType,
+                            i.IdSuffix,
+                            _user,
+                            sortCriteria,
+                            null,
+                            null
+                        ).TotalRecordCount;
 
-                        _didlBuilder.WriteFolderElement(writer, childItem, displayStubType, item, childCount, filter, null, i.VirtualFolderName, i.IdSuffix, serverItem.StubType, serverItem.IdSuffix);
+                        _didlBuilder.WriteFolderElement(
+                            writer,
+                            childItem,
+                            displayStubType,
+                            item,
+                            childCount,
+                            filter,
+                            null,
+                            i.VirtualFolderName,
+                            i.IdSuffix,
+                            serverItem.StubType,
+                            serverItem.IdSuffix
+                        );
                     }
                     else
                     {
-                        _didlBuilder.WriteItemElement(writer, childItem, _user, item, serverItem.StubType, deviceId, filter, null, serverItem.IdSuffix);
+                        _didlBuilder.WriteItemElement(
+                            writer,
+                            childItem,
+                            _user,
+                            item,
+                            serverItem.StubType,
+                            deviceId,
+                            filter,
+                            null,
+                            serverItem.IdSuffix
+                        );
                     }
                 }
             }
@@ -407,9 +481,18 @@ public class ControlHandler : BaseControlHandler
             xmlWriter.WriteElementString("Result", builder.ToString());
         }
 
-        xmlWriter.WriteElementString("NumberReturned", provided.ToString(CultureInfo.InvariantCulture));
-        xmlWriter.WriteElementString("TotalMatches", totalCount.ToString(CultureInfo.InvariantCulture));
-        xmlWriter.WriteElementString("UpdateID", _systemUpdateId.ToString(CultureInfo.InvariantCulture));
+        xmlWriter.WriteElementString(
+            "NumberReturned",
+            provided.ToString(CultureInfo.InvariantCulture)
+        );
+        xmlWriter.WriteElementString(
+            "TotalMatches",
+            totalCount.ToString(CultureInfo.InvariantCulture)
+        );
+        xmlWriter.WriteElementString(
+            "UpdateID",
+            _systemUpdateId.ToString(CultureInfo.InvariantCulture)
+        );
     }
 
     /// <summary>
@@ -418,7 +501,11 @@ public class ControlHandler : BaseControlHandler
     /// <param name="xmlWriter">The <see cref="XmlWriter"/>.</param>
     /// <param name="sparams">The method parameters.</param>
     /// <param name="deviceId">The device id.</param>
-    private void HandleXBrowseByLetter(XmlWriter xmlWriter, IReadOnlyDictionary<string, string> sparams, string deviceId)
+    private void HandleXBrowseByLetter(
+        XmlWriter xmlWriter,
+        IReadOnlyDictionary<string, string> sparams,
+        string deviceId
+    )
     {
         // TODO: Implement this method
         HandleSearch(xmlWriter, sparams, deviceId);
@@ -430,10 +517,18 @@ public class ControlHandler : BaseControlHandler
     /// <param name="xmlWriter">The xmlWriter<see cref="XmlWriter"/>.</param>
     /// <param name="sparams">The method parameters.</param>
     /// <param name="deviceId">The deviceId<see cref="string"/>.</param>
-    private void HandleSearch(XmlWriter xmlWriter, IReadOnlyDictionary<string, string> sparams, string deviceId)
+    private void HandleSearch(
+        XmlWriter xmlWriter,
+        IReadOnlyDictionary<string, string> sparams,
+        string deviceId
+    )
     {
-        var searchCriteria = new SearchCriteria(sparams.GetValueOrDefault("SearchCriteria", string.Empty));
-        var sortCriteria = new SortCriteria(sparams.GetValueOrDefault("SortCriteria", string.Empty));
+        var searchCriteria = new SearchCriteria(
+            sparams.GetValueOrDefault("SearchCriteria", string.Empty)
+        );
+        var sortCriteria = new SortCriteria(
+            sparams.GetValueOrDefault("SortCriteria", string.Empty)
+        );
         var filter = new Filter(sparams.GetValueOrDefault("Filter", "*"));
 
         // sort example: dc:title, dc:date
@@ -443,12 +538,20 @@ public class ControlHandler : BaseControlHandler
         int? requestedCount = null;
         int? start = 0;
 
-        if (sparams.ContainsKey("RequestedCount") && int.TryParse(sparams["RequestedCount"], out var requestedVal) && requestedVal > 0)
+        if (
+            sparams.ContainsKey("RequestedCount")
+            && int.TryParse(sparams["RequestedCount"], out var requestedVal)
+            && requestedVal > 0
+        )
         {
             requestedCount = requestedVal;
         }
 
-        if (sparams.ContainsKey("StartingIndex") && int.TryParse(sparams["StartingIndex"], out var startVal) && startVal > 0)
+        if (
+            sparams.ContainsKey("StartingIndex")
+            && int.TryParse(sparams["StartingIndex"], out var startVal)
+            && startVal > 0
+        )
         {
             start = startVal;
         }
@@ -459,7 +562,7 @@ public class ControlHandler : BaseControlHandler
             Encoding = Encoding.UTF8,
             CloseOutput = false,
             OmitXmlDeclaration = true,
-            ConformanceLevel = ConformanceLevel.Fragment
+            ConformanceLevel = ConformanceLevel.Fragment,
         };
 
         using (StringWriter builder = new StringWriterWithEncoding(Encoding.UTF8))
@@ -476,19 +579,40 @@ public class ControlHandler : BaseControlHandler
 
             var item = serverItem.Item;
 
-            childrenResult = GetChildrenSorted(item, _user, searchCriteria, sortCriteria, start, requestedCount);
+            childrenResult = GetChildrenSorted(
+                item,
+                _user,
+                searchCriteria,
+                sortCriteria,
+                start,
+                requestedCount
+            );
             foreach (var i in childrenResult.Items)
             {
                 if (i.IsDisplayedAsFolder)
                 {
-                    var childCount = GetChildrenSorted(i, _user, searchCriteria, sortCriteria, null, 0)
-                        .TotalRecordCount;
+                    var childCount = GetChildrenSorted(
+                        i,
+                        _user,
+                        searchCriteria,
+                        sortCriteria,
+                        null,
+                        0
+                    ).TotalRecordCount;
 
                     _didlBuilder.WriteFolderElement(writer, i, null, item, childCount, filter);
                 }
                 else
                 {
-                    _didlBuilder.WriteItemElement(writer, i, _user, item, serverItem.StubType, deviceId, filter);
+                    _didlBuilder.WriteItemElement(
+                        writer,
+                        i,
+                        _user,
+                        item,
+                        serverItem.StubType,
+                        deviceId,
+                        filter
+                    );
                 }
             }
 
@@ -497,9 +621,18 @@ public class ControlHandler : BaseControlHandler
             xmlWriter.WriteElementString("Result", builder.ToString());
         }
 
-        xmlWriter.WriteElementString("NumberReturned", childrenResult.Items.Count.ToString(CultureInfo.InvariantCulture));
-        xmlWriter.WriteElementString("TotalMatches", childrenResult.TotalRecordCount.ToString(CultureInfo.InvariantCulture));
-        xmlWriter.WriteElementString("UpdateID", _systemUpdateId.ToString(CultureInfo.InvariantCulture));
+        xmlWriter.WriteElementString(
+            "NumberReturned",
+            childrenResult.Items.Count.ToString(CultureInfo.InvariantCulture)
+        );
+        xmlWriter.WriteElementString(
+            "TotalMatches",
+            childrenResult.TotalRecordCount.ToString(CultureInfo.InvariantCulture)
+        );
+        xmlWriter.WriteElementString(
+            "UpdateID",
+            _systemUpdateId.ToString(CultureInfo.InvariantCulture)
+        );
     }
 
     /// <summary>
@@ -512,7 +645,14 @@ public class ControlHandler : BaseControlHandler
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
     /// <returns>The <see cref="QueryResult{BaseItem}"/>.</returns>
-    private static QueryResult<BaseItem> GetChildrenSorted(BaseItem item, User? user, SearchCriteria search, SortCriteria sort, int? startIndex, int? limit)
+    private static QueryResult<BaseItem> GetChildrenSorted(
+        BaseItem item,
+        User? user,
+        SearchCriteria search,
+        SortCriteria sort,
+        int? startIndex,
+        int? limit
+    )
     {
         var folder = (Folder)item;
 
@@ -539,19 +679,21 @@ public class ControlHandler : BaseControlHandler
                 break;
         }
 
-        return folder.GetItems(new InternalItemsQuery
-        {
-            Limit = limit,
-            StartIndex = startIndex,
-            OrderBy = GetOrderBy(sort, folder.IsPreSorted),
-            User = user,
-            Recursive = true,
-            IsMissing = false,
-            ExcludeItemTypes = [BaseItemKind.Book],
-            IsFolder = isFolder,
-            MediaTypes = mediaTypes,
-            DtoOptions = GetDtoOptions()
-        });
+        return folder.GetItems(
+            new InternalItemsQuery
+            {
+                Limit = limit,
+                StartIndex = startIndex,
+                OrderBy = GetOrderBy(sort, folder.IsPreSorted),
+                User = user,
+                Recursive = true,
+                IsMissing = false,
+                ExcludeItemTypes = [BaseItemKind.Book],
+                IsFolder = isFolder,
+                MediaTypes = mediaTypes,
+                DtoOptions = GetDtoOptions(),
+            }
+        );
     }
 
     /// <summary>
@@ -575,13 +717,14 @@ public class ControlHandler : BaseControlHandler
     /// <param name="limit">The maximum number to return.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
     private QueryResult<ServerItem> GetUserItems(
-    BaseItem item,
-    StubType? stubType,
-    string? idSuffix,
-    User? user,
-    SortCriteria sort,
-    int? startIndex,
-    int? limit)
+        BaseItem item,
+        StubType? stubType,
+        string? idSuffix,
+        User? user,
+        SortCriteria sort,
+        int? startIndex,
+        int? limit
+    )
     {
         if (user is not null)
         {
@@ -602,9 +745,25 @@ public class ControlHandler : BaseControlHandler
                     case CollectionType.music:
                         return GetMusicFolders(item, user, stubType, sort, startIndex, limit);
                     case CollectionType.movies:
-                        return GetMovieFolders(item, user, stubType, idSuffix, sort, startIndex, limit);
+                        return GetMovieFolders(
+                            item,
+                            user,
+                            stubType,
+                            idSuffix,
+                            sort,
+                            startIndex,
+                            limit
+                        );
                     case CollectionType.tvshows:
-                        return GetTvFolders(item, user, stubType, idSuffix, sort, startIndex, limit);
+                        return GetTvFolders(
+                            item,
+                            user,
+                            stubType,
+                            idSuffix,
+                            sort,
+                            startIndex,
+                            limit
+                        );
                     case CollectionType.folders:
                         return GetFolders(user, startIndex, limit);
                     case CollectionType.livetv:
@@ -629,7 +788,7 @@ public class ControlHandler : BaseControlHandler
             ExcludeItemTypes = [BaseItemKind.Book],
             IsPlaceHolder = false,
             DtoOptions = GetDtoOptions(),
-            OrderBy = GetOrderBy(sort, folder.IsPreSorted)
+            OrderBy = GetOrderBy(sort, folder.IsPreSorted),
         };
 
         var queryResult = folder.GetItems(query);
@@ -645,14 +804,19 @@ public class ControlHandler : BaseControlHandler
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetLiveTvChannels(User user, SortCriteria sort, int? startIndex, int? limit)
+    private QueryResult<ServerItem> GetLiveTvChannels(
+        User user,
+        SortCriteria sort,
+        int? startIndex,
+        int? limit
+    )
     {
         var query = new InternalItemsQuery(user)
         {
             StartIndex = startIndex,
             Limit = limit,
             IncludeItemTypes = [BaseItemKind.LiveTvChannel],
-            OrderBy = GetOrderBy(sort, false)
+            OrderBy = GetOrderBy(sort, false),
         };
 
         var result = _libraryManager.GetItemsResult(query);
@@ -670,13 +834,20 @@ public class ControlHandler : BaseControlHandler
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetMusicFolders(BaseItem item, User user, StubType? stubType, SortCriteria sort, int? startIndex, int? limit)
+    private QueryResult<ServerItem> GetMusicFolders(
+        BaseItem item,
+        User user,
+        StubType? stubType,
+        SortCriteria sort,
+        int? startIndex,
+        int? limit
+    )
     {
         var query = new InternalItemsQuery(user)
         {
             StartIndex = startIndex,
             Limit = limit,
-            OrderBy = GetOrderBy(sort, false)
+            OrderBy = GetOrderBy(sort, false),
         };
 
         switch (stubType)
@@ -714,14 +885,11 @@ public class ControlHandler : BaseControlHandler
             new(item, StubType.Genres),
             new(item, StubType.FavoriteArtists),
             new(item, StubType.FavoriteAlbums),
-            new(item, StubType.FavoriteSongs)
+            new(item, StubType.FavoriteSongs),
         };
 
         serverItems = GetTrimmedServerItemsArray(serverItems, startIndex, limit);
-        return new QueryResult<ServerItem>(
-            startIndex,
-            serverItems.Length,
-            serverItems);
+        return new QueryResult<ServerItem>(startIndex, serverItems.Length, serverItems);
     }
 
     /// <summary>
@@ -742,13 +910,14 @@ public class ControlHandler : BaseControlHandler
         string? idSuffix,
         SortCriteria sort,
         int? startIndex,
-        int? limit)
+        int? limit
+    )
     {
         var query = new InternalItemsQuery(user)
         {
             StartIndex = startIndex,
             Limit = limit,
-            OrderBy = GetOrderBy(sort, false)
+            OrderBy = GetOrderBy(sort, false),
         };
 
         switch (stubType)
@@ -776,14 +945,11 @@ public class ControlHandler : BaseControlHandler
             new(item, StubType.Movies),
             new(item, StubType.Collections),
             new(item, StubType.Favorites),
-            new(item, StubType.Genres)
+            new(item, StubType.Genres),
         };
 
         array = GetTrimmedServerItemsArray(array, startIndex, limit);
-        return new QueryResult<ServerItem>(
-            startIndex,
-            array.Length,
-            array);
+        return new QueryResult<ServerItem>(startIndex, array.Length, array);
     }
 
     /// <summary>
@@ -805,10 +971,7 @@ public class ControlHandler : BaseControlHandler
             .Select(i => new ServerItem(i, StubType.Folder))
             .ToArray();
 
-        return new QueryResult<ServerItem>(
-            startIndex,
-            totalRecordCount,
-            items);
+        return new QueryResult<ServerItem>(startIndex, totalRecordCount, items);
     }
 
     /// <summary>
@@ -829,13 +992,14 @@ public class ControlHandler : BaseControlHandler
         string? idSuffix,
         SortCriteria sort,
         int? startIndex,
-        int? limit)
+        int? limit
+    )
     {
         var query = new InternalItemsQuery(user)
         {
             StartIndex = startIndex,
             Limit = limit,
-            OrderBy = GetOrderBy(sort, false)
+            OrderBy = GetOrderBy(sort, false),
         };
 
         switch (stubType)
@@ -866,14 +1030,11 @@ public class ControlHandler : BaseControlHandler
             new(item, StubType.Series),
             new(item, StubType.FavoriteSeries),
             new(item, StubType.FavoriteEpisodes),
-            new(item, StubType.Genres)
+            new(item, StubType.Genres),
         };
 
         serverItems = GetTrimmedServerItemsArray(serverItems, startIndex, limit);
-        return new QueryResult<ServerItem>(
-            startIndex,
-            serverItems.Length,
-            serverItems);
+        return new QueryResult<ServerItem>(startIndex, serverItems.Length, serverItems);
     }
 
     /// <summary>
@@ -882,7 +1043,10 @@ public class ControlHandler : BaseControlHandler
     /// <param name="parent">The <see cref="BaseItem"/>.</param>
     /// <param name="query">The <see cref="InternalItemsQuery"/>.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetMovieContinueWatching(BaseItem parent, InternalItemsQuery query)
+    private QueryResult<ServerItem> GetMovieContinueWatching(
+        BaseItem parent,
+        InternalItemsQuery query
+    )
     {
         query.Recursive = true;
         query.Parent = parent;
@@ -890,7 +1054,7 @@ public class ControlHandler : BaseControlHandler
         query.OrderBy =
         [
             (ItemSortBy.DatePlayed, SortOrder.Descending),
-            (ItemSortBy.SortName, SortOrder.Ascending)
+            (ItemSortBy.SortName, SortOrder.Ascending),
         ];
 
         query.IsResumable = true;
@@ -924,18 +1088,34 @@ public class ControlHandler : BaseControlHandler
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
     /// <returns>The alphabetical virtual folders.</returns>
-    private static QueryResult<ServerItem> GetAlphabetFolders(BaseItem parent, StubType stubType, int? startIndex, int? limit)
+    private static QueryResult<ServerItem> GetAlphabetFolders(
+        BaseItem parent,
+        StubType stubType,
+        int? startIndex,
+        int? limit
+    )
     {
         var buckets = new[] { "#" }
             .Concat(Enumerable.Range('A', 26).Select(value => ((char)value).ToString()))
-            .Select(bucket => new ServerItem(parent, stubType, bucket, EncodeAlphabetBucket(bucket)))
+            .Append("Other")
+            .Select(bucket => new ServerItem(
+                parent,
+                stubType,
+                bucket,
+                EncodeAlphabetBucket(bucket)
+            ))
             .ToArray();
 
         var items = GetTrimmedServerItemsArray(buckets, startIndex, limit);
         return new QueryResult<ServerItem>(startIndex, buckets.Length, items);
     }
 
-    private QueryResult<ServerItem> GetChildrenByLetter(BaseItem parent, InternalItemsQuery query, BaseItemKind itemType, string? encodedBucket)
+    private QueryResult<ServerItem> GetChildrenByLetter(
+        BaseItem parent,
+        InternalItemsQuery query,
+        BaseItemKind itemType,
+        string? encodedBucket
+    )
     {
         var bucket = DecodeAlphabetBucket(encodedBucket);
         if (bucket is null)
@@ -945,34 +1125,74 @@ public class ControlHandler : BaseControlHandler
 
         if (bucket == "#")
         {
-            query.NameLessThan = "A";
+            query.NameLessThan = "a";
+        }
+        else if (bucket == "Other")
+        {
+            query.NameStartsWithOrGreater = "{";
         }
         else
         {
-            query.NameStartsWithOrGreater = bucket;
-            query.NameLessThan = bucket == "Z" ? "[" : ((char)(bucket[0] + 1)).ToString();
+            var lowerBucket = bucket.ToLowerInvariant();
+            query.NameStartsWithOrGreater = lowerBucket;
+            query.NameLessThan = ((char)(lowerBucket[0] + 1)).ToString();
         }
 
         return GetChildrenOfItem(parent, query, itemType);
     }
 
-    private static string EncodeAlphabetBucket(string bucket) => bucket == "#" ? "0-9" : bucket;
+    private static string EncodeAlphabetBucket(string bucket)
+    {
+        if (bucket == "#")
+        {
+            return "0-9";
+        }
+
+        return string.Equals(bucket, "Other", StringComparison.OrdinalIgnoreCase)
+            ? "other"
+            : bucket;
+    }
 
     private static string? DecodeAlphabetBucket(string? encodedBucket)
-        => string.Equals(encodedBucket, "0-9", StringComparison.OrdinalIgnoreCase) ? "#" : encodedBucket?.ToUpperInvariant();
+    {
+        if (string.IsNullOrWhiteSpace(encodedBucket))
+        {
+            return null;
+        }
 
-    private static string? GetVirtualFolderName(StubType? stubType, string? idSuffix)
-        => stubType is StubType.MovieLetter or StubType.SeriesLetter ? DecodeAlphabetBucket(idSuffix) : null;
+        if (string.Equals(encodedBucket, "0-9", StringComparison.OrdinalIgnoreCase))
+        {
+            return "#";
+        }
 
-    private static StubType? GetAlphabetParentStub(StubType? stubType)
-        => stubType switch
+        if (string.Equals(encodedBucket, "other", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Other";
+        }
+
+        var bucket = encodedBucket.ToUpperInvariant();
+        return bucket.Length == 1 && bucket[0] is >= 'A' and <= 'Z' ? bucket : null;
+    }
+
+    private static string? GetVirtualFolderName(StubType? stubType, string? idSuffix) =>
+        stubType is StubType.MovieLetter or StubType.SeriesLetter
+            ? DecodeAlphabetBucket(idSuffix)
+            : null;
+
+    private static StubType? GetAlphabetParentStub(StubType? stubType) =>
+        stubType switch
         {
             StubType.MovieLetter => StubType.Movies,
             StubType.SeriesLetter => StubType.Series,
-            _ => null
+            _ => null,
         };
 
-    private QueryResult<ServerItem> GetChildrenOfItem(BaseItem parent, InternalItemsQuery query, BaseItemKind itemType, bool isFavorite = false)
+    private QueryResult<ServerItem> GetChildrenOfItem(
+        BaseItem parent,
+        InternalItemsQuery query,
+        BaseItemKind itemType,
+        bool isFavorite = false
+    )
     {
         query.Recursive = true;
         query.Parent = parent;
@@ -1096,10 +1316,11 @@ public class ControlHandler : BaseControlHandler
                 Limit = query.Limit,
                 StartIndex = query.StartIndex,
                 // User cannot be null here as the caller has set it
-                User = query.User!
+                User = query.User!,
             },
             [parent],
-            query.DtoOptions);
+            query.DtoOptions
+        );
 
         return ToResult(query.StartIndex, result);
     }
@@ -1111,7 +1332,11 @@ public class ControlHandler : BaseControlHandler
     /// <param name="query">The <see cref="InternalItemsQuery"/>.</param>
     /// <param name="itemType">The item type.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetLatest(BaseItem parent, InternalItemsQuery query, BaseItemKind itemType)
+    private QueryResult<ServerItem> GetLatest(
+        BaseItem parent,
+        InternalItemsQuery query,
+        BaseItemKind itemType
+    )
     {
         query.OrderBy = [];
 
@@ -1119,24 +1344,30 @@ public class ControlHandler : BaseControlHandler
 
         if (query.StartIndex > 0)
         {
-            limit = (query.Limit <= 0) ? int.MaxValue : (query.StartIndex.Value + (query.Limit ?? 50));
+            limit =
+                (query.Limit <= 0) ? int.MaxValue : (query.StartIndex.Value + (query.Limit ?? 50));
         }
         else
         {
             limit = query.Limit ?? 50;
         }
 
-        var items = _userViewManager.GetLatestItems(
-            new LatestItemsQuery
-            {
-                // User cannot be null here as the caller has set it
-                User = query.User!,
-                Limit = limit,
-                IncludeItemTypes = [itemType],
-                ParentId = parent?.Id ?? Guid.Empty,
-                GroupItems = true
-            },
-            query.DtoOptions).Select(i => i.Item1 ?? i.Item2.FirstOrDefault()).OfType<BaseItem>().ToArray();
+        var items = _userViewManager
+            .GetLatestItems(
+                new LatestItemsQuery
+                {
+                    // User cannot be null here as the caller has set it
+                    User = query.User!,
+                    Limit = limit,
+                    IncludeItemTypes = [itemType],
+                    ParentId = parent?.Id ?? Guid.Empty,
+                    GroupItems = true,
+                },
+                query.DtoOptions
+            )
+            .Select(i => i.Item1 ?? i.Item2.FirstOrDefault())
+            .OfType<BaseItem>()
+            .ToArray();
 
         if (query.StartIndex > 0)
         {
@@ -1155,7 +1386,13 @@ public class ControlHandler : BaseControlHandler
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetMusicArtistItems(BaseItem item, User user, SortCriteria sort, int? startIndex, int? limit)
+    private QueryResult<ServerItem> GetMusicArtistItems(
+        BaseItem item,
+        User user,
+        SortCriteria sort,
+        int? startIndex,
+        int? limit
+    )
     {
         var query = new InternalItemsQuery(user)
         {
@@ -1165,7 +1402,7 @@ public class ControlHandler : BaseControlHandler
             Limit = limit,
             StartIndex = startIndex,
             DtoOptions = GetDtoOptions(),
-            OrderBy = GetOrderBy(sort, false)
+            OrderBy = GetOrderBy(sort, false),
         };
 
         var result = _libraryManager.GetItemsResult(query);
@@ -1182,21 +1419,23 @@ public class ControlHandler : BaseControlHandler
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetGenreItems(BaseItem item, User user, SortCriteria sort, int? startIndex, int? limit)
+    private QueryResult<ServerItem> GetGenreItems(
+        BaseItem item,
+        User user,
+        SortCriteria sort,
+        int? startIndex,
+        int? limit
+    )
     {
         var query = new InternalItemsQuery(user)
         {
             Recursive = true,
             GenreIds = [item.Id],
-            IncludeItemTypes =
-            [
-                BaseItemKind.Movie,
-                BaseItemKind.Series
-            ],
+            IncludeItemTypes = [BaseItemKind.Movie, BaseItemKind.Series],
             Limit = limit,
             StartIndex = startIndex,
             DtoOptions = GetDtoOptions(),
-            OrderBy = GetOrderBy(sort, false)
+            OrderBy = GetOrderBy(sort, false),
         };
 
         var result = _libraryManager.GetItemsResult(query);
@@ -1213,7 +1452,13 @@ public class ControlHandler : BaseControlHandler
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetMusicGenreItems(BaseItem item, User user, SortCriteria sort, int? startIndex, int? limit)
+    private QueryResult<ServerItem> GetMusicGenreItems(
+        BaseItem item,
+        User user,
+        SortCriteria sort,
+        int? startIndex,
+        int? limit
+    )
     {
         var query = new InternalItemsQuery(user)
         {
@@ -1223,7 +1468,7 @@ public class ControlHandler : BaseControlHandler
             Limit = limit,
             StartIndex = startIndex,
             DtoOptions = GetDtoOptions(),
-            OrderBy = GetOrderBy(sort, false)
+            OrderBy = GetOrderBy(sort, false),
         };
 
         var result = _libraryManager.GetItemsResult(query);
@@ -1239,14 +1484,9 @@ public class ControlHandler : BaseControlHandler
     /// <returns>A <see cref="QueryResult{ServerItem}"/>.</returns>
     private static QueryResult<ServerItem> ToResult(int? startIndex, BaseItem[]? result)
     {
-        var serverItems = result?
-            .Select(i => new ServerItem(i, null))
-            .ToArray();
+        var serverItems = result?.Select(i => new ServerItem(i, null)).ToArray();
 
-        return new QueryResult<ServerItem>(
-            startIndex,
-            result?.Length ?? 0,
-            serverItems ?? []);
+        return new QueryResult<ServerItem>(startIndex, result?.Length ?? 0, serverItems ?? []);
     }
 
     /// <summary>
@@ -1264,10 +1504,7 @@ public class ControlHandler : BaseControlHandler
             serverItems[i] = new ServerItem(result.Items[i], null);
         }
 
-        return new QueryResult<ServerItem>(
-            startIndex,
-            result.TotalRecordCount,
-            serverItems);
+        return new QueryResult<ServerItem>(startIndex, result.TotalRecordCount, serverItems);
     }
 
     /// <summary>
@@ -1276,7 +1513,10 @@ public class ControlHandler : BaseControlHandler
     /// <param name="startIndex">The start index.</param>
     /// <param name="result">A <see cref="QueryResult{BaseItem}"/>.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private static QueryResult<ServerItem> ToResult(int? startIndex, QueryResult<(BaseItem Item, ItemCounts ItemCounts)> result)
+    private static QueryResult<ServerItem> ToResult(
+        int? startIndex,
+        QueryResult<(BaseItem Item, ItemCounts ItemCounts)> result
+    )
     {
         var length = result.Items.Count;
         var serverItems = new ServerItem[length];
@@ -1285,10 +1525,7 @@ public class ControlHandler : BaseControlHandler
             serverItems[i] = new ServerItem(result.Items[i].Item, null);
         }
 
-        return new QueryResult<ServerItem>(
-            startIndex,
-            result.TotalRecordCount,
-            serverItems);
+        return new QueryResult<ServerItem>(startIndex, result.TotalRecordCount, serverItems);
     }
 
     /// <summary>
@@ -1296,9 +1533,14 @@ public class ControlHandler : BaseControlHandler
     /// </summary>
     /// <param name="sort">The <see cref="SortCriteria"/>.</param>
     /// <param name="isPreSorted">True if pre-sorted.</param>
-    private static (ItemSortBy SortName, SortOrder SortOrder)[] GetOrderBy(SortCriteria sort, bool isPreSorted)
+    private static (ItemSortBy SortName, SortOrder SortOrder)[] GetOrderBy(
+        SortCriteria sort,
+        bool isPreSorted
+    )
     {
-        return isPreSorted ? Array.Empty<(ItemSortBy, SortOrder)>() : [(ItemSortBy.SortName, sort.SortOrder)];
+        return isPreSorted
+            ? Array.Empty<(ItemSortBy, SortOrder)>()
+            : [(ItemSortBy.SortName, sort.SortOrder)];
     }
 
     /// <summary>
@@ -1358,7 +1600,12 @@ public class ControlHandler : BaseControlHandler
             var item = _libraryManager.GetItemById(itemId);
             if (item is not null)
             {
-                return new ServerItem(item, stubType, GetVirtualFolderName(stubType, idSuffix), idSuffix);
+                return new ServerItem(
+                    item,
+                    stubType,
+                    GetVirtualFolderName(stubType, idSuffix),
+                    idSuffix
+                );
             }
         }
 
@@ -1374,7 +1621,11 @@ public class ControlHandler : BaseControlHandler
     /// <param name="startIndex">The start index.</param>
     /// <param name="limit">The maximum number to return.</param>
     /// <returns>The corresponding trimmed array of <see cref="ServerItem"/></returns>
-    private static ServerItem[] GetTrimmedServerItemsArray(ServerItem[] serverItems, int? startIndex, int? limit)
+    private static ServerItem[] GetTrimmedServerItemsArray(
+        ServerItem[] serverItems,
+        int? startIndex,
+        int? limit
+    )
     {
         if (startIndex >= serverItems.Length)
         {

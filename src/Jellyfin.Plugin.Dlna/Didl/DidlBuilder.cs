@@ -84,7 +84,8 @@ public class DidlBuilder
         IMediaSourceManager mediaSourceManager,
         ILogger logger,
         IMediaEncoder mediaEncoder,
-        ILibraryManager libraryManager)
+        ILibraryManager libraryManager
+    )
     {
         _profile = profile;
         _user = user;
@@ -117,14 +118,21 @@ public class DidlBuilder
     /// <param name="filter">The <see cref="Filter"/>.</param>
     /// <param name="streamInfo">The <see cref="StreamInfo" />.</param>
     /// </summary>
-    public string GetItemDidl(BaseItem item, User? user, BaseItem? context, string deviceId, Filter filter, StreamInfo streamInfo)
+    public string GetItemDidl(
+        BaseItem item,
+        User? user,
+        BaseItem? context,
+        string deviceId,
+        Filter filter,
+        StreamInfo streamInfo
+    )
     {
         var settings = new XmlWriterSettings
         {
             Encoding = Encoding.UTF8,
             CloseOutput = false,
             OmitXmlDeclaration = true,
-            ConformanceLevel = ConformanceLevel.Fragment
+            ConformanceLevel = ConformanceLevel.Fragment,
         };
 
         using (StringWriter builder = new StringWriterWithEncoding(Encoding.UTF8))
@@ -195,7 +203,8 @@ public class DidlBuilder
         string deviceId,
         Filter filter,
         StreamInfo? streamInfo = null,
-        string? contextIdSuffix = null)
+        string? contextIdSuffix = null
+    )
     {
         var clientId = GetClientId(item, null);
 
@@ -206,7 +215,10 @@ public class DidlBuilder
 
         if (context is not null)
         {
-            writer.WriteAttributeString("parentID", GetClientId(context, contextStubType, contextIdSuffix));
+            writer.WriteAttributeString(
+                "parentID",
+                GetClientId(context, contextStubType, contextIdSuffix)
+            );
         }
         else
         {
@@ -241,20 +253,29 @@ public class DidlBuilder
         writer.WriteFullEndElement();
     }
 
-    private void AddVideoResource(XmlWriter writer, BaseItem video, string deviceId, Filter filter, StreamInfo? streamInfo = null)
+    private void AddVideoResource(
+        XmlWriter writer,
+        BaseItem video,
+        string deviceId,
+        Filter filter,
+        StreamInfo? streamInfo = null
+    )
     {
         if (streamInfo is null)
         {
             var sources = _mediaSourceManager.GetStaticMediaSources(video, true, _user);
 
-            streamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalVideoStream(new MediaOptions
-            {
-                ItemId = video.Id,
-                MediaSources = sources.ToArray(),
-                Profile = _profile,
-                DeviceId = deviceId,
-                MaxBitrate = _profile.MaxStreamingBitrate
-            }) ?? throw new InvalidOperationException("No optimal video stream found");
+            streamInfo =
+                new StreamBuilder(_mediaEncoder, _logger).GetOptimalVideoStream(
+                    new MediaOptions
+                    {
+                        ItemId = video.Id,
+                        MediaSources = sources.ToArray(),
+                        Profile = _profile,
+                        DeviceId = deviceId,
+                        MaxBitrate = _profile.MaxStreamingBitrate,
+                    }
+                ) ?? throw new InvalidOperationException("No optimal video stream found");
         }
 
         var targetWidth = streamInfo.TargetWidth;
@@ -287,14 +308,20 @@ public class DidlBuilder
             streamInfo.TargetAudioStreamCount,
             streamInfo.GetStreamCount(),
             streamInfo.TargetVideoCodecTag,
-            streamInfo.IsTargetAVC);
+            streamInfo.IsTargetAVC
+        );
 
         foreach (var contentFeature in contentFeatureList)
         {
             AddVideoResource(writer, filter, contentFeature, streamInfo);
         }
 
-        var subtitleProfiles = streamInfo.GetSubtitleProfiles(_mediaEncoder, false, _serverAddress, _accessToken);
+        var subtitleProfiles = streamInfo.GetSubtitleProfiles(
+            _mediaEncoder,
+            false,
+            _serverAddress,
+            _accessToken
+        );
 
         foreach (var subtitle in subtitleProfiles)
         {
@@ -314,9 +341,10 @@ public class DidlBuilder
 
     private bool AddSubtitleElement(XmlWriter writer, SubtitleStreamInfo info)
     {
-        var subtitleProfile = _profile.SubtitleProfiles
-            .FirstOrDefault(i => string.Equals(info.Format, i.Format, StringComparison.OrdinalIgnoreCase)
-                                 && i.Method == SubtitleDeliveryMethod.External);
+        var subtitleProfile = _profile.SubtitleProfiles.FirstOrDefault(i =>
+            string.Equals(info.Format, i.Format, StringComparison.OrdinalIgnoreCase)
+            && i.Method == SubtitleDeliveryMethod.External
+        );
 
         if (subtitleProfile is null)
         {
@@ -351,7 +379,8 @@ public class DidlBuilder
             var protocolInfo = string.Format(
                 CultureInfo.InvariantCulture,
                 "http-get:*:text/{0}:*",
-                info.Format.ToLowerInvariant());
+                info.Format.ToLowerInvariant()
+            );
             writer.WriteAttributeString("protocolInfo", protocolInfo);
 
             writer.WriteString(info.Url);
@@ -361,7 +390,12 @@ public class DidlBuilder
         return true;
     }
 
-    private void AddVideoResource(XmlWriter writer, Filter filter, string contentFeatures, StreamInfo streamInfo)
+    private void AddVideoResource(
+        XmlWriter writer,
+        Filter filter,
+        string contentFeatures,
+        StreamInfo streamInfo
+    )
     {
         writer.WriteStartElement(string.Empty, "res", NsDidl);
 
@@ -371,7 +405,12 @@ public class DidlBuilder
 
         if (mediaSource?.RunTimeTicks.HasValue == true)
         {
-            writer.WriteAttributeString("duration", TimeSpan.FromTicks(mediaSource.RunTimeTicks.Value).ToString("c", CultureInfo.InvariantCulture));
+            writer.WriteAttributeString(
+                "duration",
+                TimeSpan
+                    .FromTicks(mediaSource.RunTimeTicks.Value)
+                    .ToString("c", CultureInfo.InvariantCulture)
+            );
         }
 
         if (filter.Contains("res@size"))
@@ -382,7 +421,10 @@ public class DidlBuilder
 
                 if (size.HasValue)
                 {
-                    writer.WriteAttributeString("size", size.Value.ToString(CultureInfo.InvariantCulture));
+                    writer.WriteAttributeString(
+                        "size",
+                        size.Value.ToString(CultureInfo.InvariantCulture)
+                    );
                 }
             }
         }
@@ -396,7 +438,10 @@ public class DidlBuilder
 
         if (targetChannels.HasValue)
         {
-            writer.WriteAttributeString("nrAudioChannels", targetChannels.Value.ToString(CultureInfo.InvariantCulture));
+            writer.WriteAttributeString(
+                "nrAudioChannels",
+                targetChannels.Value.ToString(CultureInfo.InvariantCulture)
+            );
         }
 
         if (filter.Contains("res@resolution"))
@@ -409,18 +454,26 @@ public class DidlBuilder
                         CultureInfo.InvariantCulture,
                         "{0}x{1}",
                         targetWidth.Value,
-                        targetHeight.Value));
+                        targetHeight.Value
+                    )
+                );
             }
         }
 
         if (targetSampleRate.HasValue)
         {
-            writer.WriteAttributeString("sampleFrequency", targetSampleRate.Value.ToString(CultureInfo.InvariantCulture));
+            writer.WriteAttributeString(
+                "sampleFrequency",
+                targetSampleRate.Value.ToString(CultureInfo.InvariantCulture)
+            );
         }
 
         if (totalBitrate.HasValue)
         {
-            writer.WriteAttributeString("bitrate", totalBitrate.Value.ToString(CultureInfo.InvariantCulture));
+            writer.WriteAttributeString(
+                "bitrate",
+                totalBitrate.Value.ToString(CultureInfo.InvariantCulture)
+            );
         }
 
         var mediaProfile = _profile.GetVideoMediaProfile(
@@ -444,13 +497,15 @@ public class DidlBuilder
             streamInfo.TargetAudioStreamCount,
             streamInfo.GetStreamCount(),
             streamInfo.TargetVideoCodecTag,
-            streamInfo.IsTargetAVC);
+            streamInfo.IsTargetAVC
+        );
 
         var filename = url[..url.IndexOf('?', StringComparison.Ordinal)];
 
-        var mimeType = mediaProfile is null || string.IsNullOrEmpty(mediaProfile.MimeType)
-            ? MimeTypes.GetMimeType(filename)
-            : mediaProfile.MimeType;
+        var mimeType =
+            mediaProfile is null || string.IsNullOrEmpty(mediaProfile.MimeType)
+                ? MimeTypes.GetMimeType(filename)
+                : mediaProfile.MimeType;
 
         writer.WriteAttributeString(
             "protocolInfo",
@@ -458,14 +513,21 @@ public class DidlBuilder
                 CultureInfo.InvariantCulture,
                 "http-get:*:{0}:{1}",
                 mimeType,
-                contentFeatures));
+                contentFeatures
+            )
+        );
 
         writer.WriteString(url);
 
         writer.WriteFullEndElement();
     }
 
-    private string GetDisplayName(BaseItem item, StubType? itemStubType, BaseItem? context, string? virtualFolderName = null)
+    private string GetDisplayName(
+        BaseItem item,
+        StubType? itemStubType,
+        BaseItem? context,
+        string? virtualFolderName = null
+    )
     {
         if (!string.IsNullOrEmpty(virtualFolderName))
         {
@@ -476,30 +538,49 @@ public class DidlBuilder
         {
             switch (itemStubType.Value)
             {
-                case StubType.Latest: return _localization.GetLocalizedString("Latest");
-                case StubType.Playlists: return _localization.GetLocalizedString("Playlists");
-                case StubType.AlbumArtists: return _localization.GetLocalizedString("HeaderAlbumArtists");
-                case StubType.Albums: return _localization.GetLocalizedString("Albums");
-                case StubType.Artists: return _localization.GetLocalizedString("Artists");
-                case StubType.Songs: return _localization.GetLocalizedString("Songs");
-                case StubType.Genres: return _localization.GetLocalizedString("Genres");
-                case StubType.FavoriteAlbums: return _localization.GetLocalizedString("HeaderFavoriteAlbums");
-                case StubType.FavoriteArtists: return _localization.GetLocalizedString("HeaderFavoriteArtists");
-                case StubType.FavoriteSongs: return _localization.GetLocalizedString("HeaderFavoriteSongs");
-                case StubType.ContinueWatching: return _localization.GetLocalizedString("HeaderContinueWatching");
-                case StubType.Movies: return _localization.GetLocalizedString("Movies");
-                case StubType.Collections: return _localization.GetLocalizedString("Collections");
-                case StubType.Favorites: return _localization.GetLocalizedString("Favorites");
-                case StubType.NextUp: return _localization.GetLocalizedString("HeaderNextUp");
-                case StubType.FavoriteSeries: return _localization.GetLocalizedString("HeaderFavoriteShows");
-                case StubType.FavoriteEpisodes: return _localization.GetLocalizedString("HeaderFavoriteEpisodes");
-                case StubType.Series: return _localization.GetLocalizedString("Shows");
+                case StubType.Latest:
+                    return _localization.GetLocalizedString("Latest");
+                case StubType.Playlists:
+                    return _localization.GetLocalizedString("Playlists");
+                case StubType.AlbumArtists:
+                    return _localization.GetLocalizedString("HeaderAlbumArtists");
+                case StubType.Albums:
+                    return _localization.GetLocalizedString("Albums");
+                case StubType.Artists:
+                    return _localization.GetLocalizedString("Artists");
+                case StubType.Songs:
+                    return _localization.GetLocalizedString("Songs");
+                case StubType.Genres:
+                    return _localization.GetLocalizedString("Genres");
+                case StubType.FavoriteAlbums:
+                    return _localization.GetLocalizedString("HeaderFavoriteAlbums");
+                case StubType.FavoriteArtists:
+                    return _localization.GetLocalizedString("HeaderFavoriteArtists");
+                case StubType.FavoriteSongs:
+                    return _localization.GetLocalizedString("HeaderFavoriteSongs");
+                case StubType.ContinueWatching:
+                    return _localization.GetLocalizedString("HeaderContinueWatching");
+                case StubType.Movies:
+                    return _localization.GetLocalizedString("Movies");
+                case StubType.Collections:
+                    return _localization.GetLocalizedString("Collections");
+                case StubType.Favorites:
+                    return _localization.GetLocalizedString("Favorites");
+                case StubType.NextUp:
+                    return _localization.GetLocalizedString("HeaderNextUp");
+                case StubType.FavoriteSeries:
+                    return _localization.GetLocalizedString("HeaderFavoriteShows");
+                case StubType.FavoriteEpisodes:
+                    return _localization.GetLocalizedString("HeaderFavoriteEpisodes");
+                case StubType.Series:
+                    return _localization.GetLocalizedString("Shows");
+                case StubType.MovieLetter:
+                case StubType.SeriesLetter:
+                    return item.Name;
             }
         }
 
-        return item is Episode episode
-            ? GetEpisodeDisplayName(episode, context)
-            : item.Name;
+        return item is Episode episode ? GetEpisodeDisplayName(episode, context) : item.Name;
     }
 
     /// <summary>
@@ -519,13 +600,18 @@ public class DidlBuilder
         if (context is Season season)
         {
             // This is a special embedded within a season
-            if (episode.ParentIndexNumber.HasValue && episode.ParentIndexNumber.Value == 0
-                                                   && season.IndexNumber.HasValue && season.IndexNumber.Value != 0)
+            if (
+                episode.ParentIndexNumber.HasValue
+                && episode.ParentIndexNumber.Value == 0
+                && season.IndexNumber.HasValue
+                && season.IndexNumber.Value != 0
+            )
             {
                 return string.Format(
                     CultureInfo.InvariantCulture,
                     _localization.GetLocalizedString("ValueSpecialEpisodeName"),
-                    episode.Name);
+                    episode.Name
+                );
             }
 
             // inside a season use simple format (ex. '12 - Episode Name')
@@ -556,7 +642,8 @@ public class DidlBuilder
 
             if (episode.IndexNumberEnd.HasValue)
             {
-                name += "-" + episode.IndexNumberEnd.Value.ToString("00", CultureInfo.InvariantCulture);
+                name +=
+                    "-" + episode.IndexNumberEnd.Value.ToString("00", CultureInfo.InvariantCulture);
             }
         }
 
@@ -585,7 +672,13 @@ public class DidlBuilder
 
     private bool NotNullOrWhiteSpace(string s) => !string.IsNullOrWhiteSpace(s);
 
-    private void AddAudioResource(XmlWriter writer, BaseItem audio, string deviceId, Filter filter, StreamInfo? streamInfo = null)
+    private void AddAudioResource(
+        XmlWriter writer,
+        BaseItem audio,
+        string deviceId,
+        Filter filter,
+        StreamInfo? streamInfo = null
+    )
     {
         writer.WriteStartElement(string.Empty, "res", NsDidl);
 
@@ -593,13 +686,16 @@ public class DidlBuilder
         {
             var sources = _mediaSourceManager.GetStaticMediaSources(audio, true, _user);
 
-            streamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalAudioStream(new MediaOptions
-            {
-                ItemId = audio.Id,
-                MediaSources = sources.ToArray(),
-                Profile = _profile,
-                DeviceId = deviceId
-            }) ?? throw new InvalidOperationException("No optimal audio stream found");
+            streamInfo =
+                new StreamBuilder(_mediaEncoder, _logger).GetOptimalAudioStream(
+                    new MediaOptions
+                    {
+                        ItemId = audio.Id,
+                        MediaSources = sources.ToArray(),
+                        Profile = _profile,
+                        DeviceId = deviceId,
+                    }
+                ) ?? throw new InvalidOperationException("No optimal audio stream found");
         }
 
         var url = NormalizeDlnaMediaUrl(streamInfo.ToDlnaUrl(_serverAddress, _accessToken));
@@ -608,7 +704,12 @@ public class DidlBuilder
 
         if (mediaSource?.RunTimeTicks is not null)
         {
-            writer.WriteAttributeString("duration", TimeSpan.FromTicks(mediaSource.RunTimeTicks.Value).ToString("c", CultureInfo.InvariantCulture));
+            writer.WriteAttributeString(
+                "duration",
+                TimeSpan
+                    .FromTicks(mediaSource.RunTimeTicks.Value)
+                    .ToString("c", CultureInfo.InvariantCulture)
+            );
         }
 
         if (filter.Contains("res@size"))
@@ -619,7 +720,10 @@ public class DidlBuilder
 
                 if (size.HasValue)
                 {
-                    writer.WriteAttributeString("size", size.Value.ToString(CultureInfo.InvariantCulture));
+                    writer.WriteAttributeString(
+                        "size",
+                        size.Value.ToString(CultureInfo.InvariantCulture)
+                    );
                 }
             }
         }
@@ -631,17 +735,26 @@ public class DidlBuilder
 
         if (targetChannels.HasValue)
         {
-            writer.WriteAttributeString("nrAudioChannels", targetChannels.Value.ToString(CultureInfo.InvariantCulture));
+            writer.WriteAttributeString(
+                "nrAudioChannels",
+                targetChannels.Value.ToString(CultureInfo.InvariantCulture)
+            );
         }
 
         if (targetSampleRate.HasValue)
         {
-            writer.WriteAttributeString("sampleFrequency", targetSampleRate.Value.ToString(CultureInfo.InvariantCulture));
+            writer.WriteAttributeString(
+                "sampleFrequency",
+                targetSampleRate.Value.ToString(CultureInfo.InvariantCulture)
+            );
         }
 
         if (targetAudioBitrate.HasValue)
         {
-            writer.WriteAttributeString("bitrate", targetAudioBitrate.Value.ToString(CultureInfo.InvariantCulture));
+            writer.WriteAttributeString(
+                "bitrate",
+                targetAudioBitrate.Value.ToString(CultureInfo.InvariantCulture)
+            );
         }
 
         var mediaProfile = _profile.GetAudioMediaProfile(
@@ -650,13 +763,15 @@ public class DidlBuilder
             targetChannels,
             targetAudioBitrate,
             targetSampleRate,
-            targetAudioBitDepth);
+            targetAudioBitDepth
+        );
 
         var filename = url[..url.IndexOf('?', StringComparison.Ordinal)];
 
-        var mimeType = mediaProfile is null || string.IsNullOrEmpty(mediaProfile.MimeType)
-            ? MimeTypes.GetMimeType(filename)
-            : mediaProfile.MimeType;
+        var mimeType =
+            mediaProfile is null || string.IsNullOrEmpty(mediaProfile.MimeType)
+                ? MimeTypes.GetMimeType(filename)
+                : mediaProfile.MimeType;
 
         var contentFeatures = ContentFeatureBuilder.BuildAudioHeader(
             _profile,
@@ -668,7 +783,8 @@ public class DidlBuilder
             targetAudioBitDepth,
             streamInfo.IsDirectStream,
             streamInfo.RunTimeTicks ?? 0,
-            streamInfo.TranscodeSeekInfo);
+            streamInfo.TranscodeSeekInfo
+        );
 
         writer.WriteAttributeString(
             "protocolInfo",
@@ -676,7 +792,9 @@ public class DidlBuilder
                 CultureInfo.InvariantCulture,
                 "http-get:*:{0}:{1}",
                 mimeType,
-                contentFeatures));
+                contentFeatures
+            )
+        );
 
         writer.WriteString(url);
 
@@ -688,11 +806,11 @@ public class DidlBuilder
     /// </summary>
     /// <param name="id">The id.</param>
     /// <returns><c>true</c> if the id is a root id; otherwise, <c>false</c>.</returns>
-    public static bool IsIdRoot(string id)
-        => string.IsNullOrWhiteSpace(id)
-           || string.Equals(id, "0", StringComparison.OrdinalIgnoreCase)
-           // Samsung sometimes uses 1 as root
-           || string.Equals(id, "1", StringComparison.OrdinalIgnoreCase);
+    public static bool IsIdRoot(string id) =>
+        string.IsNullOrWhiteSpace(id)
+        || string.Equals(id, "0", StringComparison.OrdinalIgnoreCase)
+        // Samsung sometimes uses 1 as root
+        || string.Equals(id, "1", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Writes an XML folder element.
@@ -708,13 +826,28 @@ public class DidlBuilder
     /// <param name="contextStubType">The parent virtual-folder type.</param>
     /// <param name="contextIdSuffix">The parent virtual-folder ID suffix.</param>
     /// </summary>
-    public void WriteFolderElement(XmlWriter writer, BaseItem folder, StubType? stubType, BaseItem? context, int childCount, Filter filter, string? requestedId = null, string? virtualFolderName = null, string? idSuffix = null, StubType? contextStubType = null, string? contextIdSuffix = null)
+    public void WriteFolderElement(
+        XmlWriter writer,
+        BaseItem folder,
+        StubType? stubType,
+        BaseItem? context,
+        int childCount,
+        Filter filter,
+        string? requestedId = null,
+        string? virtualFolderName = null,
+        string? idSuffix = null,
+        StubType? contextStubType = null,
+        string? contextIdSuffix = null
+    )
     {
         writer.WriteStartElement(string.Empty, "container", NsDidl);
 
         writer.WriteAttributeString("restricted", "1");
         writer.WriteAttributeString("searchable", "1");
-        writer.WriteAttributeString("childCount", childCount.ToString(CultureInfo.InvariantCulture));
+        writer.WriteAttributeString(
+            "childCount",
+            childCount.ToString(CultureInfo.InvariantCulture)
+        );
 
         var clientId = GetClientId(folder, stubType, idSuffix);
 
@@ -729,7 +862,10 @@ public class DidlBuilder
 
             if (context is not null)
             {
-                writer.WriteAttributeString("parentID", GetClientId(context, contextStubType, contextIdSuffix));
+                writer.WriteAttributeString(
+                    "parentID",
+                    GetClientId(context, contextStubType, contextIdSuffix)
+                );
             }
             else
             {
@@ -752,7 +888,12 @@ public class DidlBuilder
         writer.WriteFullEndElement();
     }
 
-    private void AddSamsungBookmarkInfo(BaseItem item, User? user, XmlWriter writer, StreamInfo? streamInfo)
+    private void AddSamsungBookmarkInfo(
+        BaseItem item,
+        User? user,
+        XmlWriter writer,
+        StreamInfo? streamInfo
+    )
     {
         if (!item.SupportsPositionTicksResume || item is Folder)
         {
@@ -776,25 +917,42 @@ public class DidlBuilder
         }
 
         var userdata = _userDataManager.GetUserData(user, item)!;
-        var playbackPositionTicks = (streamInfo is not null && streamInfo.StartPositionTicks > 0) ? streamInfo.StartPositionTicks : userdata.PlaybackPositionTicks;
+        var playbackPositionTicks =
+            (streamInfo is not null && streamInfo.StartPositionTicks > 0)
+                ? streamInfo.StartPositionTicks
+                : userdata.PlaybackPositionTicks;
 
         if (playbackPositionTicks > 0)
         {
             var elementValue = string.Format(
                 CultureInfo.InvariantCulture,
                 "BM={0}",
-                Convert.ToInt32(TimeSpan.FromTicks(playbackPositionTicks).TotalSeconds));
+                Convert.ToInt32(TimeSpan.FromTicks(playbackPositionTicks).TotalSeconds)
+            );
             AddValue(writer, "sec", "dcmInfo", elementValue, secAttribute.Value);
         }
     }
 
-    private void AddCommonFields(BaseItem item, StubType? itemStubType, BaseItem? context, XmlWriter writer, Filter filter, string? virtualFolderName = null)
+    private void AddCommonFields(
+        BaseItem item,
+        StubType? itemStubType,
+        BaseItem? context,
+        XmlWriter writer,
+        Filter filter,
+        string? virtualFolderName = null
+    )
     {
         // Don't filter on dc:title because not all devices will include it in the filter
         // MediaMonkey for example won't display content without a title
         // if (filter.Contains("dc:title"))
         {
-            AddValue(writer, "dc", "title", GetDisplayName(item, itemStubType, context, virtualFolderName), NsDc);
+            AddValue(
+                writer,
+                "dc",
+                "title",
+                GetDisplayName(item, itemStubType, context, virtualFolderName),
+                NsDc
+            );
         }
 
         WriteObjectClass(writer, item, itemStubType);
@@ -803,7 +961,13 @@ public class DidlBuilder
         {
             if (item.PremiereDate.HasValue)
             {
-                AddValue(writer, "dc", "date", item.PremiereDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), NsDc);
+                AddValue(
+                    writer,
+                    "dc",
+                    "date",
+                    item.PremiereDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    NsDc
+                );
             }
         }
 
@@ -919,11 +1083,19 @@ public class DidlBuilder
         }
         else if (item is MusicGenre)
         {
-            writer.WriteString(_profile.RequiresPlainFolders ? "object.container.storageFolder" : "object.container.genre.musicGenre");
+            writer.WriteString(
+                _profile.RequiresPlainFolders
+                    ? "object.container.storageFolder"
+                    : "object.container.genre.musicGenre"
+            );
         }
         else if (item is Genre)
         {
-            writer.WriteString(_profile.RequiresPlainFolders ? "object.container.storageFolder" : "object.container.genre");
+            writer.WriteString(
+                _profile.RequiresPlainFolders
+                    ? "object.container.storageFolder"
+                    : "object.container.genre"
+            );
         }
         else
         {
@@ -946,21 +1118,21 @@ public class DidlBuilder
             PersonKind.Writer,
             PersonKind.Producer,
             PersonKind.Composer,
-            PersonKind.Creator
+            PersonKind.Creator,
         };
 
         // Seeing some LG models locking up due content with large lists of people
         // The actual issue might just be due to processing a more metadata than it can handle
         var people = _libraryManager.GetPeople(
-            new InternalPeopleQuery
-            {
-                ItemId = item.Id,
-                Limit = 6
-            });
+            new InternalPeopleQuery { ItemId = item.Id, Limit = 6 }
+        );
 
         foreach (var actor in people)
         {
-            var type = types.FirstOrDefault(i => i == actor.Type || string.Equals(actor.Role, i.ToString(), StringComparison.OrdinalIgnoreCase));
+            var type = types.FirstOrDefault(i =>
+                i == actor.Type
+                || string.Equals(actor.Role, i.ToString(), StringComparison.OrdinalIgnoreCase)
+            );
             if (type == PersonKind.Unknown)
             {
                 type = PersonKind.Actor;
@@ -970,7 +1142,14 @@ public class DidlBuilder
         }
     }
 
-    private void AddGeneralProperties(BaseItem item, StubType? itemStubType, BaseItem? context, XmlWriter writer, Filter filter, string? virtualFolderName = null)
+    private void AddGeneralProperties(
+        BaseItem item,
+        StubType? itemStubType,
+        BaseItem? context,
+        XmlWriter writer,
+        Filter filter,
+        string? virtualFolderName = null
+    )
     {
         AddCommonFields(item, itemStubType, context, writer, filter, virtualFolderName);
 
@@ -1006,11 +1185,23 @@ public class DidlBuilder
 
         if (item.IndexNumber.HasValue)
         {
-            AddValue(writer, "upnp", "originalTrackNumber", item.IndexNumber.Value.ToString(CultureInfo.InvariantCulture), NsUpnp);
+            AddValue(
+                writer,
+                "upnp",
+                "originalTrackNumber",
+                item.IndexNumber.Value.ToString(CultureInfo.InvariantCulture),
+                NsUpnp
+            );
 
             if (item is Episode)
             {
-                AddValue(writer, "upnp", "episodeNumber", item.IndexNumber.Value.ToString(CultureInfo.InvariantCulture), NsUpnp);
+                AddValue(
+                    writer,
+                    "upnp",
+                    "episodeNumber",
+                    item.IndexNumber.Value.ToString(CultureInfo.InvariantCulture),
+                    NsUpnp
+                );
             }
         }
     }
@@ -1032,7 +1223,13 @@ public class DidlBuilder
         }
     }
 
-    private void AddValue(XmlWriter writer, string prefix, string name, string value, string namespaceUri)
+    private void AddValue(
+        XmlWriter writer,
+        string prefix,
+        string name,
+        string value,
+        string namespaceUri
+    )
     {
         try
         {
@@ -1058,7 +1255,8 @@ public class DidlBuilder
             imageInfo,
             _profile.MaxAlbumArtWidth ?? 10000,
             _profile.MaxAlbumArtHeight ?? 10000,
-            "jpg");
+            "jpg"
+        );
 
         writer.WriteStartElement("upnp", "albumArtURI", NsUpnp);
         if (!string.IsNullOrEmpty(_profile.AlbumArtPn))
@@ -1074,7 +1272,8 @@ public class DidlBuilder
             imageInfo,
             _profile.MaxIconWidth ?? 48,
             _profile.MaxIconHeight ?? 48,
-            "jpg");
+            "jpg"
+        );
         writer.WriteElementString("upnp", "icon", NsUpnp, iconUrlInfo.Url);
 
         if (!_profile.EnableAlbumArtInDidl)
@@ -1106,7 +1305,8 @@ public class DidlBuilder
         int maxWidth,
         int maxHeight,
         string format,
-        string org_Pn)
+        string org_Pn
+    )
     {
         var imageInfo = GetImageInfo(item);
 
@@ -1124,7 +1324,14 @@ public class DidlBuilder
         var width = albumartUrlInfo.Width ?? maxWidth;
         var height = albumartUrlInfo.Height ?? maxHeight;
 
-        var contentFeatures = ContentFeatureBuilder.BuildImageHeader(_profile, format, width, height, imageInfo.IsDirectStream, org_Pn);
+        var contentFeatures = ContentFeatureBuilder.BuildImageHeader(
+            _profile,
+            format,
+            width,
+            height,
+            imageInfo.IsDirectStream,
+            org_Pn
+        );
 
         writer.WriteAttributeString(
             "protocolInfo",
@@ -1132,11 +1339,14 @@ public class DidlBuilder
                 CultureInfo.InvariantCulture,
                 "http-get:*:{0}:{1}",
                 MimeTypes.GetMimeType("file." + format),
-                contentFeatures));
+                contentFeatures
+            )
+        );
 
         writer.WriteAttributeString(
             "resolution",
-            string.Format(CultureInfo.InvariantCulture, "{0}x{1}", width, height));
+            string.Format(CultureInfo.InvariantCulture, "{0}x{1}", width, height)
+        );
 
         writer.WriteString(albumartUrlInfo.Url);
 
@@ -1255,7 +1465,7 @@ public class DidlBuilder
             Width = width,
             Height = height,
             Format = inputFormat,
-            ItemImageInfo = imageInfo
+            ItemImageInfo = imageInfo,
         };
     }
 
@@ -1284,15 +1494,26 @@ public class DidlBuilder
 
         if (stubType.HasValue)
         {
-            id = stubType.Value.ToString().ToLowerInvariant()
-                + (string.IsNullOrEmpty(idSuffix) ? string.Empty : "-" + idSuffix.ToLowerInvariant())
-                + "_" + id;
+            id =
+                stubType.Value.ToString().ToLowerInvariant()
+                + (
+                    string.IsNullOrEmpty(idSuffix)
+                        ? string.Empty
+                        : "-" + idSuffix.ToLowerInvariant()
+                )
+                + "_"
+                + id;
         }
 
         return id;
     }
 
-    private (string Url, int? Width, int? Height) GetImageUrl(ImageDownloadInfo info, int maxWidth, int maxHeight, string format)
+    private (string Url, int? Width, int? Height) GetImageUrl(
+        ImageDownloadInfo info,
+        int maxWidth,
+        int maxHeight,
+        string format
+    )
     {
         var url = string.Format(
             CultureInfo.InvariantCulture,
@@ -1303,7 +1524,8 @@ public class DidlBuilder
             info.ImageTag,
             format,
             maxWidth.ToString(CultureInfo.InvariantCulture),
-            maxHeight.ToString(CultureInfo.InvariantCulture));
+            maxHeight.ToString(CultureInfo.InvariantCulture)
+        );
 
         var width = info.Width;
         var height = info.Height;
@@ -1312,13 +1534,22 @@ public class DidlBuilder
 
         if (width.HasValue && height.HasValue)
         {
-            var newSize = DrawingUtils.Resize(new ImageDimensions(width.Value, height.Value), 0, 0, maxWidth, maxHeight);
+            var newSize = DrawingUtils.Resize(
+                new ImageDimensions(width.Value, height.Value),
+                0,
+                0,
+                maxWidth,
+                maxHeight
+            );
 
             width = newSize.Width;
             height = newSize.Height;
 
-            var normalizedFormat = format
-                .Replace("jpeg", "jpg", StringComparison.OrdinalIgnoreCase);
+            var normalizedFormat = format.Replace(
+                "jpeg",
+                "jpg",
+                StringComparison.OrdinalIgnoreCase
+            );
 
             if (string.Equals(info.Format, normalizedFormat, StringComparison.OrdinalIgnoreCase))
             {
