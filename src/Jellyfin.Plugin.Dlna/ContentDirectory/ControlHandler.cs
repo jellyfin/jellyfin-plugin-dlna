@@ -875,12 +875,20 @@ public class ControlHandler : BaseControlHandler
     /// <param name="itemType">The item type.</param>
     /// <param name="isFavorite">A value indicating whether to only fetch favorite items.</param>
     /// <returns>The <see cref="QueryResult{ServerItem}"/>.</returns>
-    private QueryResult<ServerItem> GetChildrenOfItem(BaseItem parent, InternalItemsQuery query, BaseItemKind itemType, bool isFavorite = false)
+    private QueryResult<ServerItem> GetChildrenOfItem(
+        BaseItem parent,
+        InternalItemsQuery query,
+        BaseItemKind itemType,
+        bool isFavorite = false)
     {
         query.Recursive = true;
         query.Parent = parent;
-        query.IsFavorite = isFavorite;
         query.IncludeItemTypes = [itemType];
+
+        if (isFavorite)
+        {
+            query.IsFavorite = true;
+        }
 
         var result = _libraryManager.GetItemsResult(query);
 
