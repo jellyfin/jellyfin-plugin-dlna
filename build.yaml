@@ -1,8 +1,8 @@
 name: "DLNA"
 guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
 imageUrl: ""
-version: 11
-targetAbi: "10.11.9.0"
+version: 12
+targetAbi: "12.0.0.0"
 framework: "net9.0"
 owner: "jellyfin"
 overview: "DLNA Service"
@@ -16,4 +16,8 @@ artifacts:
   - "Jellyfin.Plugin.Dlna.Playback.dll"
   - "Rssdp.dll"
 changelog: |-
-  - Fix IUserManager.Users -> GetUsers() for Jellyfin 10.11.9 (#209) @crobibero
+  - Fix favorite filtering in normal DLNA browsing (#223) @mistaboom, @crobibero
+  - Update Panasonic Viera.xml (#225) @Hisenmisen, @crobibero
+  - sonos speaker profile (#188) @Florin-Popescu, @Shadowghost
+  - Update matching for Denon AVR and DRA receivers (#213) @PovlAbrahamsen, @cvium
+  - Profile for Movian on PS3 (#190) @GwyndolynMarchant, @cvium
