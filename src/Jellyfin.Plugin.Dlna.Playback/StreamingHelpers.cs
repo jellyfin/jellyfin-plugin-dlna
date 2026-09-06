@@ -165,9 +165,13 @@ public static class StreamingHelpers
             state.DirectStreamProvider = liveStreamInfo.Item2;
         }
 
+        DlnaStreamRequestAdjustments.ApplySubtitleBurnInPreferences(state, mediaSource);
+
         var encodingOptions = serverConfigurationManager.GetEncodingOptions();
 
         encodingHelper.AttachMediaSourceInfo(state, encodingOptions, mediaSource, url);
+
+        DlnaStreamRequestAdjustments.ApplySubtitleBurnInPreferences(state, mediaSource);
 
         string? containerInternal = Path.GetExtension(state.RequestedUrl);
 

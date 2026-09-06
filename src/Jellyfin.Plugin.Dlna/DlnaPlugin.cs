@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Jellyfin.Plugin.Dlna.Configuration;
+using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
@@ -27,6 +28,19 @@ public class DlnaPlugin : BasePlugin<DlnaPluginConfiguration>, IHasWebPages
         : base(applicationPaths, xmlSerializer)
     {
         Instance = this;
+        SyncConfigurationAccessor();
+    }
+
+    /// <inheritdoc />
+    public override void UpdateConfiguration(BasePluginConfiguration configuration)
+    {
+        base.UpdateConfiguration(configuration);
+        SyncConfigurationAccessor();
+    }
+
+    private static void SyncConfigurationAccessor()
+    {
+        DlnaPluginConfigurationAccessor.EnableSubtitleBurnIn = Instance.Configuration.EnableSubtitleBurnIn;
     }
 
     /// <inheritdoc />
