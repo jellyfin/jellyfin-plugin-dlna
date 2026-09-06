@@ -6,12 +6,15 @@ using System.Text;
 using System.Xml;
 using Jellyfin.Data.Enums;
 using Jellyfin.Database.Implementations.Entities;
+using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Plugin.Dlna.ContentDirectory;
 using Jellyfin.Plugin.Dlna.Extensions;
 using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Drawing;
+using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.Entities.Audio;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
@@ -21,6 +24,7 @@ using MediaBrowser.Model.Drawing;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.Net;
+using MediaBrowser.Model.Querying;
 using Microsoft.Extensions.Logging;
 using Episode = MediaBrowser.Controller.Entities.TV.Episode;
 using Genre = MediaBrowser.Controller.Entities.Genre;
@@ -790,11 +794,14 @@ public class DidlBuilder
 
         if (filter.Contains("dc:date"))
         {
-            if (item.PremiereDate.HasValue)
+            var displayDateUtc = GetItemDisplayDateUtc(item, _user);
+            if (displayDateUtc.HasValue)
             {
-                AddValue(writer, "dc", "date", item.PremiereDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), NsDc);
+                AddValue(writer, "dc", "date", DlnaItemDisplayDate.FormatDlnaDateTime(displayDateUtc.Value), NsDc);
             }
         }
+
+        AddLiveTvBroadcastFields(item, _user, writer, filter);
 
         if (filter.Contains("upnp:genre"))
         {
@@ -844,6 +851,89 @@ public class DidlBuilder
         }
 
         AddPeople(item, writer);
+    }
+
+    private DateTime? GetItemDisplayDateUtc(BaseItem item, User? user)
+    {
+        if (item is LiveTvProgram program)
+        {
+            return DlnaItemDisplayDate.GetProgramDisplayDateUtc(program.StartDate);
+        }
+
+        if (item is LiveTvChannel channel)
+        {
+            var currentProgram = GetCurrentProgram(channel.Id, user);
+            return DlnaItemDisplayDate.GetChannelDisplayDateUtc(
+                currentProgram?.StartDate,
+                DateTime.UtcNow);
+        }
+
+        return DlnaItemDisplayDate.GetPremiereDisplayDateUtc(item.PremiereDate);
+    }
+
+    private LiveTvProgram? GetCurrentProgram(Guid channelId, User? user)
+    {
+        if (user is null)
+        {
+            return null;
+        }
+
+        var now = DateTime.UtcNow;
+        var query = new InternalItemsQuery(user)
+        {
+            IncludeItemTypes = [BaseItemKind.LiveTvProgram],
+            ChannelIds = [channelId],
+            MaxStartDate = now,
+            MinEndDate = now,
+            Limit = 1,
+            OrderBy = [(ItemSortBy.StartDate, SortOrder.Ascending)],
+            DtoOptions = new DtoOptions(false)
+        };
+
+        return _libraryManager.GetItemList(query).OfType<LiveTvProgram>().FirstOrDefault();
+    }
+
+    private void AddLiveTvBroadcastFields(BaseItem item, User? user, XmlWriter writer, Filter filter)
+    {
+        LiveTvProgram? program = item switch
+        {
+            LiveTvProgram p => p,
+            LiveTvChannel c => GetCurrentProgram(c.Id, user),
+            _ => null
+        };
+
+        if (program is null)
+        {
+            return;
+        }
+
+        // Some DLNA clients request dc:date for live TV but omit scheduledStartTime.
+        var includeSchedule = filter.Contains("upnp:scheduledStartTime") || filter.Contains("dc:date");
+
+        if (includeSchedule && DlnaItemDisplayDate.IsValidDlnaDate(program.StartDate))
+        {
+            AddValue(writer, "upnp", "scheduledStartTime", DlnaItemDisplayDate.FormatDlnaDateTime(program.StartDate), NsUpnp);
+        }
+
+        if ((filter.Contains("upnp:scheduledEndTime") || filter.Contains("dc:date"))
+            && program.EndDate.HasValue
+            && DlnaItemDisplayDate.IsValidDlnaDate(program.EndDate.Value))
+        {
+            AddValue(writer, "upnp", "scheduledEndTime", DlnaItemDisplayDate.FormatDlnaDateTime(program.EndDate.Value), NsUpnp);
+        }
+
+        if (item is LiveTvChannel channel)
+        {
+            if (filter.Contains("upnp:channelNr") && !string.IsNullOrEmpty(channel.Number))
+            {
+                AddValue(writer, "upnp", "channelNr", channel.Number, NsUpnp);
+            }
+
+            if (filter.Contains("upnp:channelName") && !string.IsNullOrEmpty(channel.Name))
+            {
+                AddValue(writer, "upnp", "channelName", channel.Name, NsUpnp);
+            }
+        }
     }
 
     private void WriteObjectClass(XmlWriter writer, BaseItem item, StubType? stubType)
