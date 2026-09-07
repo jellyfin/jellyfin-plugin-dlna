@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Jellyfin.Controller" Version="10.*-*" />
+        <PackageReference Include="Jellyfin.Controller" Version="10.1*-*" />
         <PackageReference Include="Jellyfin.Model" Version="10.*-*" />
         <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.10" />
     </ItemGroup>
