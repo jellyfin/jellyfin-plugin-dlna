@@ -23,11 +23,13 @@ using MediaBrowser.Model.Drawing;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Net;
 using Microsoft.Extensions.Logging;
+using DlnaProfileType = MediaBrowser.Model.Dlna.DlnaProfileType;
 using Episode = MediaBrowser.Controller.Entities.TV.Episode;
 using Genre = MediaBrowser.Controller.Entities.Genre;
 using MediaOptions = MediaBrowser.Model.Dlna.MediaOptions;
 using Movie = MediaBrowser.Controller.Entities.Movies.Movie;
 using MusicAlbum = MediaBrowser.Controller.Entities.Audio.MusicAlbum;
+using PlayMethod = MediaBrowser.Model.Session.PlayMethod;
 using Season = MediaBrowser.Controller.Entities.TV.Season;
 using Series = MediaBrowser.Controller.Entities.TV.Series;
 using StreamBuilder = MediaBrowser.Model.Dlna.StreamBuilder;
@@ -283,20 +285,33 @@ public class DidlBuilder
                 ItemId = item.Id,
                 MediaSources = sources.ToArray(),
                 Profile = _profile,
-                DeviceId = deviceId,
-                EnableDirectStream = false
+                DeviceId = deviceId
             };
 
             var builder = new StreamBuilder(_mediaEncoder, _logger);
+            var isAudio = item.MediaType == MediaType.Audio;
 
-            if (item.MediaType == MediaType.Audio)
+            if (!isAudio)
             {
-                return builder.GetOptimalAudioStream(options);
+                options.MaxBitrate = _profile.MaxStreamingBitrate;
             }
 
-            options.MaxBitrate = _profile.MaxStreamingBitrate;
+            var type = isAudio ? DlnaProfileType.Audio : DlnaProfileType.Video;
+            var resolved = isAudio ? builder.GetOptimalAudioStream(options) : builder.GetOptimalVideoStream(options);
 
-            return builder.GetOptimalVideoStream(options);
+            // DirectStream is served as the source file itself. The stream builder still offers it
+            // for a container the profile rejects, which hands the device that container while the
+            // DIDL advertises the one the profile does accept, so transcode in that case. Where the
+            // container is accepted the file is what the device asked for, and serving it is what
+            // lets the device read the subtitles and the extra audio tracks embedded in it.
+            if (resolved?.PlayMethod == PlayMethod.DirectStream && !SupportsSourceContainer(resolved, type))
+            {
+                options.EnableDirectStream = false;
+
+                resolved = isAudio ? builder.GetOptimalAudioStream(options) : builder.GetOptimalVideoStream(options);
+            }
+
+            return resolved;
         }
         catch (Exception ex)
         {
@@ -307,6 +322,18 @@ public class DidlBuilder
 
             return null;
         }
+    }
+
+    private bool SupportsSourceContainer(StreamInfo streamInfo, DlnaProfileType type)
+    {
+        var container = streamInfo.MediaSource?.Container;
+
+        if (string.IsNullOrEmpty(container))
+        {
+            return false;
+        }
+
+        return _profile.DirectPlayProfiles.Any(i => i.Type == type && i.SupportsContainer(container));
     }
 
     private void AddVideoResource(XmlWriter writer, Filter filter, StreamInfo streamInfo)
