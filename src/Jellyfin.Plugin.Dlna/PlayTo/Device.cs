@@ -26,9 +26,12 @@ public class Device : IDisposable
 
     /// <summary>
     /// How long a renderer is given to come up after it was handed a new track before what it
-    /// reports is taken at face value.
+    /// reports is taken at face value. A speaker that has to open and buffer a stream the server
+    /// is still transcoding sits in STOPPED for a while, so the window is generous. It is closed
+    /// again as soon as the renderer reports anything other than STOPPED, which keeps a stop the
+    /// listener triggers themselves from being held back by it.
     /// </summary>
-    private static readonly TimeSpan _transportChangeGrace = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan _transportChangeGrace = TimeSpan.FromSeconds(30);
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger _logger;
@@ -40,7 +43,7 @@ public class Device : IDisposable
     private bool _volumeRefreshActive;
     private int _connectFailureCount;
     private int _transportChanges;
-    private DateTime _transportChangedAt = DateTime.MinValue;
+    private long _transportChangedAtTicks;
     private bool _disposed;
 
     /// <summary>
@@ -220,6 +223,16 @@ public class Device : IDisposable
             _timer?.Change(Timeout.Infinite, Timeout.Infinite);
         }
     }
+
+    private bool IsAwaitingPlayback()
+    {
+        var changedAt = Interlocked.Read(ref _transportChangedAtTicks);
+
+        return changedAt != 0 && DateTime.UtcNow - new DateTime(changedAt, DateTimeKind.Utc) < _transportChangeGrace;
+    }
+
+    private void CloseTransportChangeGrace()
+        => Interlocked.Exchange(ref _transportChangedAtTicks, 0);
 
     /// <summary>
     /// Lowers the volume.
@@ -478,7 +491,7 @@ public class Device : IDisposable
         }
         finally
         {
-            _transportChangedAt = DateTime.UtcNow;
+            Interlocked.Exchange(ref _transportChangedAtTicks, DateTime.UtcNow.Ticks);
             Interlocked.Decrement(ref _transportChanges);
         }
 
@@ -604,7 +617,7 @@ public class Device : IDisposable
         await SetStop(avCommands, cancellationToken).ConfigureAwait(false);
 
         // Stopping is meant to be observed right away, it is not a renderer on its way to a new track
-        _transportChangedAt = DateTime.MinValue;
+        CloseTransportChangeGrace();
 
         RestartTimer(true);
     }
@@ -674,18 +687,24 @@ public class Device : IDisposable
                 return;
             }
 
+            // A renderer that was just handed a new track can still report STOPPED, or answer
+            // nothing at all, while it opens the stream. Taking that as idle would report the
+            // previous track as stopped and park the timer, so the playback that follows would
+            // never be reported at all.
+            if (transportState is null or TransportState.STOPPED && IsAwaitingPlayback())
+            {
+                _connectFailureCount = 0;
+                RestartTimerIn(TransportChangeTimerInterval);
+
+                return;
+            }
+
             if (transportState.HasValue)
             {
-                // A renderer that was just handed a new track can still report STOPPED while it opens
-                // the stream. Taking that as idle would report the previous track as stopped and park
-                // the timer, so the playback that follows would never be reported at all.
-                if (transportState.Value == TransportState.STOPPED
-                    && DateTime.UtcNow - _transportChangedAt < _transportChangeGrace)
+                // The renderer is up, so anything it reports from here on is what it is really doing
+                if (transportState.Value != TransportState.STOPPED)
                 {
-                    _connectFailureCount = 0;
-                    RestartTimerIn(TransportChangeTimerInterval);
-
-                    return;
+                    CloseTransportChangeGrace();
                 }
 
                 // If we're not playing anything no need to get additional data

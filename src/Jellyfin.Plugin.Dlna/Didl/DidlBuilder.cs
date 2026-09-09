@@ -23,11 +23,13 @@ using MediaBrowser.Model.Drawing;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Net;
 using Microsoft.Extensions.Logging;
+using DlnaProfileType = MediaBrowser.Model.Dlna.DlnaProfileType;
 using Episode = MediaBrowser.Controller.Entities.TV.Episode;
 using Genre = MediaBrowser.Controller.Entities.Genre;
 using MediaOptions = MediaBrowser.Model.Dlna.MediaOptions;
 using Movie = MediaBrowser.Controller.Entities.Movies.Movie;
 using MusicAlbum = MediaBrowser.Controller.Entities.Audio.MusicAlbum;
+using PlayMethod = MediaBrowser.Model.Session.PlayMethod;
 using Season = MediaBrowser.Controller.Entities.TV.Season;
 using Series = MediaBrowser.Controller.Entities.TV.Series;
 using StreamBuilder = MediaBrowser.Model.Dlna.StreamBuilder;
@@ -247,10 +249,10 @@ public class DidlBuilder
                 switch (item.MediaType)
                 {
                     case MediaType.Audio:
-                        AddAudioResource(writer, item, deviceId, filter, resource);
+                        AddAudioResource(writer, filter, resource);
                         break;
                     case MediaType.Video:
-                        AddVideoResource(writer, item, deviceId, filter, resource);
+                        AddVideoResource(writer, filter, resource);
                         break;
                 }
             }
@@ -283,20 +285,33 @@ public class DidlBuilder
                 ItemId = item.Id,
                 MediaSources = sources.ToArray(),
                 Profile = _profile,
-                DeviceId = deviceId,
-                EnableDirectStream = false
+                DeviceId = deviceId
             };
 
             var builder = new StreamBuilder(_mediaEncoder, _logger);
+            var isAudio = item.MediaType == MediaType.Audio;
 
-            if (item.MediaType == MediaType.Audio)
+            if (!isAudio)
             {
-                return builder.GetOptimalAudioStream(options);
+                options.MaxBitrate = _profile.MaxStreamingBitrate;
             }
 
-            options.MaxBitrate = _profile.MaxStreamingBitrate;
+            var type = isAudio ? DlnaProfileType.Audio : DlnaProfileType.Video;
+            var resolved = isAudio ? builder.GetOptimalAudioStream(options) : builder.GetOptimalVideoStream(options);
 
-            return builder.GetOptimalVideoStream(options);
+            // DirectStream is served as the source file itself. The stream builder still offers it
+            // for a container the profile rejects, which hands the device that container while the
+            // DIDL advertises the one the profile does accept, so transcode in that case. Where the
+            // container is accepted the file is what the device asked for, and serving it is what
+            // lets the device read the subtitles and the extra audio tracks embedded in it.
+            if (resolved?.PlayMethod == PlayMethod.DirectStream && !SupportsSourceContainer(resolved, type))
+            {
+                options.EnableDirectStream = false;
+
+                resolved = isAudio ? builder.GetOptimalAudioStream(options) : builder.GetOptimalVideoStream(options);
+            }
+
+            return resolved;
         }
         catch (Exception ex)
         {
@@ -309,26 +324,20 @@ public class DidlBuilder
         }
     }
 
-    private void AddVideoResource(XmlWriter writer, BaseItem video, string deviceId, Filter filter, StreamInfo? streamInfo = null)
+    private bool SupportsSourceContainer(StreamInfo streamInfo, DlnaProfileType type)
     {
-        if (streamInfo is null)
-        {
-            var sources = _mediaSourceManager.GetStaticMediaSources(video, true, _user);
+        var container = streamInfo.MediaSource?.Container;
 
-            // DirectStream is served as the source file itself, so a device would be handed a
-            // container its profile rejects while the DIDL advertises the target format. Transcode
-            // instead, the same way PlayTo does.
-            streamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalVideoStream(new MediaOptions
-            {
-                ItemId = video.Id,
-                MediaSources = sources.ToArray(),
-                Profile = _profile,
-                DeviceId = deviceId,
-                MaxBitrate = _profile.MaxStreamingBitrate,
-                EnableDirectStream = false
-            }) ?? throw new InvalidOperationException("No optimal video stream found");
+        if (string.IsNullOrEmpty(container))
+        {
+            return false;
         }
 
+        return _profile.DirectPlayProfiles.Any(i => i.Type == type && i.SupportsContainer(container));
+    }
+
+    private void AddVideoResource(XmlWriter writer, Filter filter, StreamInfo streamInfo)
+    {
         var targetWidth = streamInfo.TargetWidth;
         var targetHeight = streamInfo.TargetHeight;
         var targetVideoCodec = streamInfo.TargetVideoCodec.Count == 0 ? null : streamInfo.TargetVideoCodec[0];
@@ -662,23 +671,9 @@ public class DidlBuilder
 
     private bool NotNullOrWhiteSpace(string s) => !string.IsNullOrWhiteSpace(s);
 
-    private void AddAudioResource(XmlWriter writer, BaseItem audio, string deviceId, Filter filter, StreamInfo? streamInfo = null)
+    private void AddAudioResource(XmlWriter writer, Filter filter, StreamInfo streamInfo)
     {
         writer.WriteStartElement(string.Empty, "res", NsDidl);
-
-        if (streamInfo is null)
-        {
-            var sources = _mediaSourceManager.GetStaticMediaSources(audio, true, _user);
-
-            streamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalAudioStream(new MediaOptions
-            {
-                ItemId = audio.Id,
-                MediaSources = sources.ToArray(),
-                Profile = _profile,
-                DeviceId = deviceId,
-                EnableDirectStream = false
-            }) ?? throw new InvalidOperationException("No optimal audio stream found");
-        }
 
         var url = NormalizeDlnaMediaUrl(streamInfo.ToDlnaUrl(_serverAddress, _accessToken));
 
