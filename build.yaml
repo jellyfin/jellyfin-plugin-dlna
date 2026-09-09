@@ -1,7 +1,7 @@
 name: "DLNA"
 guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-dlna.png"
-version: 12
+version: 13
 targetAbi: "12.0.0.0"
 framework: "net10.0"
 owner: "jellyfin"
@@ -16,19 +16,6 @@ artifacts:
   - "Jellyfin.Plugin.Dlna.Playback.dll"
   - "Rssdp.dll"
 changelog: |-
-  - Unstable: Update to latest Jellyfin preview packages (#205) @crobibero, @jellyfin-bot
-  - Fix browse and search performance, and support Windows Media Player (#236) @Shadowghost, @crobibero
-  - Fix DLNA browsing, search and device discovery (#233) @Shadowghost, @crobibero
-  - Fix DLNA streaming regressions (#232) @Shadowghost, @crobibero
-  - Fixes for PlayTo (#231) @Shadowghost, @crobibero, @sankred9527
-  - Safeguard against control characters (#230) @Shadowghost, @crobibero
-  - Fix favorite filtering in normal DLNA browsing (#223) @mistaboom, @crobibero
-  - Fix logo and framework (#234) @Shadowghost
-  - Update Panasonic Viera.xml (#225) @Hisenmisen, @crobibero
-  - Serve multi-part videos as separate DLNA items (#229) @Shadowghost, @crobibero
-  - Harden Controllers (#228) @Shadowghost, @crobibero
-  - Align served MIME types and org_PN values with the DLNA guidelines (#227) @Shadowghost, @crobibero
-  - Enable Analyzers and nullable and fix the resulting compiler issues (#226) @Shadowghost, @crobibero
-  - sonos speaker profile (#188) @Florin-Popescu, @Shadowghost
-  - Update matching for Denon AVR and DRA receivers (#213) @PovlAbrahamsen, @cvium
-  - Profile for Movian on PS3 (#190) @GwyndolynMarchant, @cvium
+  - Fix v12 regressions (#243) @Shadowghost, @crobibero
+  - Keep genre and artist containers within the library they were browsed in from (#239) @Shadowghost, @crobibero
+  - Keep polling the renderer through a transport change (#240) @Shadowghost, @crobibero
