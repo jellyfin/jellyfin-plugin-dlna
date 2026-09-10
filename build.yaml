@@ -1,7 +1,7 @@
 name: "DLNA"
 guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-dlna.png"
-version: 13
+version: 14
 targetAbi: "12.0.0.0"
 framework: "net10.0"
 owner: "jellyfin"
@@ -16,6 +16,4 @@ artifacts:
   - "Jellyfin.Plugin.Dlna.Playback.dll"
   - "Rssdp.dll"
 changelog: |-
-  - Fix v12 regressions (#243) @Shadowghost, @crobibero
-  - Keep genre and artist containers within the library they were browsed in from (#239) @Shadowghost, @crobibero
-  - Keep polling the renderer through a transport change (#240) @Shadowghost, @crobibero
+  - Fix track changes that renderers ignore or overrun (#245) @Shadowghost, @crobibero
