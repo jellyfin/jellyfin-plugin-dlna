@@ -56,6 +56,7 @@ public class PlayToSession : ISessionController, IDisposable
     private Device _device;
     private int _currentPlaylistIndex;
     private int _nextTrackIndex = -1;
+    private string? _nextTrackAnnouncedFor;
     private bool _disposed;
 
     /// <summary>
@@ -174,6 +175,39 @@ public class PlayToSession : ISessionController, IDisposable
         }
     }
 
+    private async Task SyncWithReportedMedia(StreamParams info, string mediaUrl, CancellationToken cancellationToken)
+    {
+        var currentIndex = _playlist.FindIndex(item => item.StreamInfo.ItemId.Equals(info.ItemId));
+        if (currentIndex < 0)
+        {
+            return;
+        }
+
+        _currentPlaylistIndex = currentIndex;
+
+        // AVTransport:1 section 2.4.3 defines SetNextAVTransportURI for a renderer that holds media, and one
+        // that is still on its way to a track can take what it has queued as the track to play right now,
+        // landing a track further on than the one it was handed. So the follow-up is announced only once the
+        // renderer reports that it is playing the track it was given, and only once for that track.
+        if (!_device.IsPlaying || string.Equals(_nextTrackAnnouncedFor, mediaUrl, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        // Marked before announcing: the device timer polls again while the announcement is still on its way
+        _nextTrackAnnouncedFor = mediaUrl;
+
+        await SendNextTrackMessage(currentIndex, cancellationToken).ConfigureAwait(false);
+    }
+
+    private Task SetAvTransport(PlaylistItem item, CancellationToken cancellationToken)
+    {
+        _nextTrackIndex = -1;
+        _nextTrackAnnouncedFor = null;
+
+        return _device.SetAvTransport(item.StreamUrl, GetDlnaHeaders(item), item.Didl, cancellationToken);
+    }
+
     private async void OnDeviceUnavailable()
     {
         try
@@ -229,14 +263,7 @@ public class PlayToSession : ISessionController, IDisposable
 
             await _sessionManager.OnPlaybackStart(newItemProgress).ConfigureAwait(false);
 
-            // Send a message to the DLNA device to notify what is the next track in the playlist.
-            var currentItemIndex = _playlist.FindIndex(item => item.StreamInfo.ItemId.Equals(streamInfo.ItemId));
-            if (currentItemIndex >= 0)
-            {
-                _currentPlaylistIndex = currentItemIndex;
-            }
-
-            await SendNextTrackMessage(currentItemIndex, CancellationToken.None).ConfigureAwait(false);
+            await SyncWithReportedMedia(streamInfo, e.NewMediaInfo.Url, CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -343,6 +370,8 @@ public class PlayToSession : ISessionController, IDisposable
                 var progress = GetProgressInfo(info);
 
                 await _sessionManager.OnPlaybackStart(progress).ConfigureAwait(false);
+
+                await SyncWithReportedMedia(info, e.MediaInfo.Url, CancellationToken.None).ConfigureAwait(false);
             }
         }
         catch (Exception ex)
@@ -374,6 +403,10 @@ public class PlayToSession : ISessionController, IDisposable
                 var progress = GetProgressInfo(info);
 
                 await _sessionManager.OnPlaybackProgress(progress).ConfigureAwait(false);
+
+                // A renderer that was handed a track while it was on its way to another one may have been
+                // in no state to take the follow-up, so keep offering it for as long as it plays the track.
+                await SyncWithReportedMedia(info, mediaUrl, CancellationToken.None).ConfigureAwait(false);
             }
         }
         catch (Exception ex)
@@ -513,7 +546,13 @@ public class PlayToSession : ISessionController, IDisposable
                 _playlist.Count);
 
             // The item following the one that is playing may have changed, so tell the device about it again
-            return SendNextTrackMessage(_currentPlaylistIndex, cancellationToken);
+            _nextTrackAnnouncedFor = null;
+
+            var media = _device.CurrentMediaInfo;
+
+            return string.IsNullOrEmpty(media?.Url)
+                ? Task.CompletedTask
+                : SyncWithReportedMedia(StreamParams.ParseFromUrl(media.Url, _libraryManager, _mediaSourceManager), media.Url, cancellationToken);
         }
 
         return PlayItems(playlist, cancellationToken);
@@ -564,11 +603,7 @@ public class PlayToSession : ISessionController, IDisposable
                     : _userManager.GetUserById(_session.UserId);
                 var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, info.AudioStreamIndex, info.SubtitleStreamIndex, GetProfile());
 
-                await _device.SetAvTransport(newItem.StreamUrl, GetDlnaHeaders(newItem), newItem.Didl, CancellationToken.None).ConfigureAwait(false);
-
-                // Send a message to the DLNA device to notify what is the next track in the play list.
-                var newItemIndex = _playlist.FindIndex(item => item.StreamUrl == newItem.StreamUrl);
-                await SendNextTrackMessage(newItemIndex, CancellationToken.None).ConfigureAwait(false);
+                await SetAvTransport(newItem, CancellationToken.None).ConfigureAwait(false);
 
                 return;
             }
@@ -761,6 +796,7 @@ public class PlayToSession : ISessionController, IDisposable
     {
         _playlist.Clear();
         _nextTrackIndex = -1;
+        _nextTrackAnnouncedFor = null;
     }
 
     private async Task SetPlaylistIndex(int index, CancellationToken cancellationToken = default)
@@ -775,10 +811,7 @@ public class PlayToSession : ISessionController, IDisposable
         _currentPlaylistIndex = index;
         var currentitem = _playlist[index];
 
-        await _device.SetAvTransport(currentitem.StreamUrl, GetDlnaHeaders(currentitem), currentitem.Didl, cancellationToken).ConfigureAwait(false);
-
-        // Send a message to the DLNA device to notify what is the next track in the play list.
-        await SendNextTrackMessage(index, cancellationToken).ConfigureAwait(false);
+        await SetAvTransport(currentitem, cancellationToken).ConfigureAwait(false);
 
         var streamInfo = currentitem.StreamInfo;
         if (streamInfo.StartPositionTicks > 0 && EnableClientSideSeek(streamInfo))
@@ -891,11 +924,7 @@ public class PlayToSession : ISessionController, IDisposable
                     : _userManager.GetUserById(_session.UserId);
                 var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, newIndex, info.SubtitleStreamIndex, GetProfile());
 
-                await _device.SetAvTransport(newItem.StreamUrl, GetDlnaHeaders(newItem), newItem.Didl, CancellationToken.None).ConfigureAwait(false);
-
-                // Send a message to the DLNA device to notify what is the next track in the play list.
-                var newItemIndex = _playlist.FindIndex(item => item.StreamUrl == newItem.StreamUrl);
-                await SendNextTrackMessage(newItemIndex, CancellationToken.None).ConfigureAwait(false);
+                await SetAvTransport(newItem, CancellationToken.None).ConfigureAwait(false);
 
                 if (EnableClientSideSeek(newItem.StreamInfo))
                 {
@@ -922,11 +951,7 @@ public class PlayToSession : ISessionController, IDisposable
                     : _userManager.GetUserById(_session.UserId);
                 var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, info.AudioStreamIndex, newIndex, GetProfile());
 
-                await _device.SetAvTransport(newItem.StreamUrl, GetDlnaHeaders(newItem), newItem.Didl, CancellationToken.None).ConfigureAwait(false);
-
-                // Send a message to the DLNA device to notify what is the next track in the play list.
-                var newItemIndex = _playlist.FindIndex(item => item.StreamUrl == newItem.StreamUrl);
-                await SendNextTrackMessage(newItemIndex, CancellationToken.None).ConfigureAwait(false);
+                await SetAvTransport(newItem, CancellationToken.None).ConfigureAwait(false);
 
                 if (EnableClientSideSeek(newItem.StreamInfo) && newPosition > 0)
                 {

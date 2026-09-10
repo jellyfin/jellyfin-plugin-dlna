@@ -24,13 +24,9 @@ public class Device : IDisposable
     private const int ActiveTimerInterval = 10000;
     private const int TransportChangeTimerInterval = 500;
 
-    /// <summary>
-    /// How long a renderer is given to come up after it was handed a new track before what it
-    /// reports is taken at face value. A speaker that has to open and buffer a stream the server
-    /// is still transcoding sits in STOPPED for a while, so the window is generous. It is closed
-    /// again as soon as the renderer reports anything other than STOPPED, which keeps a stop the
-    /// listener triggers themselves from being held back by it.
-    /// </summary>
+    private static readonly TimeSpan _stopPollInterval = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan _stopTimeout = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan _transportSettleTime = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan _transportChangeGrace = TimeSpan.FromSeconds(30);
 
     private readonly IHttpClientFactory _httpClientFactory;
@@ -454,18 +450,16 @@ public class Device : IDisposable
 
         try
         {
-            // AVTransport:1 section 2.4.2 defines SetAVTransportURI for the STOPPED and NO_MEDIA_PRESENT states only.
-            // A renderer that is still playing, e.g. because it was stopped from its own remote, answers every
-            // following request with 705 (Transport is locked) until it is stopped.
-            try
-            {
-                await SetStop(avCommands!, cancellationToken).ConfigureAwait(false); // null checked above
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                // Stopping a transport that is already idle is a no-op that some devices fault on
-                _logger.LogDebug(ex, "{Name} - Stop before SetAVTransportURI failed", Properties.Name);
-            }
+            // AVTransport:1 section 2.4.2 defines SetAVTransportURI for the STOPPED and NO_MEDIA_PRESENT states
+            // only. A renderer that is still playing, e.g. because it was stopped from its own remote, answers
+            // every following request with 705 (Transport is locked) until it is stopped. Others take the
+            // request and keep playing what they had, so the transport has to have come to a stop first.
+            await StopForTransportChange(avCommands!, cancellationToken).ConfigureAwait(false); // null checked above
+
+            // The renderer still holds the track that was queued behind the one it was playing. Renderers that
+            // move to their queued track when the transport starts would land on that instead of the track
+            // handed over here, a track further on than the one that was asked for.
+            await ClearNextAvTransport(avCommands!, service, cancellationToken).ConfigureAwait(false); // null checked above
 
             await new DlnaHttpClient(_logger, _httpClientFactory)
                 .SendCommandAsync(
@@ -488,6 +482,10 @@ public class Device : IDisposable
                 // Some devices will throw an error if you tell it to play when it's already playing
                 // Others won't
             }
+
+            // Hold the renderer while it starts the track, so nothing reaches it that it could take
+            // as the track to play instead. A poll cannot get past _transportChanges either.
+            await Task.Delay(_transportSettleTime, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -537,6 +535,90 @@ public class Device : IDisposable
             .ConfigureAwait(false);
 
         return true;
+    }
+
+    private async Task ClearNextAvTransport(TransportCommands avCommands, DeviceService service, CancellationToken cancellationToken)
+    {
+        var command = avCommands.ServiceActions.FirstOrDefault(c => string.Equals(c.Name, "SetNextAVTransportURI", StringComparison.OrdinalIgnoreCase));
+        if (command is null)
+        {
+            return;
+        }
+
+        // AVTransport:1 section 2.4.3: an empty NextURI is what tells a renderer to forget what it has queued.
+        var dictionary = new Dictionary<string, string>
+        {
+            { "NextURI", string.Empty },
+            { "NextURIMetaData", string.Empty }
+        };
+
+        try
+        {
+            await new DlnaHttpClient(_logger, _httpClientFactory)
+                .SendCommandAsync(
+                    NormalizeUrl(service.ControlUrl),
+                    service,
+                    command.Name,
+                    avCommands.BuildPost(command, service.ServiceType, string.Empty, dictionary),
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // A renderer that refuses an empty NextURI keeps what it had queued, which is what it did before
+            _logger.LogDebug(ex, "{Name} - Clearing the queued next track failed", Properties.Name);
+        }
+    }
+
+    private async Task StopForTransportChange(TransportCommands avCommands, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await SetStop(avCommands, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Stopping a transport that is already idle is a no-op that some devices fault on
+            _logger.LogDebug(ex, "{Name} - Stop before SetAVTransportURI failed", Properties.Name);
+        }
+
+        var waited = TimeSpan.Zero;
+        while (true)
+        {
+            TransportState? state;
+            try
+            {
+                state = await GetTransportInfo(avCommands, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Without an answer there is nothing to wait for, so hand the track over
+                _logger.LogDebug(ex, "{Name} - Reading the transport state after Stop failed", Properties.Name);
+
+                return;
+            }
+
+            // No answer, or a state that is not modelled here such as the NO_MEDIA_PRESENT of an empty
+            // transport, leaves nothing to wait for: the renderer is as ready for a new track as a stopped one.
+            if (state is not (TransportState.PLAYING or TransportState.TRANSITIONING))
+            {
+                return;
+            }
+
+            if (waited >= _stopTimeout)
+            {
+                _logger.LogWarning(
+                    "{Name} - Transport still reports {State} {Seconds}s after it was stopped, handing over the track regardless",
+                    Properties.Name,
+                    state,
+                    _stopTimeout.TotalSeconds);
+
+                return;
+            }
+
+            await Task.Delay(_stopPollInterval, cancellationToken).ConfigureAwait(false);
+            waited += _stopPollInterval;
+        }
     }
 
     private static string CreateDidlMeta(string value)
