@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<Profile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>WiiM</Name>
+
+  <Identification>
+    <FriendlyName>WiiM.*</FriendlyName>
+    <ModelName>WiiM.*</ModelName>
+    <Manufacturer>Linkplay.*</Manufacturer>
+    <Headers>
+      <HttpHeaderInfo name="User-Agent" value="WiiM.*|Linkplay.*" match="Regex" />
+    </Headers>
+  </Identification>
+
+  <EnableAlbumArtInDidl>true</EnableAlbumArtInDidl>
+  <EnableSingleAlbumArtLimit>true</EnableSingleAlbumArtLimit>
+  <EnableSingleSubtitleLimit>true</EnableSingleSubtitleLimit>
+  <SupportedMediaTypes>Audio</SupportedMediaTypes>
+  <AlbumArtPn>JPEG_TN</AlbumArtPn>
+  <MaxAlbumArtWidth>160</MaxAlbumArtWidth>
+  <MaxAlbumArtHeight>160</MaxAlbumArtHeight>
+  <MaxIconWidth>48</MaxIconWidth>
+  <MaxIconHeight>48</MaxIconHeight>
+  <MaxStreamingBitrate>140000000</MaxStreamingBitrate>
+  <MaxStaticBitrate>140000000</MaxStaticBitrate>
+  <MusicStreamingTranscodingBitrate>320000</MusicStreamingTranscodingBitrate>
+  <ProtocolInfo>http-get:*:audio/flac:*,http-get:*:audio/mp4:*,http-get:*:audio/mpeg:*,http-get:*:audio/wav:*,http-get:*:audio/ogg:*</ProtocolInfo>
+
+  <DirectPlayProfiles>
+    <DirectPlayProfile type="Audio" container="flac" />
+    <DirectPlayProfile type="Audio" container="mp3" />
+    <DirectPlayProfile type="Audio" container="m4a" />
+    <DirectPlayProfile type="Audio" container="aac" />
+    <DirectPlayProfile type="Audio" container="wav" />
+    <DirectPlayProfile type="Audio" container="ogg" />
+  </DirectPlayProfiles>
+</Profile>
