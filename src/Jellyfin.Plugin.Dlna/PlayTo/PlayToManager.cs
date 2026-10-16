@@ -13,6 +13,7 @@ using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Session;
+using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Model.Session;
 using Microsoft.Extensions.Logging;
 using IDlnaManager = Jellyfin.Plugin.Dlna.Model.IDlnaManager;
@@ -28,6 +29,7 @@ public sealed class PlayToManager : IDisposable
     private readonly ISessionManager _sessionManager;
     private readonly ILibraryManager _libraryManager;
     private readonly IUserManager _userManager;
+    private readonly IPlaybackAccessManager _playbackAccessManager;
     private readonly IDlnaManager _dlnaManager;
     private readonly IServerApplicationHost _appHost;
     private readonly IImageProcessor _imageProcessor;
@@ -57,6 +59,7 @@ public sealed class PlayToManager : IDisposable
     /// <param name="localization">Instance of the <see cref="DlnaLocalization"/> class.</param>
     /// <param name="mediaSourceManager">Instance of the <see cref="IMediaSourceManager"/> interface.</param>
     /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
+    /// <param name="playbackAccessManager">Instance of the <see cref="IPlaybackAccessManager"/> interface.</param>
     public PlayToManager(
         ILogger logger,
         ISessionManager sessionManager,
@@ -70,7 +73,8 @@ public sealed class PlayToManager : IDisposable
         IUserDataManager userDataManager,
         DlnaLocalization localization,
         IMediaSourceManager mediaSourceManager,
-        IMediaEncoder mediaEncoder)
+        IMediaEncoder mediaEncoder,
+        IPlaybackAccessManager playbackAccessManager)
     {
         _logger = logger;
         _sessionManager = sessionManager;
@@ -85,6 +89,7 @@ public sealed class PlayToManager : IDisposable
         _localization = localization;
         _mediaSourceManager = mediaSourceManager;
         _mediaEncoder = mediaEncoder;
+        _playbackAccessManager = playbackAccessManager;
     }
 
     /// <summary>
@@ -272,7 +277,7 @@ public sealed class PlayToManager : IDisposable
                 _userManager,
                 _imageProcessor,
                 serverAddress,
-                null,
+                _playbackAccessManager,
                 _deviceDiscovery,
                 _userDataManager,
                 _localization,

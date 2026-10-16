@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 
 namespace Jellyfin.Plugin.Dlna.Extensions;
@@ -6,7 +7,7 @@ namespace Jellyfin.Plugin.Dlna.Extensions;
 /// <summary>
 /// Extensions for <see cref="string"/>.
 /// </summary>
-public static class StringExtensions
+public static partial class StringExtensions
 {
     /// <summary>
     /// Removes all characters that are not valid inside an XML document.
@@ -46,4 +47,26 @@ public static class StringExtensions
 
         return builder?.ToString() ?? value;
     }
+
+    /// <summary>
+    /// Masks the credentials a stream url carries, so the url can be logged.
+    /// </summary>
+    /// <remarks>
+    /// The url may be plain, XML escaped or embedded in DIDL metadata, so only the value of each
+    /// credential parameter is replaced, up to the character that ends it in any of these forms.
+    /// </remarks>
+    /// <param name="value">The url, or text holding urls.</param>
+    /// <returns>The value with each credential replaced by <c>***</c>.</returns>
+    public static string? RedactCredentials(this string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+
+        return CredentialParameterRegex().Replace(value, "$1***");
+    }
+
+    [GeneratedRegex(@"\b((?:PlaybackToken|ApiKey|api_key)=)[^&""'<>\s]+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex CredentialParameterRegex();
 }
