@@ -56,11 +56,12 @@ public class PlayToSession : ISessionController, IDisposable
     private readonly IPlaybackAccessManager _playbackAccessManager;
     private readonly List<PlaylistItem> _playlist = [];
     private readonly ConcurrentDictionary<string, Guid> _playbackGrantOwners = new(StringComparer.Ordinal);
+    private string? _reportedPlaySessionId;
     private Device _device;
     private int _currentPlaylistIndex;
     private int _nextTrackIndex = -1;
     private string? _nextTrackAnnouncedFor;
-    private bool _disposed;
+    private volatile bool _disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PlayToSession"/> class.
@@ -260,6 +261,7 @@ public class PlayToSession : ISessionController, IDisposable
             }
 
             streamInfo = StreamParams.ParseFromUrl(e.NewMediaInfo.Url, _libraryManager, _mediaSourceManager);
+            TrackReportedStream(streamInfo);
             if (streamInfo.Item is null)
             {
                 return;
@@ -342,21 +344,48 @@ public class PlayToSession : ISessionController, IDisposable
         }
     }
 
+    private void RevokePlaybackAccess(string playSessionId)
+    {
+        if (!_playbackGrantOwners.TryRemove(playSessionId, out var userId))
+        {
+            return;
+        }
+
+        _playbackAccessManager.Revoke(playSessionId, userId);
+        foreach (var item in _playlist)
+        {
+            if (string.Equals(item.StreamInfo.PlaySessionId, playSessionId, StringComparison.Ordinal))
+            {
+                // Replaying an earlier queue entry needs a fresh grant, rather than
+                // reusing one that is only valid for outstanding stop-time requests.
+                item.StreamInfo.PlaybackToken = null;
+                item.StreamInfo.PlaySessionId = null;
+            }
+        }
+    }
+
+    // Device reports a new track only when the item changes, so an audio or subtitle switch, or the same item
+    // queued twice, leaves the item as it was while the url, and with it the play session, moves on.
+    // The grant of the stream the renderer has left is revoked as soon as it reports a different one.
+    private void TrackReportedStream(StreamParams info)
+    {
+        if (string.IsNullOrEmpty(info.PlaySessionId))
+        {
+            return;
+        }
+
+        var previous = Interlocked.Exchange(ref _reportedPlaySessionId, info.PlaySessionId);
+        if (previous is not null && !string.Equals(previous, info.PlaySessionId, StringComparison.Ordinal))
+        {
+            RevokePlaybackAccess(previous);
+        }
+    }
+
     private async Task ReportPlaybackStopped(StreamParams streamInfo, long? positionTicks)
     {
-        if (streamInfo.PlaySessionId is { } playSessionId && _playbackGrantOwners.TryRemove(playSessionId, out var userId))
+        if (streamInfo.PlaySessionId is { } playSessionId)
         {
-            _playbackAccessManager.Revoke(playSessionId, userId);
-            foreach (var item in _playlist)
-            {
-                if (string.Equals(item.StreamInfo.PlaySessionId, playSessionId, StringComparison.Ordinal))
-                {
-                    // Replaying an earlier queue entry needs a fresh grant, rather than
-                    // reusing one that is only valid for outstanding stop-time requests.
-                    item.StreamInfo.PlaybackToken = null;
-                    item.StreamInfo.PlaySessionId = null;
-                }
-            }
+            RevokePlaybackAccess(playSessionId);
         }
 
         try
@@ -386,6 +415,7 @@ public class PlayToSession : ISessionController, IDisposable
         try
         {
             var info = StreamParams.ParseFromUrl(e.MediaInfo.Url, _libraryManager, _mediaSourceManager);
+            TrackReportedStream(info);
 
             if (info.Item is not null)
             {
@@ -419,6 +449,7 @@ public class PlayToSession : ISessionController, IDisposable
             }
 
             var info = StreamParams.ParseFromUrl(mediaUrl, _libraryManager, _mediaSourceManager);
+            TrackReportedStream(info);
 
             if (info.Item is not null)
             {
@@ -621,9 +652,7 @@ public class PlayToSession : ISessionController, IDisposable
 
             if (info.Item is not null && !EnableClientSideSeek(info))
             {
-                var user = _session.UserId.IsEmpty()
-                    ? null
-                    : _userManager.GetUserById(_session.UserId);
+                var user = GetPlaybackUser(info);
                 var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, info.AudioStreamIndex, info.SubtitleStreamIndex, GetProfile());
 
                 await SetAvTransport(newItem, CancellationToken.None).ConfigureAwait(false);
@@ -667,6 +696,22 @@ public class PlayToSession : ISessionController, IDisposable
         }
 
         list.Add(item);
+    }
+
+    // A stream rebuilt for a seek or a stream switch is authorized by whoever queued the item. The session
+    // user is whoever sent the latest play command, which can be a different user queueing onto the playlist.
+    private User? GetPlaybackUser(StreamParams info)
+    {
+        var index = _currentPlaylistIndex >= 0
+            && _currentPlaylistIndex < _playlist.Count
+            && _playlist[_currentPlaylistIndex].StreamInfo.ItemId.Equals(info.ItemId)
+                ? _currentPlaylistIndex
+                : _playlist.FindIndex(item => item.StreamInfo.ItemId.Equals(info.ItemId));
+
+        // Without a playlist entry nobody vouches for the item, so CreatePlaylistItem falls back to the default user
+        return index >= 0 && _playlist[index].UserId is { } userId
+            ? _userManager.GetUserById(userId)
+            : null;
     }
 
     private DlnaDeviceProfile GetProfile()
@@ -726,6 +771,15 @@ public class PlayToSession : ISessionController, IDisposable
             cancellationToken).ConfigureAwait(false);
         streamInfo.PlaybackToken = grant.Token;
         _playbackGrantOwners[grant.PlaySessionId] = grant.UserId;
+
+        // Dispose marks the session before it revokes the grants it tracks, so a grant created while the
+        // session was being disposed is either among those or seen here, and never outlives the session.
+        if (_disposed)
+        {
+            RevokePlaybackAccess(grant.PlaySessionId);
+            ObjectDisposedException.ThrowIf(true, this);
+        }
+
         var libraryItem = _libraryManager.GetItemById(streamInfo.ItemId)
             ?? throw new InvalidOperationException("The playback item no longer exists.");
         BuildPlaylistMetadata(item, libraryItem, _userManager.GetUserById(userId));
@@ -859,12 +913,15 @@ public class PlayToSession : ISessionController, IDisposable
 
     private void ClearPlaylist()
     {
-        foreach (var grant in _playbackGrantOwners)
+        // Each grant is removed on its own: one registered while the others are revoked stays tracked for
+        // a later stop, rather than being dropped from the dictionary without having been revoked.
+        foreach (var playSessionId in _playbackGrantOwners.Keys)
         {
-            _playbackAccessManager.Revoke(grant.Key, grant.Value);
+            if (_playbackGrantOwners.TryRemove(playSessionId, out var userId))
+            {
+                _playbackAccessManager.Revoke(playSessionId, userId);
+            }
         }
-
-        _playbackGrantOwners.Clear();
 
         _playlist.Clear();
         _nextTrackIndex = -1;
@@ -910,6 +967,9 @@ public class PlayToSession : ISessionController, IDisposable
             return;
         }
 
+        // Set first: a grant that PreparePlaybackAccess registers after ClearPlaylist has run revokes itself
+        _disposed = true;
+
         if (disposing)
         {
             ClearPlaylist();
@@ -921,8 +981,6 @@ public class PlayToSession : ISessionController, IDisposable
             _device.OnDeviceUnavailable = null;
             _device.Dispose();
         }
-
-        _disposed = true;
     }
 
     private Task SendGeneralCommand(GeneralCommand command, CancellationToken cancellationToken)
@@ -992,9 +1050,7 @@ public class PlayToSession : ISessionController, IDisposable
             {
                 var newPosition = GetProgressPositionTicks(info) ?? 0;
 
-                var user = _session.UserId.IsEmpty()
-                    ? null
-                    : _userManager.GetUserById(_session.UserId);
+                var user = GetPlaybackUser(info);
                 var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, newIndex, info.SubtitleStreamIndex, GetProfile());
 
                 await SetAvTransport(newItem, CancellationToken.None).ConfigureAwait(false);
@@ -1019,9 +1075,7 @@ public class PlayToSession : ISessionController, IDisposable
             {
                 var newPosition = GetProgressPositionTicks(info) ?? 0;
 
-                var user = _session.UserId.IsEmpty()
-                    ? null
-                    : _userManager.GetUserById(_session.UserId);
+                var user = GetPlaybackUser(info);
                 var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, info.AudioStreamIndex, newIndex, GetProfile());
 
                 await SetAvTransport(newItem, CancellationToken.None).ConfigureAwait(false);
