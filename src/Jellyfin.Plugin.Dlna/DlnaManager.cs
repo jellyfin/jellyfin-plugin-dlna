@@ -329,8 +329,8 @@ public class DlnaManager : IDlnaManager
     /// <remarks>
     /// Profiles written by the device profile editor of Jellyfin 10.8 spell an unset attribute out
     /// as an empty one. Most of them are typed as an enum, a bool or an int, none of which accept
-    /// an empty value. Older profiles also use capitalized protocol values, which the current
-    /// MediaStreamProtocol enum no longer accepts.
+    /// an empty value. Older profiles also spell the protocol in another case than the lowercase
+    /// MediaStreamProtocol enum members, such as Http or HLS, which it does not accept.
     /// </remarks>
     private DlnaDeviceProfile DeserializeProfile(string path)
     {
@@ -351,7 +351,9 @@ public class DlnaManager : IDlnaManager
                 .Where(element => element.Name.LocalName == "TranscodingProfile")
                 .SelectMany(element => element.Attributes())
                 .Where(attribute => attribute.Name.LocalName == "protocol"
-                    && attribute.Value is "Http" or "Hls")
+                    && attribute.Value is not ("http" or "hls")
+                    && (string.Equals(attribute.Value, "http", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(attribute.Value, "hls", StringComparison.OrdinalIgnoreCase)))
                 .ToList();
 
             if (empty.Count == 0 && legacyProtocols.Count == 0)
@@ -361,10 +363,12 @@ public class DlnaManager : IDlnaManager
 
             _logger.LogWarning(
                 ex,
-                "Profile file {Path} could not be read, retrying without its {EmptyCount} empty attributes and with {ProtocolCount} legacy protocol values normalized",
+                "Profile file {Path} could not be read, retrying without its {EmptyCount} empty attributes ({Attributes}) and with its {ProtocolCount} protocol values lowercased ({Protocols})",
                 path,
                 empty.Count,
-                legacyProtocols.Count);
+                string.Join(", ", empty.Select(attribute => attribute.Name.LocalName).Distinct()),
+                legacyProtocols.Count,
+                string.Join(", ", legacyProtocols.Select(attribute => attribute.Value).Distinct()));
 
             foreach (var attribute in empty)
             {
