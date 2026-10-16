@@ -4,11 +4,10 @@
   <Name>WiiM</Name>
 
   <Identification>
-    <FriendlyName>WiiM.*</FriendlyName>
-    <ModelName>WiiM.*</ModelName>
-    <Manufacturer>Linkplay.*</Manufacturer>
+    <Manufacturer>Linkplay|WiiM</Manufacturer>
     <Headers>
-      <HttpHeaderInfo name="User-Agent" value="WiiM.*|Linkplay.*" match="Regex" />
+      <HttpHeaderInfo name="User-Agent" value="WiiM" match="Substring" />
+      <HttpHeaderInfo name="User-Agent" value="Linkplay" match="Substring" />
     </Headers>
   </Identification>
 
@@ -34,4 +33,8 @@
     <DirectPlayProfile type="Audio" container="wav" />
     <DirectPlayProfile type="Audio" container="ogg" />
   </DirectPlayProfiles>
+
+  <TranscodingProfiles>
+    <TranscodingProfile container="mp3" type="Audio" audioCodec="mp3" estimateContentLength="false" enableMpegtsM2TsMode="false" transcodeSeekInfo="Auto" copyTimestamps="false" context="Streaming" enableSubtitlesInManifest="false" minSegments="0" segmentLength="0" breakOnNonKeyFrames="false" />
+  </TranscodingProfiles>
 </Profile>
