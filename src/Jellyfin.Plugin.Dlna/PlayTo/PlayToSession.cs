@@ -287,7 +287,10 @@ public class PlayToSession : ISessionController, IDisposable
                 return;
             }
 
-            var positionTicks = GetProgressPositionTicks(streamInfo);
+            // The device is back at 0 once it reaches the end of the track, which the stream's start offset must not hide
+            var playedToCompletion = _device.Position.Ticks == 0;
+
+            long? positionTicks = playedToCompletion ? 0 : GetProgressPositionTicks(streamInfo);
 
             await ReportPlaybackStopped(streamInfo, positionTicks).ConfigureAwait(false);
 
@@ -296,8 +299,6 @@ public class PlayToSession : ISessionController, IDisposable
             var duration = mediaSource is null
                 ? _device.Duration?.Ticks
                 : mediaSource.RunTimeTicks;
-
-            var playedToCompletion = positionTicks.HasValue && positionTicks.Value == 0;
 
             if (!playedToCompletion && duration.HasValue && positionTicks.HasValue)
             {
