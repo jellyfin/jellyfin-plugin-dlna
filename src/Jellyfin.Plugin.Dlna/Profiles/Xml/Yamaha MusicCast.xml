@@ -4,11 +4,13 @@
   <Name>Yamaha MusicCast</Name>
 
   <Identification>
-    <FriendlyName>.*MusicCast.*|.*NP-S.*|.*Yamaha.*</FriendlyName>
-    <ModelName>.*MusicCast.*|.*NP-S.*|.*Yamaha.*</ModelName>
-    <Manufacturer>.*Yamaha.*</Manufacturer>
+    <Manufacturer>Yamaha</Manufacturer>
+    <ModelDescription>MusicCast</ModelDescription>
     <Headers>
-      <HttpHeaderInfo name="User-Agent" value=".*NP-S.*|.*Yamaha.*|.*MusicCast.*|.*Network_Module.*" match="Regex" />
+      <HttpHeaderInfo name="User-Agent" value="MusicCast" match="Substring" />
+      <HttpHeaderInfo name="User-Agent" value="Network_Module" match="Substring" />
+      <HttpHeaderInfo name="User-Agent" value="YamahaNetworkPlayer" match="Substring" />
+      <HttpHeaderInfo name="User-Agent" value="NP-S" match="Substring" />
     </Headers>
   </Identification>
 
@@ -34,4 +36,8 @@
     <DirectPlayProfile type="Audio" container="wav" />
     <DirectPlayProfile type="Audio" container="wma" />
   </DirectPlayProfiles>
+
+  <TranscodingProfiles>
+    <TranscodingProfile container="mp3" type="Audio" audioCodec="mp3" estimateContentLength="false" enableMpegtsM2TsMode="false" transcodeSeekInfo="Auto" copyTimestamps="false" context="Streaming" enableSubtitlesInManifest="false" minSegments="0" segmentLength="0" breakOnNonKeyFrames="false" />
+  </TranscodingProfiles>
 </Profile>
