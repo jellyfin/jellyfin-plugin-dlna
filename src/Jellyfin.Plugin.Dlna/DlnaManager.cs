@@ -322,14 +322,15 @@ public class DlnaManager : IDlnaManager
     }
 
     /// <summary>
-    /// Deserializes a profile file, retrying without the attributes that carry no value.
+    /// Deserializes a profile file, retrying after normalizing legacy attributes.
     /// </summary>
     /// <param name="path">The path of the profile file.</param>
     /// <returns>The <see cref="DlnaDeviceProfile"/>.</returns>
     /// <remarks>
     /// Profiles written by the device profile editor of Jellyfin 10.8 spell an unset attribute out
     /// as an empty one. Most of them are typed as an enum, a bool or an int, none of which accept
-    /// an empty value, so the whole profile would be dropped over an attribute that was never set.
+    /// an empty value. Older profiles also spell the protocol in another case than the lowercase
+    /// MediaStreamProtocol enum members, such as Http or HLS, which it does not accept.
     /// </remarks>
     private DlnaDeviceProfile DeserializeProfile(string path)
     {
@@ -346,21 +347,37 @@ public class DlnaManager : IDlnaManager
                 .Where(attribute => !attribute.IsNamespaceDeclaration && attribute.Value.Length == 0)
                 .ToList();
 
-            if (empty.Count == 0)
+            var legacyProtocols = document.Descendants()
+                .Where(element => element.Name.LocalName == "TranscodingProfile")
+                .SelectMany(element => element.Attributes())
+                .Where(attribute => attribute.Name.LocalName == "protocol"
+                    && attribute.Value is not ("http" or "hls")
+                    && (string.Equals(attribute.Value, "http", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(attribute.Value, "hls", StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+            if (empty.Count == 0 && legacyProtocols.Count == 0)
             {
                 throw;
             }
 
             _logger.LogWarning(
                 ex,
-                "Profile file {Path} could not be read, retrying without its {Count} empty attributes: {Attributes}",
+                "Profile file {Path} could not be read, retrying without its {EmptyCount} empty attributes ({Attributes}) and with its {ProtocolCount} protocol values lowercased ({Protocols})",
                 path,
                 empty.Count,
-                string.Join(", ", empty.Select(attribute => attribute.Name.LocalName).Distinct()));
+                string.Join(", ", empty.Select(attribute => attribute.Name.LocalName).Distinct()),
+                legacyProtocols.Count,
+                string.Join(", ", legacyProtocols.Select(attribute => attribute.Value).Distinct()));
 
             foreach (var attribute in empty)
             {
                 attribute.Remove();
+            }
+
+            foreach (var attribute in legacyProtocols)
+            {
+                attribute.Value = attribute.Value.ToLowerInvariant();
             }
 
             using var stream = new MemoryStream();
