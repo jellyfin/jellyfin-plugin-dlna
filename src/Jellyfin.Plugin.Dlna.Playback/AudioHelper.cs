@@ -112,7 +112,9 @@ public class AudioHelper
                 cancellationTokenSource.Token)
             .ConfigureAwait(false);
 
-        if (streamingRequest.Static && state.DirectStreamProvider is not null)
+        var serveStatic = streamingRequest.Static;
+
+        if (serveStatic && state.DirectStreamProvider is not null)
         {
             StreamingHelpers.AddDlnaHeaders(state, _httpContextAccessor.HttpContext.Response.Headers, true, streamingRequest.StartTimeTicks, _httpContextAccessor.HttpContext.Request, _dlnaManager);
 
@@ -128,7 +130,7 @@ public class AudioHelper
         }
 
         // Static remote stream
-        if (streamingRequest.Static && state.InputProtocol == MediaProtocol.Http)
+        if (serveStatic && state.InputProtocol == MediaProtocol.Http)
         {
             StreamingHelpers.AddDlnaHeaders(state, _httpContextAccessor.HttpContext.Response.Headers, true, streamingRequest.StartTimeTicks, _httpContextAccessor.HttpContext.Request, _dlnaManager);
 
@@ -136,7 +138,7 @@ public class AudioHelper
             return await FileStreamResponseHelpers.GetStaticRemoteStreamResult(state, httpClient, _httpContextAccessor.HttpContext).ConfigureAwait(false);
         }
 
-        if (streamingRequest.Static && state.InputProtocol != MediaProtocol.File)
+        if (serveStatic && state.InputProtocol != MediaProtocol.File)
         {
             return new BadRequestObjectResult($"Input protocol {state.InputProtocol} cannot be streamed statically");
         }
@@ -147,10 +149,10 @@ public class AudioHelper
         var transcodingJob = _transcodeManager.GetTranscodingJob(outputPath, TranscodingJobType.Progressive);
         var isTranscodeCached = outputPathExists && transcodingJob is not null;
 
-        StreamingHelpers.AddDlnaHeaders(state, _httpContextAccessor.HttpContext.Response.Headers, streamingRequest.Static || isTranscodeCached, streamingRequest.StartTimeTicks, _httpContextAccessor.HttpContext.Request, _dlnaManager);
+        StreamingHelpers.AddDlnaHeaders(state, _httpContextAccessor.HttpContext.Response.Headers, serveStatic || isTranscodeCached, streamingRequest.StartTimeTicks, _httpContextAccessor.HttpContext.Request, _dlnaManager);
 
         // Static stream
-        if (streamingRequest.Static)
+        if (serveStatic)
         {
             var contentType = DlnaMimeTypes.GetAudioMimeType(state.OutputContainer, state.OutputAudioBitrate, state.OutputAudioSampleRate, state.OutputAudioChannels)
                               ?? state.GetMimeType("." + state.OutputContainer, false)

@@ -11,6 +11,7 @@ using Jellyfin.Plugin.Dlna.ContentDirectory;
 using Jellyfin.Plugin.Dlna.Extensions;
 using Jellyfin.Plugin.Dlna.Localization;
 using Jellyfin.Plugin.Dlna.Model;
+using Jellyfin.Plugin.Dlna.Playback;
 using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Entities;
@@ -20,6 +21,7 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Playlists;
 using MediaBrowser.Model.Drawing;
+using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Net;
 using Microsoft.Extensions.Logging;
@@ -67,6 +69,7 @@ public class DidlBuilder
     private readonly ILogger _logger;
     private readonly IMediaEncoder _mediaEncoder;
     private readonly ILibraryManager _libraryManager;
+    private readonly IUserManager _userManager;
 
     private IReadOnlyDictionary<Guid, IReadOnlyList<PersonInfo>>? _preloadedPeople;
 
@@ -84,6 +87,7 @@ public class DidlBuilder
     /// <param name="logger">Instance of the <see cref="ILogger"/> interface.</param>
     /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
     /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
+    /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     public DidlBuilder(
         DlnaDeviceProfile profile,
         User? user,
@@ -95,7 +99,8 @@ public class DidlBuilder
         IMediaSourceManager mediaSourceManager,
         ILogger logger,
         IMediaEncoder mediaEncoder,
-        ILibraryManager libraryManager)
+        ILibraryManager libraryManager,
+        IUserManager userManager)
     {
         _profile = profile;
         _user = user;
@@ -108,6 +113,7 @@ public class DidlBuilder
         _logger = logger;
         _mediaEncoder = mediaEncoder;
         _libraryManager = libraryManager;
+        _userManager = userManager;
     }
 
     /// <summary>
@@ -273,6 +279,13 @@ public class DidlBuilder
     {
         if (streamInfo is not null)
         {
+            // The caller already built this stream, and may already have turned it into a URL.
+            // Changing PlayMethod here would make the DIDL describe a different stream than the one sent.
+            if (item.MediaType == MediaType.Video)
+            {
+                DlnaStreamRequestAdjustments.ApplyBrowseSubtitlePreferences(streamInfo, itemMediaType: item.MediaType);
+            }
+
             return streamInfo;
         }
 
@@ -297,6 +310,20 @@ public class DidlBuilder
             }
 
             var type = isAudio ? DlnaProfileType.Audio : DlnaProfileType.Video;
+            var liveSource = sources.FirstOrDefault(source => source.IsInfiniteStream);
+            var burnIn = DlnaStreamRequestAdjustments.CanBurnInSubtitles(liveSource, _userManager, item.MediaType);
+            if (!isAudio)
+            {
+                DlnaStreamRequestAdjustments.WarnMissingBurnInUser(_logger, liveSource, _userManager, item.MediaType);
+            }
+
+            // Burn-in only happens inside a transcode. Ask for one before the stream is built,
+            // so the URL and the DIDL describe the same transcode.
+            if (burnIn)
+            {
+                DlnaStreamRequestAdjustments.RequireBurnInTranscode(options);
+            }
+
             var resolved = isAudio ? builder.GetOptimalAudioStream(options) : builder.GetOptimalVideoStream(options);
 
             // DirectStream is served as the source file itself. The stream builder still offers it
@@ -309,6 +336,11 @@ public class DidlBuilder
                 options.EnableDirectStream = false;
 
                 resolved = isAudio ? builder.GetOptimalAudioStream(options) : builder.GetOptimalVideoStream(options);
+            }
+
+            if (!isAudio)
+            {
+                DlnaStreamRequestAdjustments.ApplyBrowseSubtitlePreferences(resolved, itemMediaType: item.MediaType);
             }
 
             return resolved;
@@ -374,6 +406,14 @@ public class DidlBuilder
         foreach (var contentFeature in contentFeatureList)
         {
             AddVideoResource(writer, filter, contentFeature, streamInfo);
+        }
+
+        // Live TV subtitles are only offered when burn-in is enabled. On-demand video keeps
+        // advertising its external subtitle tracks regardless of the setting.
+        if (!DlnaPluginConfigurationAccessor.EnableSubtitleBurnIn
+            && DlnaStreamRequestAdjustments.IsLiveTv(streamInfo.MediaSource))
+        {
+            return;
         }
 
         var subtitleProfiles = streamInfo.GetSubtitleProfiles(_mediaEncoder, false, _serverAddress, _accessToken);
