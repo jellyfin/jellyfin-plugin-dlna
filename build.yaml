@@ -1,8 +1,8 @@
 name: "DLNA"
 guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-dlna.png"
-version: 14
-targetAbi: "12.1.0.0"
+version: 15
+targetAbi: "12.2.0.0"
 framework: "net10.0"
 owner: "jellyfin"
 overview: "DLNA Service"
@@ -16,4 +16,7 @@ artifacts:
   - "Jellyfin.Plugin.Dlna.Playback.dll"
   - "Rssdp.dll"
 changelog: |-
-  - Fix track changes that renderers ignore or overrun (#245) @Shadowghost, @crobibero
+  - Fix seeking in transcoded PlayTo streams (#254) @DrakenKor, @Shadowghost
+  - Add DLNA profile for WiiM and Linkplay devices (#251) @Zenedith, @Shadowghost
+  - Add DLNA profile for Yamaha MusicCast devices (#252) @Zenedith, @Shadowghost
+  - Accept legacy protocol values in custom DLNA profiles (#258) @DrakenKor, @Shadowghost
