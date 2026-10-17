@@ -7,21 +7,25 @@ using System.Text;
 using System.Xml;
 using Jellyfin.Data.Enums;
 using Jellyfin.Database.Implementations.Entities;
+using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Plugin.Dlna.ContentDirectory;
 using Jellyfin.Plugin.Dlna.Extensions;
 using Jellyfin.Plugin.Dlna.Localization;
 using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Drawing;
+using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Audio;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.LiveTv;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Playlists;
 using MediaBrowser.Model.Drawing;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Net;
+using MediaBrowser.Model.Querying;
 using Microsoft.Extensions.Logging;
 using DlnaProfileType = MediaBrowser.Model.Dlna.DlnaProfileType;
 using Episode = MediaBrowser.Controller.Entities.TV.Episode;
@@ -69,6 +73,8 @@ public class DidlBuilder
     private readonly ILibraryManager _libraryManager;
 
     private IReadOnlyDictionary<Guid, IReadOnlyList<PersonInfo>>? _preloadedPeople;
+
+    private IReadOnlyDictionary<Guid, LiveTvProgram?>? _currentPrograms;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DidlBuilder"/> class.
@@ -873,13 +879,26 @@ public class DidlBuilder
 
         WriteObjectClass(writer, item, itemStubType);
 
-        if (filter.Contains("dc:date"))
+        var liveProgram = ResolveLiveTvProgram(item, _user);
+
+        // Samsung omits dc:date from the browse filter and then shows 01/01/1970 when the field is absent.
+        if (item is LiveTvProgram or LiveTvChannel)
         {
-            if (item.PremiereDate.HasValue)
+            var displayDateUtc = item is LiveTvProgram program
+                ? DlnaItemDisplayDate.GetProgramDisplayDateUtc(program.StartDate)
+                : DlnaItemDisplayDate.GetChannelDisplayDateUtc(liveProgram?.StartDate);
+
+            if (displayDateUtc.HasValue)
             {
-                AddValue(writer, "dc", "date", item.PremiereDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), NsDc);
+                AddValue(writer, "dc", "date", DlnaItemDisplayDate.FormatDlnaLocalDateTime(displayDateUtc.Value), NsDc);
             }
         }
+        else if (filter.Contains("dc:date") && item.PremiereDate.HasValue)
+        {
+            AddValue(writer, "dc", "date", item.PremiereDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), NsDc);
+        }
+
+        AddLiveTvBroadcastFields(item, liveProgram, writer, filter);
 
         if (filter.Contains("upnp:genre"))
         {
@@ -929,6 +948,78 @@ public class DidlBuilder
         }
 
         AddPeople(item, writer);
+    }
+
+    private LiveTvProgram? ResolveLiveTvProgram(BaseItem item, User? user)
+    {
+        if (item is LiveTvProgram program)
+        {
+            return program;
+        }
+
+        if (item is not LiveTvChannel channel)
+        {
+            return null;
+        }
+
+        return GetCurrentProgram(channel.Id, user);
+    }
+
+    private LiveTvProgram? GetCurrentProgram(Guid channelId, User? user)
+    {
+        if (_currentPrograms is not null)
+        {
+            return _currentPrograms.GetValueOrDefault(channelId);
+        }
+
+        if (user is null)
+        {
+            return null;
+        }
+
+        var now = DateTime.UtcNow;
+        var query = new InternalItemsQuery(user)
+        {
+            IncludeItemTypes = [BaseItemKind.LiveTvProgram],
+            ChannelIds = [channelId],
+            MaxStartDate = now,
+            MinEndDate = now,
+            OrderBy = [(ItemSortBy.StartDate, SortOrder.Descending)],
+            DtoOptions = new DtoOptions(false)
+        };
+
+        return _libraryManager.GetItemList(query).OfType<LiveTvProgram>().FirstOrDefault();
+    }
+
+    private void AddLiveTvBroadcastFields(BaseItem item, LiveTvProgram? program, XmlWriter writer, Filter filter)
+    {
+        if (program is not null)
+        {
+            if (filter.Contains("upnp:scheduledStartTime") && DlnaItemDisplayDate.IsValidDlnaDate(program.StartDate))
+            {
+                AddValue(writer, "upnp", "scheduledStartTime", DlnaItemDisplayDate.FormatDlnaDateTime(program.StartDate), NsUpnp);
+            }
+
+            if (program.EndDate.HasValue
+                && filter.Contains("upnp:scheduledEndTime")
+                && DlnaItemDisplayDate.IsValidDlnaDate(program.EndDate.Value))
+            {
+                AddValue(writer, "upnp", "scheduledEndTime", DlnaItemDisplayDate.FormatDlnaDateTime(program.EndDate.Value), NsUpnp);
+            }
+        }
+
+        if (item is LiveTvChannel channel)
+        {
+            if (!string.IsNullOrEmpty(channel.Number))
+            {
+                AddValue(writer, "upnp", "channelNr", channel.Number, NsUpnp);
+            }
+
+            if (!string.IsNullOrEmpty(channel.Name))
+            {
+                AddValue(writer, "upnp", "channelName", channel.Name, NsUpnp);
+            }
+        }
     }
 
     private void WriteObjectClass(XmlWriter writer, BaseItem item, StubType? stubType)
@@ -986,6 +1077,10 @@ public class DidlBuilder
             {
                 writer.WriteString("object.item.videoItem.musicVideoClip");
             }
+            else if (!_profile.RequiresPlainVideoItems && item is LiveTvChannel or LiveTvProgram)
+            {
+                writer.WriteString("object.item.videoItem.videoBroadcast");
+            }
             else
             {
                 writer.WriteString("object.item.videoItem");
@@ -1030,6 +1125,48 @@ public class DidlBuilder
         _preloadedPeople = ids.Length == 0
             ? new Dictionary<Guid, IReadOnlyList<PersonInfo>>()
             : _libraryManager.GetPeopleByItems(ids);
+    }
+
+    /// <summary>
+    /// Fetches the programme currently airing on each channel in a listing, so writing the page
+    /// does not query it once per channel.
+    /// </summary>
+    /// <param name="items">The items about to be written.</param>
+    public void PreloadCurrentPrograms(IReadOnlyList<BaseItem> items)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+
+        var channelIds = items.OfType<LiveTvChannel>().Select(channel => channel.Id).Distinct().ToArray();
+        if (_user is null || channelIds.Length == 0)
+        {
+            _currentPrograms = new Dictionary<Guid, LiveTvProgram?>();
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        var programs = _libraryManager.GetItemList(new InternalItemsQuery(_user)
+        {
+            IncludeItemTypes = [BaseItemKind.LiveTvProgram],
+            ChannelIds = channelIds,
+            MaxStartDate = now,
+            MinEndDate = now,
+            OrderBy = [(ItemSortBy.StartDate, SortOrder.Descending)],
+            DtoOptions = new DtoOptions(false)
+        });
+
+        var current = new Dictionary<Guid, LiveTvProgram?>(channelIds.Length);
+        foreach (var channelId in channelIds)
+        {
+            current[channelId] = null;
+        }
+
+        foreach (var program in programs.OfType<LiveTvProgram>().Where(program =>
+            current.TryGetValue(program.ChannelId, out var existing) && existing is null))
+        {
+            current[program.ChannelId] = program;
+        }
+
+        _currentPrograms = current;
     }
 
     private void AddPeople(BaseItem item, XmlWriter writer)
