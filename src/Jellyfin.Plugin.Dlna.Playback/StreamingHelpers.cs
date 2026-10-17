@@ -287,7 +287,7 @@ public static class StreamingHelpers
             ? GetOutputFileExtension(state, mediaSource)
             : ("." + GetContainerFileExtension(state.OutputContainer));
 
-        state.OutputFilePath = GetOutputFilePath(state, ext, serverConfigurationManager, streamingRequest.DeviceId, streamingRequest.PlaySessionId);
+        state.OutputFilePath = GetOutputFilePath(state, ext, serverConfigurationManager, streamingRequest.DeviceId, streamingRequest.PlaySessionId, streamingRequest.StartTimeTicks);
 
         return state;
     }
@@ -572,10 +572,12 @@ public static class StreamingHelpers
     /// <param name="serverConfigurationManager">Instance of the <see cref="IServerConfigurationManager"/> interface.</param>
     /// <param name="deviceId">The device id.</param>
     /// <param name="playSessionId">The play session id.</param>
+    /// <param name="startTimeTicks">The start time in ticks.</param>
     /// <returns>The complete file path, including the folder, for the transcoding file.</returns>
-    private static string GetOutputFilePath(StreamState state, string outputFileExtension, IServerConfigurationManager serverConfigurationManager, string? deviceId, string? playSessionId)
+    private static string GetOutputFilePath(StreamState state, string outputFileExtension, IServerConfigurationManager serverConfigurationManager, string? deviceId, string? playSessionId, long? startTimeTicks)
     {
-        var data = $"{state.MediaPath}-{state.UserAgent}-{deviceId!}-{playSessionId!}";
+        // The output starts at the requested position, so a request for another position is another output
+        var data = $"{state.MediaPath}-{state.UserAgent}-{deviceId!}-{playSessionId!}-{startTimeTicks}";
 
         var filename = data.GetMD5().ToString("N", CultureInfo.InvariantCulture);
         var ext = outputFileExtension.ToLowerInvariant();
