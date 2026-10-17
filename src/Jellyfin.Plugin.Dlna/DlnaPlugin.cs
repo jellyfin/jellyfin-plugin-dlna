@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Jellyfin.Plugin.Dlna.Configuration;
+using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
@@ -22,6 +23,7 @@ public class DlnaPlugin : BasePlugin<DlnaPluginConfiguration>, IHasWebPages
         : base(applicationPaths, xmlSerializer)
     {
         Instance = this;
+        SyncConfigurationAccessor();
     }
 
     /// <summary>
@@ -37,6 +39,13 @@ public class DlnaPlugin : BasePlugin<DlnaPluginConfiguration>, IHasWebPages
 
     /// <inheritdoc />
     public override string Description => "Use Jellyfin as a DLNA server.";
+
+    /// <inheritdoc />
+    public override void UpdateConfiguration(BasePluginConfiguration configuration)
+    {
+        base.UpdateConfiguration(configuration);
+        SyncConfigurationAccessor();
+    }
 
     /// <inheritdoc />
     public IEnumerable<PluginPageInfo> GetPages()
@@ -55,5 +64,10 @@ public class DlnaPlugin : BasePlugin<DlnaPluginConfiguration>, IHasWebPages
                 EmbeddedResourcePath = GetType().Namespace + ".Configuration.config.js"
             },
         ];
+    }
+
+    private static void SyncConfigurationAccessor()
+    {
+        DlnaPluginConfigurationAccessor.DefaultUserId = Instance.Configuration.DefaultUserId;
     }
 }

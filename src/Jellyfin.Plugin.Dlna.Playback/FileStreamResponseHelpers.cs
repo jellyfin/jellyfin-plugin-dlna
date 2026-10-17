@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -7,10 +8,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Playback.Extensions;
+using Jellyfin.Plugin.Dlna.Playback.Model;
+using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Streaming;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 
 namespace Jellyfin.Plugin.Dlna.Playback;
@@ -117,6 +122,7 @@ public static class FileStreamResponseHelpers
     /// <param name="isHeadRequest">Whether the current request is a HTTP HEAD request so only the headers get returned.</param>
     /// <param name="httpContext">The current http context.</param>
     /// <param name="transcodeManager">The <see cref="ITranscodeManager"/> singleton.</param>
+    /// <param name="mediaSourceManager">The <see cref="IMediaSourceManager"/> singleton.</param>
     /// <param name="ffmpegCommandLineArguments">The command line arguments to start ffmpeg.</param>
     /// <param name="transcodingJobType">The <see cref="TranscodingJobType"/>.</param>
     /// <param name="cancellationTokenSource">The <see cref="CancellationTokenSource"/>.</param>
@@ -126,6 +132,7 @@ public static class FileStreamResponseHelpers
         bool isHeadRequest,
         HttpContext httpContext,
         ITranscodeManager transcodeManager,
+        IMediaSourceManager mediaSourceManager,
         string ffmpegCommandLineArguments,
         TranscodingJobType transcodingJobType,
         CancellationTokenSource cancellationTokenSource)
@@ -140,9 +147,10 @@ public static class FileStreamResponseHelpers
                               ? DlnaMimeTypes.GetVideoMimeType(state.OutputContainer, state.TargetTimestamp)
                               : DlnaMimeTypes.GetAudioMimeType(state.OutputContainer, state.OutputAudioBitrate, state.OutputAudioSampleRate, state.OutputAudioChannels))
                           ?? state.GetMimeType(outputPath);
+        var isLiveTv = state.MediaSource.IsInfiniteStream;
 
-        // Headers only
-        if (isHeadRequest)
+        // Library HEAD only needs the headers. Starting ffmpeg here leaves it running after the client stops.
+        if (isHeadRequest && !isLiveTv)
         {
             httpContext.Response.Headers[HeaderNames.ContentType] = contentType;
             return new OkResult();
@@ -150,9 +158,40 @@ public static class FileStreamResponseHelpers
 
         using var transcodingLock = await transcodeManager.LockAsync(outputPath, cancellationTokenSource.Token).ConfigureAwait(false);
 
-        TranscodingJob? job;
-        if (!File.Exists(outputPath))
+        TranscodingJob? job = null;
+        var existingLiveJob = isLiveTv && File.Exists(outputPath)
+            ? transcodeManager.GetTranscodingJob(outputPath, TranscodingJobType.Progressive)
+            : null;
+        var startNewLiveJob = isLiveTv && (existingLiveJob is null || !DlnaLiveSessionTracker.CanReuseLiveTranscode(existingLiveJob));
+
+        if (existingLiveJob is not null && !DlnaLiveSessionTracker.CanReuseLiveTranscode(existingLiveJob))
         {
+            await DlnaLiveStreamTeardown.StopDeadTranscodeAsync(existingLiveJob, transcodeManager).ConfigureAwait(false);
+        }
+
+        if (!File.Exists(outputPath) || startNewLiveJob)
+        {
+            if (isLiveTv && string.IsNullOrWhiteSpace(state.Request.PlaySessionId))
+            {
+                state.Request.PlaySessionId = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture);
+            }
+
+            if (startNewLiveJob && File.Exists(outputPath))
+            {
+                try
+                {
+                    File.Delete(outputPath);
+                }
+                catch (IOException ex)
+                {
+                    LogDeleteFailure(ex);
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    LogDeleteFailure(ex);
+                }
+            }
+
             job = await transcodeManager.StartFfMpeg(
                 state,
                 outputPath,
@@ -160,14 +199,74 @@ public static class FileStreamResponseHelpers
                 httpContext.User.GetUserId(),
                 transcodingJobType,
                 cancellationTokenSource).ConfigureAwait(false);
+
+            if (isLiveTv)
+            {
+                job.IsLiveOutput = true;
+                job.StopKillTimer();
+            }
         }
         else
         {
-            job = transcodeManager.OnTranscodeBeginRequest(outputPath, TranscodingJobType.Progressive);
-            state.Dispose();
+            // A live HEAD already counted this job. A second begin request would keep ffmpeg up after disconnect.
+            job = isLiveTv
+                ? existingLiveJob
+                : transcodeManager.OnTranscodeBeginRequest(outputPath, TranscodingJobType.Progressive);
+
+            job?.StopKillTimer();
         }
 
-        var stream = new ProgressiveFileStream(outputPath, job, transcodeManager);
-        return new FileStreamResult(stream, contentType);
+        var dlnaState = state as DlnaStreamState;
+        var openedTuner = dlnaState is not null && dlnaState.OpenedLiveStream;
+        if (isLiveTv)
+        {
+            DlnaLiveStreamTeardown.Track(
+                httpContext,
+                job,
+                transcodeManager,
+                mediaSourceManager,
+                state.MediaSource.LiveStreamId,
+                openedTuner,
+                isHeadRequest,
+                dlnaState);
+        }
+
+        // Live TV HEAD starts the transcode so the following GET has data ready.
+        if (isHeadRequest)
+        {
+            httpContext.Response.Headers[HeaderNames.ContentType] = contentType;
+            return new OkResult();
+        }
+
+        if (isLiveTv && job is not null)
+        {
+            return TakeOwnership(new DlnaLiveProgressiveFileStream(outputPath, job), contentType);
+        }
+
+        return TakeOwnership(new ProgressiveFileStream(outputPath, job, transcodeManager), contentType);
+
+        void LogDeleteFailure(Exception ex)
+        {
+            var logger = httpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger(nameof(FileStreamResponseHelpers));
+            logger.LogDebug(ex, "Could not delete live transcode file {Path}", outputPath);
+        }
+    }
+
+    private static FileStreamResult TakeOwnership(Stream stream, string contentType)
+    {
+        try
+        {
+            return new FileStreamResult(stream, contentType);
+        }
+        catch (ArgumentException)
+        {
+            stream.Dispose();
+            throw;
+        }
+        catch (FormatException)
+        {
+            stream.Dispose();
+            throw;
+        }
     }
 }

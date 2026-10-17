@@ -3,4 +3,5 @@
   <Project Path="src/Jellyfin.Plugin.Dlna.Model/Jellyfin.Plugin.Dlna.Model.csproj" />
   <Project Path="src/Jellyfin.Plugin.Dlna.Playback/Jellyfin.Plugin.Dlna.Playback.csproj" />
   <Project Path="src/Rssdp/Rssdp.csproj" />
+  <Project Path="tests/Jellyfin.Plugin.Dlna.Tests/Jellyfin.Plugin.Dlna.Tests.csproj" />
 </Solution>
