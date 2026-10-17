@@ -38,4 +38,10 @@ public class DlnaPluginConfiguration : BasePluginConfiguration
     /// Gets or sets the default user account that the dlna server uses.
     /// </summary>
     public Guid? DefaultUserId { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to burn in subtitles for DLNA live TV playback
+    /// using the default user's subtitle preferences.
+    /// </summary>
+    public bool EnableSubtitleBurnIn { get; set; } = false;
 }

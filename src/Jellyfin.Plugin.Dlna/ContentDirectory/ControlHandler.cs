@@ -54,6 +54,7 @@ public class ControlHandler : BaseControlHandler
     private readonly User? _user;
     private readonly IUserViewManager _userViewManager;
     private readonly ITVSeriesManager _tvSeriesManager;
+    private readonly IUserManager _userManager;
 
     private readonly int _systemUpdateId;
 
@@ -78,6 +79,7 @@ public class ControlHandler : BaseControlHandler
     /// <param name="userViewManager">Instance of the <see cref="IUserViewManager"/> interface.</param>
     /// <param name="mediaEncoder">Instance of the <see cref="IMediaEncoder"/> interface.</param>
     /// <param name="tvSeriesManager">Instance of the <see cref="ITVSeriesManager"/> interface.</param>
+    /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     public ControlHandler(
         ILogger logger,
         ILibraryManager libraryManager,
@@ -92,7 +94,8 @@ public class ControlHandler : BaseControlHandler
         IMediaSourceManager mediaSourceManager,
         IUserViewManager userViewManager,
         IMediaEncoder mediaEncoder,
-        ITVSeriesManager tvSeriesManager)
+        ITVSeriesManager tvSeriesManager,
+        IUserManager userManager)
         : base(logger)
     {
         _libraryManager = libraryManager;
@@ -101,6 +104,7 @@ public class ControlHandler : BaseControlHandler
         _systemUpdateId = systemUpdateId;
         _userViewManager = userViewManager;
         _tvSeriesManager = tvSeriesManager;
+        _userManager = userManager;
         _profile = profile;
 
         _didlBuilder = new DidlBuilder(
@@ -114,7 +118,8 @@ public class ControlHandler : BaseControlHandler
             mediaSourceManager,
             Logger,
             mediaEncoder,
-            libraryManager);
+            libraryManager,
+            userManager);
     }
 
     /// <inheritdoc />

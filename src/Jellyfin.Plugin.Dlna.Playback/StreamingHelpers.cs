@@ -14,12 +14,14 @@ using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Controller.Configuration;
 using MediaBrowser.Controller.Devices;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using ContentFeatureBuilder = Jellyfin.Plugin.Dlna.Model.ContentFeatureBuilder;
@@ -180,6 +182,16 @@ public static class StreamingHelpers
             }
         }
 
+        var loggerFactory = httpContext.RequestServices.GetService(typeof(ILoggerFactory)) as ILoggerFactory;
+        var subtitleSource = ApplyDefaultUserSubtitleSelection(
+            state,
+            item,
+            mediaSource,
+            mediaSourceManager,
+            userManager,
+            loggerFactory?.CreateLogger(typeof(StreamingHelpers)));
+        DlnaStreamRequestAdjustments.ApplySubtitleBurnInPreferences(state, subtitleSource, item?.MediaType);
+
         var encodingOptions = serverConfigurationManager.GetEncodingOptions();
 
         encodingHelper.AttachMediaSourceInfo(state, encodingOptions, mediaSource, url);
@@ -276,6 +288,8 @@ public static class StreamingHelpers
             {
                 state.OutputAudioCodec = state.SupportedAudioCodecs.Where(c => !EncodingHelper.LosslessAudioCodecs.Contains(c)).FirstOrDefault(mediaEncoder.CanEncodeToAudioCodec);
             }
+
+            DlnaStreamRequestAdjustments.EnsureBurnInVideoIsEncoded(state, mediaSource);
         }
 
         var deviceProfileId = state.IsVideoRequest
@@ -884,6 +898,58 @@ public static class StreamingHelpers
     private static bool IsValidCodecName(string val)
     {
         return EncodingHelper.ContainerValidationRegex().IsMatch(val);
+    }
+
+    /// <summary>
+    /// DLNA clients never pick a subtitle track for live TV, and the media source is resolved
+    /// without a user, so <see cref="MediaSourceInfo.DefaultSubtitleStreamIndex"/> is never set.
+    /// Run the server's own selector with the plugin's default user so burn-in has something to use.
+    /// The selector is given a copy: the live source is shared by every viewer of that stream.
+    /// </summary>
+    /// <param name="state">The DLNA stream state.</param>
+    /// <param name="item">The item being streamed.</param>
+    /// <param name="mediaSource">The shared live media source.</param>
+    /// <param name="mediaSourceManager">The media source manager.</param>
+    /// <param name="userManager">The user manager used to resolve the default user.</param>
+    /// <param name="logger">The logger to write to, if any.</param>
+    /// <returns>The copy whose subtitle index was selected, or <paramref name="mediaSource"/> when no selection was made.</returns>
+    private static MediaSourceInfo? ApplyDefaultUserSubtitleSelection(
+        DlnaStreamState state,
+        BaseItem? item,
+        MediaSourceInfo? mediaSource,
+        IMediaSourceManager mediaSourceManager,
+        IUserManager userManager,
+        ILogger? logger)
+    {
+        var videoRequest = state.VideoRequest;
+        if (item is null
+            || mediaSource is null
+            || videoRequest is null
+            || videoRequest.SubtitleStreamIndex.HasValue
+            || !DlnaStreamRequestAdjustments.ShouldBurnInSubtitles(mediaSource, item.MediaType))
+        {
+            return mediaSource;
+        }
+
+        if (logger is not null)
+        {
+            DlnaStreamRequestAdjustments.WarnMissingBurnInUser(logger, mediaSource, userManager, item.MediaType);
+        }
+
+        if (!DlnaStreamRequestAdjustments.HasDefaultUser(userManager))
+        {
+            return mediaSource;
+        }
+
+        var user = userManager.GetUserById(DlnaPluginConfigurationAccessor.DefaultUserId!.Value);
+        if (user is null)
+        {
+            return mediaSource;
+        }
+
+        var selectionSource = DlnaStreamRequestAdjustments.CopyForSubtitleSelection(mediaSource);
+        mediaSourceManager.SetDefaultAudioAndSubtitleStreamIndices(item, selectionSource, user);
+        return selectionSource;
     }
 
     /// <summary>

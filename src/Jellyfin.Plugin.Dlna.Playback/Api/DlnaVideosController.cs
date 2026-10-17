@@ -263,7 +263,9 @@ public class DlnaVideosController : ControllerBase
                 cancellationTokenSource.Token)
             .ConfigureAwait(false);
 
-        if (@static.HasValue && @static.Value && state.DirectStreamProvider is not null)
+        var serveStatic = @static.HasValue && @static.Value;
+
+        if (serveStatic && state.DirectStreamProvider is not null)
         {
             StreamingHelpers.AddDlnaHeaders(state, Response.Headers, true, state.Request.StartTimeTicks, Request, _dlnaManager);
 
@@ -279,7 +281,7 @@ public class DlnaVideosController : ControllerBase
         }
 
         // Static remote stream
-        if (@static.HasValue && @static.Value && state.InputProtocol == MediaProtocol.Http)
+        if (serveStatic && state.InputProtocol == MediaProtocol.Http)
         {
             StreamingHelpers.AddDlnaHeaders(state, Response.Headers, true, state.Request.StartTimeTicks, Request, _dlnaManager);
 
@@ -287,7 +289,7 @@ public class DlnaVideosController : ControllerBase
             return await FileStreamResponseHelpers.GetStaticRemoteStreamResult(state, httpClient, HttpContext).ConfigureAwait(false);
         }
 
-        if (@static.HasValue && @static.Value && state.InputProtocol != MediaProtocol.File)
+        if (serveStatic && state.InputProtocol != MediaProtocol.File)
         {
             return BadRequest($"Input protocol {state.InputProtocol} cannot be streamed statically");
         }
@@ -298,10 +300,10 @@ public class DlnaVideosController : ControllerBase
         var transcodingJob = _transcodingJobHelper.GetTranscodingJob(outputPath, TranscodingJobType.Progressive);
         var isTranscodeCached = outputPathExists && transcodingJob is not null;
 
-        StreamingHelpers.AddDlnaHeaders(state, Response.Headers, (@static.HasValue && @static.Value) || isTranscodeCached, state.Request.StartTimeTicks, Request, _dlnaManager);
+        StreamingHelpers.AddDlnaHeaders(state, Response.Headers, serveStatic || isTranscodeCached, state.Request.StartTimeTicks, Request, _dlnaManager);
 
         // Static stream
-        if (@static.HasValue && @static.Value)
+        if (serveStatic)
         {
             var contentType = DlnaMimeTypes.GetVideoMimeType(state.OutputContainer, state.TargetTimestamp)
                               ?? state.GetMimeType("." + state.OutputContainer, false)
