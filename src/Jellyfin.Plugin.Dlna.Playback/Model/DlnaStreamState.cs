@@ -26,6 +26,16 @@ public class DlnaStreamState : StreamState
     }
 
     /// <summary>
+    /// Gets or sets a value indicating whether this request opened a live stream consumer.
+    /// </summary>
+    public bool OpenedLiveStream { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether this request must close the tuner if it fails before playback tracking starts.
+    /// </summary>
+    public bool CloseLiveStreamOnFailure { get; set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether to enable dlna headers.
     /// </summary>
     public bool EnableDlnaHeaders { get; set; }

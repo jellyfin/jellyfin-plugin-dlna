@@ -96,6 +96,9 @@ public class AudioHelper
         // CTS lifecycle is managed internally.
         var cancellationTokenSource = new CancellationTokenSource();
 
+        DlnaStreamState? openedLiveStream = null;
+        try
+        {
         using var state = await StreamingHelpers.GetStreamingState(
                 streamingRequest,
                 _httpContextAccessor.HttpContext,
@@ -111,9 +114,30 @@ public class AudioHelper
                 transcodingJobType,
                 cancellationTokenSource.Token)
             .ConfigureAwait(false);
+        openedLiveStream = state;
+
+        var httpContext = _httpContextAccessor.HttpContext;
+        void TrackDirectLive()
+        {
+            if (!state.OpenedLiveStream || httpContext is null)
+            {
+                return;
+            }
+
+            DlnaLiveStreamTeardown.Track(
+                httpContext,
+                null,
+                null,
+                _mediaSourceManager,
+                state.MediaSource.LiveStreamId ?? streamingRequest.LiveStreamId,
+                true,
+                isHeadRequest,
+                state);
+        }
 
         if (streamingRequest.Static && state.DirectStreamProvider is not null)
         {
+            TrackDirectLive();
             StreamingHelpers.AddDlnaHeaders(state, _httpContextAccessor.HttpContext.Response.Headers, true, streamingRequest.StartTimeTicks, _httpContextAccessor.HttpContext.Request, _dlnaManager);
 
             var liveStreamInfo = _mediaSourceManager.GetLiveStreamInfo(streamingRequest.LiveStreamId);
@@ -130,6 +154,7 @@ public class AudioHelper
         // Static remote stream
         if (streamingRequest.Static && state.InputProtocol == MediaProtocol.Http)
         {
+            TrackDirectLive();
             StreamingHelpers.AddDlnaHeaders(state, _httpContextAccessor.HttpContext.Response.Headers, true, streamingRequest.StartTimeTicks, _httpContextAccessor.HttpContext.Request, _dlnaManager);
 
             var httpClient = _httpClientFactory.CreateClient(NamedClient.Default);
@@ -138,6 +163,7 @@ public class AudioHelper
 
         if (streamingRequest.Static && state.InputProtocol != MediaProtocol.File)
         {
+            TrackDirectLive();
             return new BadRequestObjectResult($"Input protocol {state.InputProtocol} cannot be streamed statically");
         }
 
@@ -152,6 +178,7 @@ public class AudioHelper
         // Static stream
         if (streamingRequest.Static)
         {
+            TrackDirectLive();
             var contentType = DlnaMimeTypes.GetAudioMimeType(state.OutputContainer, state.OutputAudioBitrate, state.OutputAudioSampleRate, state.OutputAudioChannels)
                               ?? state.GetMimeType("." + state.OutputContainer, false)
                               ?? state.GetMimeType(state.MediaPath);
@@ -175,8 +202,19 @@ public class AudioHelper
             isHeadRequest,
             _httpContextAccessor.HttpContext,
             _transcodeManager,
+            _mediaSourceManager,
             ffmpegCommandLineArguments,
             transcodingJobType,
             cancellationTokenSource).ConfigureAwait(false);
+        }
+        catch
+        {
+            if (openedLiveStream is not null)
+            {
+                await DlnaLiveStreamTeardown.CloseIfUntrackedAsync(openedLiveStream, _mediaSourceManager).ConfigureAwait(false);
+            }
+
+            throw;
+        }
     }
 }
