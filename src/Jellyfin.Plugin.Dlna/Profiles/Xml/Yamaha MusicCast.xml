@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<Profile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>Yamaha MusicCast</Name>
+
+  <Identification>
+    <Manufacturer>Yamaha</Manufacturer>
+    <ModelDescription>MusicCast</ModelDescription>
+    <Headers>
+      <HttpHeaderInfo name="User-Agent" value="MusicCast" match="Substring" />
+      <HttpHeaderInfo name="User-Agent" value="Network_Module" match="Substring" />
+      <HttpHeaderInfo name="User-Agent" value="YamahaNetworkPlayer" match="Substring" />
+      <HttpHeaderInfo name="User-Agent" value="NP-S" match="Substring" />
+    </Headers>
+  </Identification>
+
+  <EnableAlbumArtInDidl>true</EnableAlbumArtInDidl>
+  <EnableSingleAlbumArtLimit>true</EnableSingleAlbumArtLimit>
+  <EnableSingleSubtitleLimit>true</EnableSingleSubtitleLimit>
+  <SupportedMediaTypes>Audio</SupportedMediaTypes>
+  <AlbumArtPn>JPEG_TN</AlbumArtPn>
+  <MaxAlbumArtWidth>160</MaxAlbumArtWidth>
+  <MaxAlbumArtHeight>160</MaxAlbumArtHeight>
+  <MaxIconWidth>48</MaxIconWidth>
+  <MaxIconHeight>48</MaxIconHeight>
+  <MaxStreamingBitrate>140000000</MaxStreamingBitrate>
+  <MaxStaticBitrate>140000000</MaxStaticBitrate>
+  <MusicStreamingTranscodingBitrate>320000</MusicStreamingTranscodingBitrate>
+  <ProtocolInfo>http-get:*:audio/flac:*,http-get:*:audio/mp4:*,http-get:*:audio/mpeg:*,http-get:*:audio/wav:*,http-get:*:audio/x-ms-wma:*,http-get:*:audio/aac:*</ProtocolInfo>
+
+  <DirectPlayProfiles>
+    <DirectPlayProfile type="Audio" container="flac" />
+    <DirectPlayProfile type="Audio" container="mp3" />
+    <DirectPlayProfile type="Audio" container="m4a" />
+    <DirectPlayProfile type="Audio" container="aac" />
+    <DirectPlayProfile type="Audio" container="wav" />
+    <DirectPlayProfile type="Audio" container="wma" />
+  </DirectPlayProfiles>
+
+  <TranscodingProfiles>
+    <TranscodingProfile container="mp3" type="Audio" audioCodec="mp3" estimateContentLength="false" enableMpegtsM2TsMode="false" transcodeSeekInfo="Auto" copyTimestamps="false" context="Streaming" enableSubtitlesInManifest="false" minSegments="0" segmentLength="0" breakOnNonKeyFrames="false" />
+  </TranscodingProfiles>
+</Profile>
