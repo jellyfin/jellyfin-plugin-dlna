@@ -19,6 +19,7 @@ using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
+using MediaBrowser.Model.MediaInfo;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
@@ -107,6 +108,10 @@ public static class StreamingHelpers
         {
             state.User = userManager.GetUserById(userId);
         }
+        else
+        {
+            state.User = GetDefaultDlnaUser(userManager);
+        }
 
         if (state.IsVideoRequest && !string.IsNullOrWhiteSpace(state.Request.VideoCodec))
         {
@@ -146,13 +151,21 @@ public static class StreamingHelpers
 
             if (mediaSource is null)
             {
-                var mediaSources = await mediaSourceManager.GetPlaybackMediaSources(libraryManager.GetItemById(streamingRequest.Id), null, false, false, cancellationToken).ConfigureAwait(false);
+                var mediaSources = await mediaSourceManager.GetPlaybackMediaSources(
+                    libraryManager.GetItemById(streamingRequest.Id),
+                    state.User,
+                    false,
+                    false,
+                    cancellationToken).ConfigureAwait(false);
 
                 mediaSource = string.IsNullOrEmpty(streamingRequest.MediaSourceId)
                     ? mediaSources[0]
                     : mediaSources.FirstOrDefault(i => string.Equals(i.Id, streamingRequest.MediaSourceId, StringComparison.Ordinal));
 
-                if (mediaSource is null && Guid.Parse(streamingRequest.MediaSourceId).Equals(streamingRequest.Id))
+                if (mediaSource is null
+                    && !string.IsNullOrEmpty(streamingRequest.MediaSourceId)
+                    && Guid.TryParse(streamingRequest.MediaSourceId, out var mediaSourceGuid)
+                    && mediaSourceGuid.Equals(streamingRequest.Id))
                 {
                     mediaSource = mediaSources[0];
                 }
@@ -180,9 +193,44 @@ public static class StreamingHelpers
             }
         }
 
+        // Many DLNA clients do not call /LiveStreams/Open before playback. Open the tuner
+        // here so MediaPath points at LiveStreamFiles/... instead of the placeholder LAN base URL.
+        if (mediaSource is not null
+            && mediaSource.RequiresOpening
+            && string.IsNullOrWhiteSpace(streamingRequest.LiveStreamId)
+            && string.IsNullOrWhiteSpace(mediaSource.LiveStreamId)
+            && !string.IsNullOrWhiteSpace(mediaSource.OpenToken))
+        {
+            var liveStreamRequest = new LiveStreamRequest
+            {
+                OpenToken = mediaSource.OpenToken,
+                ItemId = streamingRequest.Id
+            };
+
+            if (state.User is not null)
+            {
+                liveStreamRequest.UserId = state.User.Id;
+            }
+
+            var openResult = await mediaSourceManager.OpenLiveStreamInternal(liveStreamRequest, cancellationToken)
+                .ConfigureAwait(false);
+            mediaSource = openResult.Item1.MediaSource;
+            state.DirectStreamProvider = openResult.Item2;
+            state.OpenedLiveStream = true;
+            state.CloseLiveStreamOnFailure = true;
+            streamingRequest.LiveStreamId = mediaSource.LiveStreamId;
+        }
+
+        try
+        {
+        mediaSource = await ProbeLiveSourceWhenVideoSizeIsUnknown(mediaSource, mediaEncoder, cancellationToken)
+            .ConfigureAwait(false);
+
         var encodingOptions = serverConfigurationManager.GetEncodingOptions();
 
         encodingHelper.AttachMediaSourceInfo(state, encodingOptions, mediaSource, url);
+
+        DlnaStreamRequestAdjustments.CapLiveStreamTranscodeResolution(state, mediaSource);
 
         string? containerInternal = Path.GetExtension(state.RequestedUrl);
 
@@ -290,6 +338,12 @@ public static class StreamingHelpers
         state.OutputFilePath = GetOutputFilePath(state, ext, serverConfigurationManager, streamingRequest.DeviceId, streamingRequest.PlaySessionId, streamingRequest.StartTimeTicks);
 
         return state;
+        }
+        catch
+        {
+            await DlnaLiveStreamTeardown.CloseIfUntrackedAsync(state, mediaSourceManager).ConfigureAwait(false);
+            throw;
+        }
     }
 
     /// <summary>
@@ -903,5 +957,61 @@ public static class StreamingHelpers
         }
 
         return container;
+    }
+
+    /// <summary>
+    /// A cached live probe can report 0×0 before the HEVC parameter sets arrive.
+    /// Probe the open stream again and keep the result only when it has a real size.
+    /// </summary>
+    /// <param name="mediaSource">The opened live source, if any.</param>
+    /// <param name="mediaEncoder">The encoder used to probe the stream.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The same source, updated when the second probe has a real video size.</returns>
+    private static async Task<MediaSourceInfo?> ProbeLiveSourceWhenVideoSizeIsUnknown(
+        MediaSourceInfo? mediaSource,
+        IMediaEncoder mediaEncoder,
+        CancellationToken cancellationToken)
+    {
+        if (!DlnaStreamRequestAdjustments.NeedsFreshLiveProbe(mediaSource) || mediaSource is null)
+        {
+            return mediaSource;
+        }
+
+        var previousAnalyzeDuration = mediaSource.AnalyzeDurationMs;
+        mediaSource.AnalyzeDurationMs = Math.Max(previousAnalyzeDuration ?? 0, DlnaStreamRequestAdjustments.LiveReprobeAnalyzeDurationMs);
+        try
+        {
+            var probed = await mediaEncoder.GetMediaInfo(
+                new MediaInfoRequest
+                {
+                    MediaSource = mediaSource,
+                    ExtractChapters = false,
+                    MediaType = DlnaProfileType.Video
+                },
+                cancellationToken).ConfigureAwait(false);
+
+            DlnaStreamRequestAdjustments.TryApplyProbedLiveMediaInfo(mediaSource, probed);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Playback continues with the original probe when the second read fails.
+        }
+        finally
+        {
+            mediaSource.AnalyzeDurationMs = previousAnalyzeDuration;
+        }
+
+        return mediaSource;
+    }
+
+    private static Jellyfin.Database.Implementations.Entities.User? GetDefaultDlnaUser(IUserManager userManager)
+    {
+        var defaultUserId = DlnaPluginConfigurationAccessor.DefaultUserId;
+        if (defaultUserId is null || defaultUserId.Value.Equals(default))
+        {
+            return null;
+        }
+
+        return userManager.GetUserById(defaultUserId.Value);
     }
 }

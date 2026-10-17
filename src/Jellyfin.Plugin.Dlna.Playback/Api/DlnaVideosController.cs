@@ -247,6 +247,9 @@ public class DlnaVideosController : ControllerBase
             StreamOptions = streamOptions
         };
 
+        DlnaStreamState? openedLiveStream = null;
+        try
+        {
         var state = await StreamingHelpers.GetStreamingState(
                 streamingRequest,
                 HttpContext,
@@ -262,9 +265,29 @@ public class DlnaVideosController : ControllerBase
                 _transcodingJobType,
                 cancellationTokenSource.Token)
             .ConfigureAwait(false);
+        openedLiveStream = state;
+
+        void TrackDirectLive()
+        {
+            if (!state.OpenedLiveStream)
+            {
+                return;
+            }
+
+            DlnaLiveStreamTeardown.Track(
+                HttpContext,
+                null,
+                null,
+                _mediaSourceManager,
+                state.MediaSource.LiveStreamId ?? streamingRequest.LiveStreamId,
+                true,
+                isHeadRequest,
+                state);
+        }
 
         if (@static.HasValue && @static.Value && state.DirectStreamProvider is not null)
         {
+            TrackDirectLive();
             StreamingHelpers.AddDlnaHeaders(state, Response.Headers, true, state.Request.StartTimeTicks, Request, _dlnaManager);
 
             var liveStreamInfo = _mediaSourceManager.GetLiveStreamInfo(streamingRequest.LiveStreamId);
@@ -281,6 +304,7 @@ public class DlnaVideosController : ControllerBase
         // Static remote stream
         if (@static.HasValue && @static.Value && state.InputProtocol == MediaProtocol.Http)
         {
+            TrackDirectLive();
             StreamingHelpers.AddDlnaHeaders(state, Response.Headers, true, state.Request.StartTimeTicks, Request, _dlnaManager);
 
             var httpClient = _httpClientFactory.CreateClient(NamedClient.Default);
@@ -289,6 +313,7 @@ public class DlnaVideosController : ControllerBase
 
         if (@static.HasValue && @static.Value && state.InputProtocol != MediaProtocol.File)
         {
+            TrackDirectLive();
             return BadRequest($"Input protocol {state.InputProtocol} cannot be streamed statically");
         }
 
@@ -303,6 +328,7 @@ public class DlnaVideosController : ControllerBase
         // Static stream
         if (@static.HasValue && @static.Value)
         {
+            TrackDirectLive();
             var contentType = DlnaMimeTypes.GetVideoMimeType(state.OutputContainer, state.TargetTimestamp)
                               ?? state.GetMimeType("." + state.OutputContainer, false)
                               ?? state.GetMimeType(state.MediaPath);
@@ -326,9 +352,20 @@ public class DlnaVideosController : ControllerBase
             isHeadRequest,
             HttpContext,
             _transcodingJobHelper,
+            _mediaSourceManager,
             ffmpegCommandLineArguments,
             _transcodingJobType,
             cancellationTokenSource).ConfigureAwait(false);
+        }
+        catch
+        {
+            if (openedLiveStream is not null)
+            {
+                await DlnaLiveStreamTeardown.CloseIfUntrackedAsync(openedLiveStream, _mediaSourceManager).ConfigureAwait(false);
+            }
+
+            throw;
+        }
     }
 
     /// <summary>
