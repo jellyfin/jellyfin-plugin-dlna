@@ -119,7 +119,8 @@ public class ContentDirectoryService : BaseService, IContentDirectory
                 _mediaSourceManager,
                 _userViewManager,
                 _mediaEncoder,
-                _tvSeriesManager)
+                _tvSeriesManager,
+                _userManager)
             .ProcessControlRequestAsync(request);
     }
 
