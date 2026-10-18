@@ -216,7 +216,7 @@ public class DescriptionXmlBuilder
                 .Append(SecurityElement.Escape(icon.Depth))
                 .Append("</depth>");
             builder.Append("<url>")
-                .Append(BuildUrl(icon.Url))
+                .Append(BuildIconUrl(icon.Url))
                 .Append("</url>");
 
             builder.Append("</icon>");
@@ -265,6 +265,32 @@ public class DescriptionXmlBuilder
         url = _serverAddress.TrimEnd('/') + "/dlna/" + _serverUdn + "/" + url.TrimStart('/');
 
         return SecurityElement.Escape(url);
+    }
+
+    // VLC prepends scheme, host and port to the icon path, so an absolute URL becomes
+    // unusable. A root-relative path resolves to the same file for a client that joins it
+    // to the description document.
+    private string BuildIconUrl(string url)
+    {
+        if (string.IsNullOrEmpty(url))
+        {
+            return string.Empty;
+        }
+
+        var prefix = _serverAddress;
+        if (Uri.TryCreate(_serverAddress, UriKind.Absolute, out var absolute))
+        {
+            prefix = absolute.AbsolutePath;
+        }
+
+        prefix = prefix.TrimEnd('/');
+        var path = prefix + "/dlna/" + _serverUdn + "/" + url.TrimStart('/');
+        if (!path.StartsWith('/'))
+        {
+            path = "/" + path;
+        }
+
+        return SecurityElement.Escape(path);
     }
 
     private static IEnumerable<DeviceIcon> GetIcons()
