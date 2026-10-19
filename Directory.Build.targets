@@ -2,6 +2,7 @@
 
   <!-- See Directory.Build.props for what this switch is for. -->
   <PropertyGroup Condition="'$(UseLocalJellyfin)' == 'true'">
+    <JellyfinSourcePath Condition="'$(JellyfinSourcePath)' == ''">$(MSBuildThisFileDirectory)../jellyfin</JellyfinSourcePath>
     <JellyfinLocalAssemblyDir>$(JellyfinSourcePath)/MediaBrowser.Controller/bin/$(Configuration)/$(TargetFramework)</JellyfinLocalAssemblyDir>
 
     <!--

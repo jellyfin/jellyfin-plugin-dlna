@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using Jellyfin.Plugin.Dlna.Common;
+using Jellyfin.Plugin.Dlna.Extensions;
 using MediaBrowser.Common.Net;
 using Microsoft.Extensions.Logging;
 
@@ -89,7 +90,7 @@ public partial class DlnaHttpClient
             (int)response.StatusCode,
             request.Method,
             request.RequestUri,
-            content.Length > MaxLoggedContentLength ? content[..MaxLoggedContentLength] + "..." : content);
+            (content.Length > MaxLoggedContentLength ? content[..MaxLoggedContentLength] + "..." : content).RedactCredentials());
     }
 
     /// <summary>
@@ -162,7 +163,7 @@ public partial class DlnaHttpClient
                 catch (XmlException ex)
                 {
                     _logger.LogError(ex, "Failed to parse response");
-                    _logger.LogDebug("Malformed response: {Content}\n", xmlString);
+                    _logger.LogDebug("Malformed response: {Content}\n", xmlString.RedactCredentials());
 
                     return null;
                 }

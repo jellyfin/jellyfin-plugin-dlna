@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using Jellyfin.Plugin.Dlna.Common;
+using Jellyfin.Plugin.Dlna.Extensions;
 using Jellyfin.Plugin.Dlna.Ssdp;
 using Microsoft.Extensions.Logging;
 
@@ -426,7 +427,7 @@ public class Device : IDisposable
 
         url = url.Replace("&", "&amp;", StringComparison.Ordinal);
 
-        _logger.LogDebug("{0} - SetAvTransport Uri: {1} DlnaHeaders: {2}", Properties.Name, url, header);
+        _logger.LogDebug("{0} - SetAvTransport Uri: {1} DlnaHeaders: {2}", Properties.Name, url.RedactCredentials(), header);
 
         var command = avCommands?.ServiceActions.FirstOrDefault(c => c.Name == "SetAVTransportURI");
         if (command is null)
@@ -514,7 +515,7 @@ public class Device : IDisposable
 
         url = url.Replace("&", "&amp;", StringComparison.Ordinal);
 
-        _logger.LogDebug("{PropertyName} - SetNextAvTransport Uri: {Url} DlnaHeaders: {Header}", Properties.Name, url, header);
+        _logger.LogDebug("{PropertyName} - SetNextAvTransport Uri: {Url} DlnaHeaders: {Header}", Properties.Name, url.RedactCredentials(), header);
 
         var command = avCommands?.ServiceActions.FirstOrDefault(c => string.Equals(c.Name, "SetNextAVTransportURI", StringComparison.OrdinalIgnoreCase));
         if (command is null)
@@ -1146,7 +1147,7 @@ public class Device : IDisposable
 
         if (uPnpResponse is null)
         {
-            _logger.LogError("Failed to parse xml: \n {Xml}", trackString);
+            _logger.LogError("Failed to parse xml: \n {Xml}", trackString.RedactCredentials());
             return (true, null);
         }
 

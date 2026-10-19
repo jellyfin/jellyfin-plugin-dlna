@@ -1,3 +1,4 @@
+using System;
 using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Model.Dlna;
 
@@ -8,6 +9,11 @@ namespace Jellyfin.Plugin.Dlna.PlayTo;
 /// </summary>
 public class PlaylistItem
 {
+    /// <summary>
+    /// Gets or sets the user who authorized this playback item.
+    /// </summary>
+    public Guid? UserId { get; set; }
+
     /// <summary>
     /// Gets or sets the stream URL.
     /// </summary>
