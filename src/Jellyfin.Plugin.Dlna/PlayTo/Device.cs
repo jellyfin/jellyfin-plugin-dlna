@@ -851,11 +851,13 @@ public class Device : IDisposable
                 {
                     _logger.LogDebug("Disposing device due to loss of connection");
                     action();
-                    return;
                 }
+
+                return;
             }
 
-            RestartTimerInactive();
+            // A transient failure must not park the one-shot timer before the failure limit is reached.
+            RestartTimer();
         }
     }
 
