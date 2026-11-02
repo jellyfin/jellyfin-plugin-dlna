@@ -27,4 +27,7 @@ public class PlaylistItem
     /// Gets or sets the profile.
     /// </summary>
     public required DlnaDeviceProfile Profile { get; set; }
+
+    // Published DLNA IDs for native music queues, using the same formatter as DIDL.
+    internal (string Id, string Parent)? DlnaIds { get; set; }
 }
