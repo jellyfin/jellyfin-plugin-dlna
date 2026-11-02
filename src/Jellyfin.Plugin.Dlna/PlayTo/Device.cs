@@ -230,6 +230,32 @@ public class Device : IDisposable
     private void CloseTransportChangeGrace()
         => Interlocked.Exchange(ref _transportChangedAtTicks, 0);
 
+    // Transport changes pass through STOPPED; defer polling until the change is complete.
+    internal async Task ChangeTransportAsync(Func<Task> change)
+    {
+        Interlocked.Increment(ref _transportChanges);
+        try
+        {
+            await change().ConfigureAwait(false);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _transportChangedAtTicks, DateTime.UtcNow.Ticks);
+            Interlocked.Decrement(ref _transportChanges);
+        }
+
+        RestartTimer(true);
+    }
+
+    internal async Task PrepareNativeQueueAsync(CancellationToken cancellationToken)
+    {
+        var commands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false)
+            ?? throw new InvalidOperationException("Unable to find AVTransport commands");
+        var service = GetAvTransportService() ?? throw new InvalidOperationException("Unable to find AVTransport service");
+        await StopForTransportChange(commands, cancellationToken).ConfigureAwait(false);
+        await ClearNextAvTransport(commands, service, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Lowers the volume.
     /// </summary>
@@ -446,9 +472,7 @@ public class Device : IDisposable
         // The transport passes through STOPPED on the way to the new track. A poll landing in that
         // window would report the previous track as stopped and park the timer as if the renderer
         // had gone idle, which leaves the whole playback of the new track unreported.
-        Interlocked.Increment(ref _transportChanges);
-
-        try
+        await ChangeTransportAsync(async () =>
         {
             // AVTransport:1 section 2.4.2 defines SetAVTransportURI for the STOPPED and NO_MEDIA_PRESENT states
             // only. A renderer that is still playing, e.g. because it was stopped from its own remote, answers
@@ -475,7 +499,7 @@ public class Device : IDisposable
 
             try
             {
-                await SetPlay(avCommands!, cancellationToken).ConfigureAwait(false); // null checked above
+                await SendTransportCommandAsync("Play", cancellationToken, avCommands).ConfigureAwait(false);
             }
             catch
             {
@@ -486,14 +510,7 @@ public class Device : IDisposable
             // Hold the renderer while it starts the track, so nothing reaches it that it could take
             // as the track to play instead. A poll cannot get past _transportChanges either.
             await Task.Delay(_transportSettleTime, cancellationToken).ConfigureAwait(false);
-        }
-        finally
-        {
-            Interlocked.Exchange(ref _transportChangedAtTicks, DateTime.UtcNow.Ticks);
-            Interlocked.Decrement(ref _transportChanges);
-        }
-
-        RestartTimer(true);
+        }).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -574,7 +591,7 @@ public class Device : IDisposable
     {
         try
         {
-            await SetStop(avCommands, cancellationToken).ConfigureAwait(false);
+            await SendTransportCommandAsync("Stop", cancellationToken, avCommands).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -631,39 +648,34 @@ public class Device : IDisposable
         return SecurityElement.Escape(value);
     }
 
-    private Task SetStop(TransportCommands avCommands, CancellationToken cancellationToken)
+    private async Task<bool> SendTransportCommandAsync(string name, CancellationToken cancellationToken, TransportCommands? avCommands = null)
     {
-        var command = avCommands.ServiceActions.FirstOrDefault(c => c.Name == "Stop");
+        avCommands ??= await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
+        var command = avCommands?.ServiceActions.FirstOrDefault(c => c.Name == name);
         if (command is null)
         {
-            return Task.CompletedTask;
+            return false;
         }
 
         var service = GetAvTransportService() ?? throw new InvalidOperationException("Unable to find service");
-        return new DlnaHttpClient(_logger, _httpClientFactory).SendCommandAsync(
+        await new DlnaHttpClient(_logger, _httpClientFactory).SendCommandAsync(
             NormalizeUrl(service.ControlUrl),
             service,
             command.Name,
-            avCommands.BuildPost(command, service.ServiceType, 1),
-            cancellationToken: cancellationToken);
+            avCommands!.BuildPost(command, service.ServiceType, 1), // null checked above
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        return true;
     }
 
-    private Task SetPlay(TransportCommands avCommands, CancellationToken cancellationToken)
-    {
-        var command = avCommands.ServiceActions.FirstOrDefault(c => c.Name == "Play");
-        if (command is null)
+    internal Task SkipAsync(bool next, CancellationToken cancellationToken)
+        => ChangeTransportAsync(async () =>
         {
-            return Task.CompletedTask;
-        }
-
-        var service = GetAvTransportService() ?? throw new InvalidOperationException("Unable to find service");
-        return new DlnaHttpClient(_logger, _httpClientFactory).SendCommandAsync(
-            NormalizeUrl(service.ControlUrl),
-            service,
-            command.Name,
-            avCommands.BuildPost(command, service.ServiceType, 1),
-            cancellationToken: cancellationToken);
-    }
+            if (!await SendTransportCommandAsync(next ? "Next" : "Previous", cancellationToken).ConfigureAwait(false))
+            {
+                throw new NotSupportedException("The renderer does not support the requested track navigation.");
+            }
+        });
 
     /// <summary>
     /// Sends play command.
@@ -672,15 +684,10 @@ public class Device : IDisposable
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task SetPlay(CancellationToken cancellationToken)
     {
-        var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
-        if (avCommands is null)
+        if (await SendTransportCommandAsync("Play", cancellationToken).ConfigureAwait(false))
         {
-            return;
+            RestartTimer(true);
         }
-
-        await SetPlay(avCommands, cancellationToken).ConfigureAwait(false);
-
-        RestartTimer(true);
     }
 
     /// <summary>
@@ -690,13 +697,10 @@ public class Device : IDisposable
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task SetStop(CancellationToken cancellationToken)
     {
-        var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
-        if (avCommands is null)
+        if (!await SendTransportCommandAsync("Stop", cancellationToken).ConfigureAwait(false))
         {
             return;
         }
-
-        await SetStop(avCommands, cancellationToken).ConfigureAwait(false);
 
         // Stopping is meant to be observed right away, it is not a renderer on its way to a new track
         CloseTransportChangeGrace();
@@ -711,23 +715,10 @@ public class Device : IDisposable
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task SetPause(CancellationToken cancellationToken)
     {
-        var avCommands = await GetAVProtocolAsync(cancellationToken).ConfigureAwait(false);
-
-        var command = avCommands?.ServiceActions.FirstOrDefault(c => c.Name == "Pause");
-        if (command is null)
+        if (!await SendTransportCommandAsync("Pause", cancellationToken).ConfigureAwait(false))
         {
             return;
         }
-
-        var service = GetAvTransportService() ?? throw new InvalidOperationException("Unable to find service");
-        await new DlnaHttpClient(_logger, _httpClientFactory)
-            .SendCommandAsync(
-                NormalizeUrl(service.ControlUrl),
-                service,
-                command.Name,
-                avCommands!.BuildPost(command, service.ServiceType, 1), // null checked above
-                cancellationToken: cancellationToken)
-            .ConfigureAwait(false);
 
         TransportState = TransportState.PAUSED_PLAYBACK;
 

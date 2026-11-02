@@ -6,6 +6,7 @@ const DlnaConfigurationPage = {
         ApiClient.getPluginConfiguration(this.pluginUniqueId)
             .then(function(config) {
                 page.querySelector('#dlnaPlayTo').checked = config.EnablePlayTo;
+                page.querySelector('#dlnaNativeHeosQueue').checked = config.EnableNativeHeosQueue === true;
                 page.querySelector('#dlnaDiscoveryInterval').value = parseInt(config.ClientDiscoveryIntervalSeconds) || this.defaultDiscoveryInterval;
                 page.querySelector('#dlnaBlastAlive').checked = config.BlastAliveMessages;
                 page.querySelector('#dlnaAliveInterval').value = parseInt(config.AliveMessageIntervalSeconds) || this.defaultAliveInterval;
@@ -37,6 +38,7 @@ const DlnaConfigurationPage = {
             ApiClient.getPluginConfiguration(this.pluginUniqueId)
                 .then(function(config) {
                     config.EnablePlayTo = page.querySelector('#dlnaPlayTo').checked;
+                    config.EnableNativeHeosQueue = page.querySelector('#dlnaNativeHeosQueue').checked;
                     config.ClientDiscoveryIntervalSeconds = parseInt(page.querySelector('#dlnaDiscoveryInterval').value) || this.defaultDiscoveryInterval;
                     config.BlastAliveMessages = page.querySelector('#dlnaBlastAlive').checked;
                     config.AliveMessageIntervalSeconds = parseInt(page.querySelector('#dlnaAliveInterval').value) || this.defaultAliveInterval;

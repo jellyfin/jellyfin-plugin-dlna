@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <InternalsVisibleTo Include="Jellyfin.Plugin.Dlna.Tests" />
       <PackageReference Include="Jellyfin.Controller" Version="12.*-*" />
       <PackageReference Include="Jellyfin.Model" Version="12.*-*" />
     </ItemGroup>

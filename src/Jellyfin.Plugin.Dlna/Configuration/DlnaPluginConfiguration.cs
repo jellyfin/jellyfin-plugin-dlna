@@ -14,6 +14,11 @@ public class DlnaPluginConfiguration : BasePluginConfiguration
     public bool EnablePlayTo { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets a value indicating whether supported Denon/Marantz players use native HEOS queues for local music.
+    /// </summary>
+    public bool EnableNativeHeosQueue { get; set; }
+
+    /// <summary>
     /// Gets or sets the ssdp client discovery interval time (in seconds).
     /// This is the time after which the server will send a ssdp search request.
     /// </summary>

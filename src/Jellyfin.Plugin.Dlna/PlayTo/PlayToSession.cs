@@ -53,10 +53,14 @@ public class PlayToSession : ISessionController, IDisposable
     private readonly string _serverAddress;
     private readonly string? _accessToken;
     private readonly List<PlaylistItem> _playlist = [];
+#pragma warning disable CA2213 // No wait handle is created; in-flight commands must still be able to release this gate during disposal.
+    private readonly SemaphoreSlim _commandLock = new(1, 1);
+#pragma warning restore CA2213
     private Device _device;
     private int _currentPlaylistIndex;
     private int _nextTrackIndex = -1;
     private string? _nextTrackAnnouncedFor;
+    private HeosQueue? _heosQueue;
     private bool _disposed;
 
     /// <summary>
@@ -189,7 +193,7 @@ public class PlayToSession : ISessionController, IDisposable
         // that is still on its way to a track can take what it has queued as the track to play right now,
         // landing a track further on than the one it was handed. So the follow-up is announced only once the
         // renderer reports that it is playing the track it was given, and only once for that track.
-        if (!_device.IsPlaying || string.Equals(_nextTrackAnnouncedFor, mediaUrl, StringComparison.Ordinal))
+        if (_heosQueue is not null || !_device.IsPlaying || string.Equals(_nextTrackAnnouncedFor, mediaUrl, StringComparison.Ordinal))
         {
             return;
         }
@@ -202,6 +206,7 @@ public class PlayToSession : ISessionController, IDisposable
 
     private Task SetAvTransport(PlaylistItem item, CancellationToken cancellationToken)
     {
+        _heosQueue = null;
         _nextTrackIndex = -1;
         _nextTrackAnnouncedFor = null;
 
@@ -293,6 +298,12 @@ public class PlayToSession : ISessionController, IDisposable
             long? positionTicks = playedToCompletion ? 0 : GetProgressPositionTicks(streamInfo);
 
             await ReportPlaybackStopped(streamInfo, positionTicks).ConfigureAwait(false);
+
+            if (_heosQueue is not null)
+            {
+                // HEOS owns the queue, including remote skips, natural transitions and its end.
+                return;
+            }
 
             var mediaSource = await streamInfo.GetMediaSource(CancellationToken.None).ConfigureAwait(false);
 
@@ -454,7 +465,7 @@ public class PlayToSession : ISessionController, IDisposable
     /// <param name="command">The <see cref="PlayRequest"/>.</param>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>The task object representing the asynchronous play command sending operation.</returns>
-    public Task SendPlayCommand(PlayRequest command, CancellationToken cancellationToken)
+    public async Task SendPlayCommand(PlayRequest command, CancellationToken cancellationToken)
     {
         _logger.LogDebug("{0} - Received PlayRequest: {1}", _session.DeviceName, command.PlayCommand);
 
@@ -487,7 +498,7 @@ public class PlayToSession : ISessionController, IDisposable
         if (startIndex >= items.Count)
         {
             _logger.LogDebug("{DeviceName} - Play command resulted in no items", _session.DeviceName);
-            return Task.CompletedTask;
+            return;
         }
 
         int len = items.Count - startIndex;
@@ -517,19 +528,24 @@ public class PlayToSession : ISessionController, IDisposable
 
         if (!command.ControllingUserId.IsEmpty())
         {
-            _sessionManager.LogSessionActivity(
+            await _sessionManager.LogSessionActivity(
                 _session.Client,
                 _session.ApplicationVersion,
                 _session.DeviceId,
                 _session.DeviceName,
                 _session.RemoteEndPoint,
-                user);
+                user).ConfigureAwait(false);
         }
 
         // Queueing only applies while there is a playlist to queue onto, an empty one just starts playing
         if (_playlist.Count > 0
             && (command.PlayCommand == PlayCommand.PlayLast || command.PlayCommand == PlayCommand.PlayNext))
         {
+            var wasNative = _heosQueue is not null;
+            var position = _device.Position.Ticks;
+            var nativeQueued = wasNative
+                && await QueueInHeosAsync(playlist, command.PlayCommand, cancellationToken).ConfigureAwait(false);
+
             if (command.PlayCommand == PlayCommand.PlayLast)
             {
                 _playlist.AddRange(playlist);
@@ -549,14 +565,30 @@ public class PlayToSession : ISessionController, IDisposable
             // The item following the one that is playing may have changed, so tell the device about it again
             _nextTrackAnnouncedFor = null;
 
+            if (nativeQueued)
+            {
+                return;
+            }
+
+            if (wasNative)
+            {
+                // An unsupported addition switches the entire playlist back to the existing DLNA path.
+                await SetPlaylistIndex(_currentPlaylistIndex, cancellationToken).ConfigureAwait(false);
+                await SeekAfterTransportChange(position, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
             var media = _device.CurrentMediaInfo;
 
-            return string.IsNullOrEmpty(media?.Url)
-                ? Task.CompletedTask
-                : SyncWithReportedMedia(StreamParams.ParseFromUrl(media.Url, _libraryManager, _mediaSourceManager), media.Url, cancellationToken);
+            if (!string.IsNullOrEmpty(media?.Url))
+            {
+                await SyncWithReportedMedia(StreamParams.ParseFromUrl(media.Url, _libraryManager, _mediaSourceManager), media.Url, cancellationToken).ConfigureAwait(false);
+            }
+
+            return;
         }
 
-        return PlayItems(playlist, cancellationToken);
+        await PlayItems(playlist, cancellationToken).ConfigureAwait(false);
     }
 
     private Task SendPlaystateCommand(PlaystateRequest command, CancellationToken cancellationToken)
@@ -580,10 +612,14 @@ public class PlayToSession : ISessionController, IDisposable
                 return Seek(command.SeekPositionTicks ?? 0);
 
             case PlaystateCommand.NextTrack:
-                return SetPlaylistIndex(_currentPlaylistIndex + 1, cancellationToken);
+                return _heosQueue is not null
+                    ? _device.SkipAsync(true, cancellationToken)
+                    : SetPlaylistIndex(_currentPlaylistIndex + 1, cancellationToken);
 
             case PlaystateCommand.PreviousTrack:
-                return SetPlaylistIndex(_currentPlaylistIndex - 1, cancellationToken);
+                return _heosQueue is not null
+                    ? _device.SkipAsync(false, cancellationToken)
+                    : SetPlaylistIndex(_currentPlaylistIndex - 1, cancellationToken);
         }
 
         return Task.CompletedTask;
@@ -762,6 +798,9 @@ public class PlayToSession : ISessionController, IDisposable
             },
             MediaType.Audio => new PlaylistItem
             {
+                DlnaIds = item.IsDisplayedAsFolder || item.DisplayParentId == Guid.Empty
+                    ? null
+                    : (DidlBuilder.GetClientId(item, null), DidlBuilder.GetClientId(item.DisplayParentId, null)),
                 StreamInfo = new StreamBuilder(_mediaEncoder, _logger).GetOptimalAudioStream(new MediaOptions
                 {
                     ItemId = item.Id,
@@ -789,15 +828,61 @@ public class PlayToSession : ISessionController, IDisposable
         _playlist.AddRange(items);
         _logger.LogDebug("{0} - Playing {1} items", _session.DeviceName, _playlist.Count);
 
+        _heosQueue = HeosQueue.Create(_device.Properties, _dlnaManager.GetServerName(), DlnaPlugin.Instance?.Configuration.EnableNativeHeosQueue == true);
+        if (_heosQueue is not null && await QueueInHeosAsync(_playlist, PlayCommand.PlayNow, cancellationToken).ConfigureAwait(false))
+        {
+            _currentPlaylistIndex = 0;
+            return true;
+        }
+
         await SetPlaylistIndex(0, cancellationToken).ConfigureAwait(false);
         return true;
     }
 
     private void ClearPlaylist()
     {
+        _heosQueue = null;
         _playlist.Clear();
         _nextTrackIndex = -1;
         _nextTrackAnnouncedFor = null;
+    }
+
+    private async Task<bool> QueueInHeosAsync(IReadOnlyList<PlaylistItem> items, PlayCommand mode, CancellationToken cancellationToken)
+    {
+        var queue = _heosQueue!;
+        var queued = false;
+        try
+        {
+            await _device.ChangeTransportAsync(async () =>
+            {
+                queued = await queue.QueueAsync(items, mode, cancellationToken, () => _device.PrepareNativeQueueAsync(cancellationToken)).ConfigureAwait(false);
+            }).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            if (queue.QueueChanged)
+            {
+                ClearPlaylist();
+                await _device.SetStop(CancellationToken.None).ConfigureAwait(false);
+            }
+            else if (mode == PlayCommand.PlayNow)
+            {
+                _heosQueue = null;
+            }
+
+            throw;
+        }
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex, "{DeviceName} - Native HEOS queue unavailable, using DLNA", _session.DeviceName);
+        }
+
+        if (!queued)
+        {
+            _heosQueue = null;
+        }
+
+        return queued;
     }
 
     private async Task SetPlaylistIndex(int index, CancellationToken cancellationToken = default)
@@ -1019,17 +1104,35 @@ public class PlayToSession : ISessionController, IDisposable
     }
 
     /// <inheritdoc />
-    public Task SendMessage<T>(SessionMessageType name, Guid messageId, T data, CancellationToken cancellationToken)
+    public async Task SendMessage<T>(SessionMessageType name, Guid messageId, T data, CancellationToken cancellationToken)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        return name switch
+        var nativeCommands = _heosQueue is not null
+            || HeosQueue.Create(_device.Properties, _dlnaManager.GetServerName(), DlnaPlugin.Instance?.Configuration.EnableNativeHeosQueue == true) is not null;
+        if (nativeCommands)
         {
-            SessionMessageType.Play => SendPlayCommand((data as PlayRequest)!, cancellationToken),
-            SessionMessageType.Playstate => SendPlaystateCommand((data as PlaystateRequest)!, cancellationToken),
-            SessionMessageType.GeneralCommand => SendGeneralCommand((data as GeneralCommand)!, cancellationToken),
-            _ => Task.CompletedTask // Not supported or needed right now
-        };
+            await _commandLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        try
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            await (name switch
+            {
+                SessionMessageType.Play => SendPlayCommand((data as PlayRequest)!, cancellationToken),
+                SessionMessageType.Playstate => SendPlaystateCommand((data as PlaystateRequest)!, cancellationToken),
+                SessionMessageType.GeneralCommand => SendGeneralCommand((data as GeneralCommand)!, cancellationToken),
+                _ => Task.CompletedTask // Not supported or needed right now
+            }).ConfigureAwait(false);
+        }
+        finally
+        {
+            if (nativeCommands)
+            {
+                _commandLock.Release();
+            }
+        }
     }
 
     private sealed class StreamParams
