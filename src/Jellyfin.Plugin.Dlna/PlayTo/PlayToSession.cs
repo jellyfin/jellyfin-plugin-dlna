@@ -57,6 +57,7 @@ public class PlayToSession : ISessionController, IDisposable
     private int _currentPlaylistIndex;
     private int _nextTrackIndex = -1;
     private string? _nextTrackAnnouncedFor;
+    private Guid _controllingUserId;
     private bool _disposed;
 
     /// <summary>
@@ -515,16 +516,11 @@ public class PlayToSession : ISessionController, IDisposable
 
         _logger.LogDebug("{0} - Playlist created", _session.DeviceName);
 
-        if (!command.ControllingUserId.IsEmpty())
-        {
-            _sessionManager.LogSessionActivity(
-                _session.Client,
-                _session.ApplicationVersion,
-                _session.DeviceId,
-                _session.DeviceName,
-                _session.RemoteEndPoint,
-                user);
-        }
+        // Remember who started the playlist, so that seeking or switching streams later builds the
+        // stream for the same user. The user is not attached to the session: since Jellyfin 12 the
+        // user is part of the session key, so logging activity with the user would create a second
+        // session for this device without a controller instead of updating this one.
+        _controllingUserId = command.ControllingUserId;
 
         // Queueing only applies while there is a playlist to queue onto, an empty one just starts playing
         if (_playlist.Count > 0
@@ -599,9 +595,7 @@ public class PlayToSession : ISessionController, IDisposable
 
             if (info.Item is not null && !EnableClientSideSeek(info))
             {
-                var user = _session.UserId.IsEmpty()
-                    ? null
-                    : _userManager.GetUserById(_session.UserId);
+                var user = GetControllingUser();
                 var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, info.AudioStreamIndex, info.SubtitleStreamIndex, GetProfile());
 
                 await SetAvTransport(newItem, CancellationToken.None).ConfigureAwait(false);
@@ -611,6 +605,17 @@ public class PlayToSession : ISessionController, IDisposable
 
             await SeekAfterTransportChange(newPosition, CancellationToken.None).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// Gets the user who started the current playlist, falling back to the user of the session.
+    /// </summary>
+    /// <returns>The <see cref="User"/>, or <c>null</c> when neither is known.</returns>
+    private User? GetControllingUser()
+    {
+        var userId = _controllingUserId.IsEmpty() ? _session.UserId : _controllingUserId;
+
+        return userId.IsEmpty() ? null : _userManager.GetUserById(userId);
     }
 
     private static bool EnableClientSideSeek(StreamParams info)
@@ -920,9 +925,7 @@ public class PlayToSession : ISessionController, IDisposable
             {
                 var newPosition = GetProgressPositionTicks(info) ?? 0;
 
-                var user = _session.UserId.IsEmpty()
-                    ? null
-                    : _userManager.GetUserById(_session.UserId);
+                var user = GetControllingUser();
                 var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, newIndex, info.SubtitleStreamIndex, GetProfile());
 
                 await SetAvTransport(newItem, CancellationToken.None).ConfigureAwait(false);
@@ -947,9 +950,7 @@ public class PlayToSession : ISessionController, IDisposable
             {
                 var newPosition = GetProgressPositionTicks(info) ?? 0;
 
-                var user = _session.UserId.IsEmpty()
-                    ? null
-                    : _userManager.GetUserById(_session.UserId);
+                var user = GetControllingUser();
                 var newItem = CreatePlaylistItem(info.Item, user, newPosition, info.MediaSourceId, info.AudioStreamIndex, newIndex, GetProfile());
 
                 await SetAvTransport(newItem, CancellationToken.None).ConfigureAwait(false);

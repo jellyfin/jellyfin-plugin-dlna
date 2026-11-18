@@ -132,8 +132,13 @@ public sealed class PlayToManager : IDisposable
                 return;
             }
 
+            // Only a session with a working controller stands for this renderer. Another session can
+            // carry the same device id, e.g. one a client created for its user, and must not keep the
+            // renderer from getting a controller again once the controlled session has ended.
             var existingSession = _sessionManager.Sessions.FirstOrDefault(
-                i => !string.IsNullOrEmpty(i.DeviceId) && usn.Contains(i.DeviceId, StringComparison.OrdinalIgnoreCase));
+                i => !string.IsNullOrEmpty(i.DeviceId)
+                    && usn.Contains(i.DeviceId, StringComparison.OrdinalIgnoreCase)
+                    && GetActiveController(i) is not null);
 
             if (existingSession is not null)
             {
@@ -181,7 +186,7 @@ public sealed class PlayToManager : IDisposable
             return false;
         }
 
-        var controller = session.SessionControllers.OfType<PlayToSession>().FirstOrDefault();
+        var controller = GetActiveController(session);
         if (controller is null)
         {
             return false;
@@ -189,6 +194,14 @@ public sealed class PlayToManager : IDisposable
 
         return !string.Equals(controller.DeviceBaseUrl, Device.GetBaseUrl(location), StringComparison.OrdinalIgnoreCase);
     }
+
+    /// <summary>
+    /// Gets the <see cref="PlayToSession"/> of a session that has not been disposed yet.
+    /// </summary>
+    /// <param name="session">The <see cref="SessionInfo"/>.</param>
+    /// <returns>The active controller, or <c>null</c> when the session has none.</returns>
+    private static PlayToSession? GetActiveController(SessionInfo session)
+        => session.SessionControllers.OfType<PlayToSession>().FirstOrDefault(c => c.IsSessionActive);
 
     internal static string GetUuid(string usn)
     {
@@ -246,7 +259,7 @@ public sealed class PlayToManager : IDisposable
             .LogSessionActivity("DLNA", _appHost.ApplicationVersionString, uuid, null, uri.OriginalString, null)
             .ConfigureAwait(false);
 
-        var controller = sessionInfo.SessionControllers.OfType<PlayToSession>().FirstOrDefault();
+        var controller = GetActiveController(sessionInfo);
 
         if (controller is null)
         {
